@@ -1,0 +1,16 @@
+{
+    "waypoints": {
+        "Nco": 6,
+        "keyframes": {
+            "k0":  { "t": 0.00,  "fo": [[ 0.40, 0.00], [ 0.20, 0.00], [-1.10, 0.00], [-1.571, 0.00]] },
+            "k1":  { "t": 3.60,  "fo": [[ 0.40, null, null, null], [-1.60, null, null, null], [-1.10, null, null, null], [-1.571, null, null, null]] },
+            "k2":  { "t": 4.40,  "fo": [[ 0.20, null, null, null], [-1.80, null, null, null], [-1.10, null, null, null], [-3.142, null, null, null]] },
+            "k3":  { "t": 7.60,  "fo": [[-1.40, null, null, null], [-1.80, null, null, null], [-1.10, null, null, null], [-3.142, null, null, null]] },
+            "k4":  { "t": 8.40,  "fo": [[-1.60, null, null, null], [-1.60, null, null, null], [-1.10, null, null, null], [-4.712, null, null, null]] },
+            "k5":  { "t": 11.60, "fo": [[-1.60, null, null, null], [ 0.00, null, null, null], [-1.10, null, null, null], [-4.712, null, null, null]] },
+            "k6":  { "t": 12.40, "fo": [[-1.40, null, null, null], [ 0.20, null, null, null], [-1.10, null, null, null], [-6.283, null, null, null]] },
+            "k7":  { "t": 16.00, "fo": [[ 0.40, 0.00], [ 0.20, 0.00], [-1.10, 0.00], [-6.283, 0.00]] }
+        }
+    },
+    "forces": null
+}

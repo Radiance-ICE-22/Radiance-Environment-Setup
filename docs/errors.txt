@@ -1,0 +1,69 @@
+
+==============================================================================
+  Simulate
+==============================================================================
+Loading latest checkpoint from load_dir
+✅ Done loading checkpoint from 
+outputs/intellisense_02/splatfacto/2026-08-07_103309/nerfstudio_models/step-000029999.ckpt
+Warning: Did not find environment variable ACADOS_SOURCE_DIR, guessed ACADOS_PATH to be /home/intellisense05/FYP-Radiance/figs/SousVide/FiGS/acados.
+Please export ACADOS_SOURCE_DIR to avoid this warning.
+Warning: Please note that the following versions of CasADi are officially supported: 3.4.0 or 3.4.5 or 3.5.1 or 3.5.2 or 3.5.3 or 3.5.4 or 3.5.6 or 3.5.5 or 3.6.0 or 3.6.1 or 3.6.2 or 3.6.3 or 3.6.4 or 3.6.5 or 3.6.6 or 3.6.7.
+ If there is an incompatibility with the CasADi generated code, please consider changing your CasADi version.
+Version 3.7.2 currently in use.
+Warning: Did not find environment variable ACADOS_SOURCE_DIR, guessed ACADOS_PATH to be /home/intellisense05/FYP-Radiance/figs/SousVide/FiGS/acados.
+Please export ACADOS_SOURCE_DIR to avoid this warning.
+Warning: Did not find environment variable ACADOS_SOURCE_DIR, guessed ACADOS_PATH to be /home/intellisense05/FYP-Radiance/figs/SousVide/FiGS/acados.
+Please export ACADOS_SOURCE_DIR to avoid this warning.
+Warning: Did not find environment variable ACADOS_SOURCE_DIR, guessed ACADOS_PATH to be /home/intellisense05/FYP-Radiance/figs/SousVide/FiGS/acados.
+Please export ACADOS_SOURCE_DIR to avoid this warning.
+Warning: Did not find environment variable ACADOS_SOURCE_DIR, guessed ACADOS_PATH to be /home/intellisense05/FYP-Radiance/figs/SousVide/FiGS/acados.
+Please export ACADOS_SOURCE_DIR to avoid this warning.
+Warning: Did not find environment variable ACADOS_SOURCE_DIR, guessed ACADOS_PATH to be /home/intellisense05/FYP-Radiance/figs/SousVide/FiGS/acados.
+Please export ACADOS_SOURCE_DIR to avoid this warning.
+Warning: Did not find environment variable ACADOS_SOURCE_DIR, guessed ACADOS_PATH to be /home/intellisense05/FYP-Radiance/figs/SousVide/FiGS/acados.
+Please export ACADOS_SOURCE_DIR to avoid this warning.
+Warning: Did not find environment variable ACADOS_SOURCE_DIR, guessed ACADOS_PATH to be /home/intellisense05/FYP-Radiance/figs/SousVide/FiGS/acados.
+Please export ACADOS_SOURCE_DIR to avoid this warning.
+Warning: Did not find environment variable ACADOS_SOURCE_DIR, guessed ACADOS_PATH to be /home/intellisense05/FYP-Radiance/figs/SousVide/FiGS/acados.
+Please export ACADOS_SOURCE_DIR to avoid this warning.
+Warning: Did not find environment variable ACADOS_SOURCE_DIR, guessed ACADOS_PATH to be /home/intellisense05/FYP-Radiance/figs/SousVide/FiGS/acados.
+Please export ACADOS_SOURCE_DIR to avoid this warning.
+Warning: Did not find environment variable ACADOS_SOURCE_DIR, guessed ACADOS_PATH to be /home/intellisense05/FYP-Radiance/figs/SousVide/FiGS/acados.
+Please export ACADOS_SOURCE_DIR to avoid this warning.
+...
+Warning: Did not find environment variable ACADOS_SOURCE_DIR, guessed ACADOS_PATH to be /home/intellisense05/FYP-Radiance/figs/SousVide/FiGS/acados.
+Please export ACADOS_SOURCE_DIR to avoid this warning.
+
+  VRAM baseline 597 MiB → peak 597 MiB
+
+---------------------------------------------------------------------------
+OSError                                   Traceback (most recent call last)
+Cell In[16], line 13
+     11 t0 = time.time()
+     12 with VramMonitor(interval=2) as vm:
+---> 13     sim = Simulator(SCENE, METHOD, FRAME)
+     14     ctl = VehicleRateMPC(PILOT, COURSE, FRAME)
+     15     tA, tB, x0 = ctl.tXUd[0, 0], ctl.tXUd[-1, 0], ctl.tXUd[0, 1:11]
+
+File ~/FYP-Radiance/figs/SousVide/FiGS/src/figs/simulator.py:68, in Simulator.__init__(self, gsplat, method, frame, forces)
+     62 self.gsplat = gsplat
+     63 self.conFiG = {
+     64     "rollout": rollout,
+     65     "frame": frame,
+     66     "forces": forces,
+     67     }
+---> 68 self.solver = AcadosSimSolver(sim, json_file=sim_json, verbose=False)
+     70 # Clean up the ACADOS generation files
+     71 os.remove(os.path.join(os.getcwd(),sim_json))
+
+File ~/FYP-Radiance/figs/SousVide/FiGS/acados/interfaces/acados_template/acados_template/acados_sim_solver.py:278, in AcadosSimSolver.__init__(self, acados_sim, json_file, generate, build, cmake_builder, verbose)
+    276 libacados_name = f'{lib_prefix}acados{lib_ext}'
+    277 libacados_filepath = os.path.join(acados_sim.acados_lib_path, '..', lib_dir, libacados_name)
+--> 278 self.__acados_lib = get_shared_lib(libacados_filepath, self.winmode)
+    280 # find out if acados was compiled with OpenMP
+...
+--> 374     self._handle = _dlopen(self._name, mode)
+    375 else:
+    376     self._handle = handle
+
+OSError: libqpOASES_e.so: cannot open shared object file: No such file or directory
