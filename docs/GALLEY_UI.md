@@ -225,6 +225,15 @@ by index, so a smaller re-run would mix old and new files); and a second trackin
 `deploy` (see §7). `--fresh histNet|commNet` archives an existing network, because upstream
 otherwise keeps training the one already on disk.
 
+First gate run (27 Sep, cohort `p4_smoke`): preflight 4.6 s; rollout 2 min 12 s, 111 rollouts
+kept, 4,440 samples, 5.41 GB, peak 614 MiB; observe 33 s, commNet observations 2.68 GB, peak
+3426 MiB; histNet 200 epochs in 76 s (train 1.249, test 1.287). commNet then ran out of memory
+in epoch 2: every step ran in one process, and the splat, the observe step's tensors and
+PyTorch's cache stayed on the 4 GB card. Each step now runs in its own child process, and
+`deploy_roster` calls are followed by `gc.collect()` + `torch.cuda.empty_cache()`. If commNet
+still runs out: smaller `--nro-ds` (needs `--redo rollout`), `--comm-eval none`, or
+`--batch-size 32`.
+
 UI: *SV-Net* page (`#/svnet`): cohort list; new cohort (scene with one model, courses, rollout
 method, students, epochs, in-loop and final evaluation; "Preflight only" prints the size
 estimate); per cohort (`#/svnet/<cohort>`): steps, Continue / run steps / force redo / fresh

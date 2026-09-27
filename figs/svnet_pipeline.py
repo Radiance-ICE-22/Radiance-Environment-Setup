@@ -24,6 +24,13 @@ The cohort's settings are remembered in <PROJECT_ROOT>/.svnet_pipeline_state/<co
 so a resume needs only --cohort. Each step's marker fingerprint includes the marker of the
 step before it: re-running an earlier step invalidates everything after it.
 
+Each GPU step runs in its own child process (this script with --in-step), so the splat,
+networks and PyTorch's cached GPU memory from one step are gone before the next starts: in a
+single process, rollout + observe left ~3.4 GB held on a 4 GB card and commNet training ran out
+of memory. Inside a step, deploy_roster calls (the in-loop evaluation during commNet training)
+are followed by gc.collect() + torch.cuda.empty_cache(): FiGS's splat objects hold reference
+cycles, so they are otherwise freed only whenever Python's collector happens to run.
+
 Only three things are added around upstream, none of which changes what it computes:
   * progress output: sousvide draws rich progress bars, which print nothing when stdout is not
     a terminal (Galley jobs, `tee`, tmux logs). They are replaced by plain lines, and training
@@ -192,6 +199,14 @@ class Ctx:
         if rp.exists():
             try:
                 self.results.update(json.loads(rp.read_text()))
+            except ValueError:
+                pass
+
+    def reload_results(self):
+        rp = self.state / "results.json"
+        if rp.exists():
+            try:
+                self.results = json.loads(rp.read_text())
             except ValueError:
                 pass
 
@@ -582,6 +597,88 @@ STEPS = [
 _ALWAYS = {"preflight"}
 
 
+OOM_HINT = (
+    "GPU out of memory. Check nvidia-smi for other GPU users first (ns-viewer holds ~4.6 GB; a "
+    "Galley queue runs one job at a time, a shell run next to it does not). On a 4 GB card: "
+    "commNet training holds one observation file on the GPU (Nro_ds rollouts, ~1.2 GB at "
+    "--nro-ds 50) plus the next one while it loads, so re-run with a smaller --nro-ds (e.g. 25, "
+    "needs --redo rollout), or --comm-eval none to keep the splat off the GPU during training, "
+    "or --batch-size 32 (a training change: note it with the results).")
+
+
+def run_step_here(c, name):
+    """Run one step in this process. Returns an exit code; never writes markers."""
+    fn = {n: f for n, f, _, _ in STEPS}[name]
+    if name != "preflight":
+        install_progress(c.state)
+        _release_after_deploy()
+    try:
+        fn(c)
+    except KeyboardInterrupt:
+        print()
+        warn(f"interrupted during '{name}' — marker NOT written, this step will re-run")
+        c.save_results()
+        return 130
+    except StepFailed as e:
+        print()
+        fail(f"step '{name}' failed:\n\n{e}\n")
+        c.save_results()
+        return 1
+    except Exception:
+        print()
+        tb = traceback.format_exc()
+        traceback.print_exc()
+        d = OOM_HINT if re.search(r"CUDA out of memory|OutOfMemoryError", tb) else diagnose(tb)
+        if d:
+            print()
+            fail(d)
+        info(f"after fixing, resume with:  svnet_pipeline.py --cohort {c.cohort} --from {name}")
+        c.save_results()
+        return 1
+    c.save_results()
+    return 0
+
+
+def run_step_child(c, name):
+    """Run one step in a fresh Python process, so no GPU memory carries over between steps.
+    Settings come from the cohort's config.json, which the parent has just written."""
+    import subprocess
+    argv = [sys.executable, str(Path(__file__).resolve()), "--project-root", str(c.project_root),
+            "--cohort", c.cohort, "--in-step", name]
+    for net in c.a.fresh:
+        argv += ["--fresh", net]
+    env = os.environ.copy()
+    env.setdefault("PYTORCH_CUDA_ALLOC_CONF", "max_split_size_mb:128")   # less fragmentation on small cards
+    env["PYTHONUNBUFFERED"] = "1"
+    try:
+        return subprocess.run(argv, env=env).returncode
+    except KeyboardInterrupt:
+        warn(f"interrupted during '{name}' — marker NOT written, this step will re-run")
+        return 130
+
+
+def _release_after_deploy():
+    """Free the splat after every deploy_roster call (observe only; results unchanged)."""
+    import gc
+    import sousvide.flight.deploy_figs as df
+    if getattr(df.deploy_roster, "_galley_wrapped", False):
+        return
+    upstream = df.deploy_roster
+
+    def deploy_roster(*args, **kw):
+        try:
+            return upstream(*args, **kw)
+        finally:
+            gc.collect()
+            try:
+                import torch
+                torch.cuda.empty_cache()
+            except Exception:
+                pass
+    deploy_roster._galley_wrapped = True
+    df.deploy_roster = deploy_roster
+
+
 def main():
     ap = argparse.ArgumentParser(description="SOUS-VIDE SV-Net pipeline (resumable)",
                                  formatter_class=argparse.RawDescriptionHelpFormatter, epilog=__doc__)
@@ -613,6 +710,7 @@ def main():
     ap.add_argument("--stop-after", metavar="STEP")
     ap.add_argument("--list-steps", action="store_true")
     ap.add_argument("--status", action="store_true")
+    ap.add_argument("--in-step", help=argparse.SUPPRESS)      # internal: run one step, in this process
     a = ap.parse_args()
 
     names = [s[0] for s in STEPS]
@@ -659,11 +757,14 @@ def main():
     for v in names_used:
         if not NAME_RE.match(str(v)):
             ap.error(f"invalid name: {v!r}")
-    _atomic(cfg_path, json.dumps({k: getattr(a, k) for k in DEFAULTS}, indent=2) + "\n")
-    c.results["config"] = {k: getattr(a, k) for k in DEFAULTS}
     models = active_model(c.repo, a.scene)
     a.scene_model = models[0].parent.name if len(models) == 1 else None
     a.course_digests = [course_digest(c.repo, x) for x in a.courses]
+    if a.in_step:
+        return run_step_here(c, a.in_step)
+    _atomic(cfg_path, json.dumps({k: getattr(a, k) for k in DEFAULTS}, indent=2) + "\n")
+    c.results["config"] = {k: getattr(a, k) for k in DEFAULTS}
+    c.save_results()
 
     for n in a.redo:
         c.clear(n)
@@ -697,31 +798,11 @@ def main():
             print(f"  {_C['d']}· {n:<11} already done — skipping{_C['x']}")
             continue
         section(f"{n}  —  {desc}")
-        if n != "preflight":
-            install_progress(c.state)
         t0 = time.time()
-        try:
-            fn(c)
-        except KeyboardInterrupt:
-            print()
-            warn(f"interrupted during '{n}' — marker NOT written, this step will re-run")
-            c.save_results()
-            return 130
-        except StepFailed as e:
-            print()
-            fail(f"step '{n}' failed:\n\n{e}\n")
-            c.save_results()
-            return 1
-        except Exception:
-            print()
-            traceback.print_exc()
-            d = diagnose(traceback.format_exc())
-            if d:
-                print()
-                fail(d)
-            info(f"after fixing, resume with:  {Path(sys.argv[0]).name} --cohort {a.cohort} --from {n}")
-            c.save_results()
-            return 1
+        rc = run_step_child(c, n)           # preflight too: it would otherwise hold a CUDA context
+        c.reload_results()
+        if rc != 0:
+            return rc
         if n not in _ALWAYS:
             c.mark_done(n, c.fingerprint(keys, this_prev))
             # downstream markers now mismatch through the chain; nothing else to clear
