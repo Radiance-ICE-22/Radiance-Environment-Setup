@@ -204,8 +204,11 @@ class ConfigStore:
         p = self._path(family, name)
         if p.exists() and not overwrite:
             raise ConfigError(f"{family}/{name} already exists")
-        self.validate(family, data)
-        text = json.dumps(data, indent=4) + "\n"
+        dumped = self.validate(family, data)
+        # Courses are written from the validated model, so every fo cell and t is a float.
+        # JSON from a browser turns 0.0 into 0, and FiGS's KF_to_TpFO reads an integer cell
+        # as the previous cell's value: [0.4, 0] would silently become [0.4, 0.4].
+        text = (_course_json(dumped) if family == "courses" else json.dumps(data, indent=4)) + "\n"
         _atomic_write(p, text)
         result = {"path": str(p), "mirrored": None}
         if self.overlay and family in MIRRORED and self.overlay.is_dir():
@@ -213,6 +216,17 @@ class ConfigStore:
             _atomic_write(m, text)
             result["mirrored"] = str(m)
         return result
+
+
+_FLAT_LIST = re.compile(r"\[\s*([^\[\]{}]*?)\s*\]")
+
+
+def _course_json(data: dict) -> str:
+    """Indented JSON with each fo row kept on one line, like the upstream course files."""
+    text = json.dumps(data, indent=4)
+    flat = _FLAT_LIST.sub(lambda m: "[" + ", ".join(x.strip() for x in m.group(1).split(",")) + "]"
+                          if m.group(1).strip() else "[]", text)
+    return flat if json.loads(flat) == data else text      # a string with brackets in it: play safe
 
 
 def _atomic_write(p: Path, text: str) -> None:

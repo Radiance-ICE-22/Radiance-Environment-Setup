@@ -119,3 +119,72 @@ export function BarChart({ bars, xLabel, yLabel, detail }:
     </div>
   );
 }
+
+/**
+ * Time-series chart for the course editor: one series against time, optional reference
+ * lines (limits, thresholds) and shaded intervals where something is wrong. The hover
+ * cursor is shared across charts and the 3D view through `cursor` / `onCursor`.
+ */
+export function TimeChart({ t, y, label, unit, refs = [], bad = [], cursor, onCursor, zeroBased = true, height = 130 }:
+  { t: number[]; y: (number | null)[]; label: string; unit: string;
+    refs?: { y: number; label: string }[]; bad?: [number, number][];
+    cursor: number | null; onCursor: (t: number | null) => void; zeroBased?: boolean; height?: number }) {
+  const ref = useRef<SVGSVGElement>(null);
+  const W = 400, Hh = height, P = { l: 40, r: 10, t: 10, b: 22 };
+  const vals = y.filter((v): v is number => v !== null && Number.isFinite(v));
+  if (t.length < 2 || vals.length < 2) return <p className="muted small">No data.</p>;
+  const x0 = t[0], x1 = t[t.length - 1];
+  let y0 = Math.min(...vals, ...refs.map((r) => r.y)), y1 = Math.max(...vals, ...refs.map((r) => r.y));
+  if (zeroBased && y0 > 0) y0 = 0;
+  if (y1 - y0 < 1e-9) { y0 -= 0.5; y1 += 0.5; }
+  y1 += (y1 - y0) * 0.08;
+  const X = (v: number) => P.l + ((v - x0) / (x1 - x0 || 1)) * (W - P.l - P.r);
+  const Y = (v: number) => P.t + (1 - (v - y0) / (y1 - y0)) * (Hh - P.t - P.b);
+  let d = "", pen = false;
+  y.forEach((v, i) => {
+    if (v === null || !Number.isFinite(v)) { pen = false; return; }
+    d += `${pen ? "L" : "M"}${X(t[i]).toFixed(1)},${Y(v).toFixed(1)}`; pen = true;
+  });
+  const onMove = (e: React.MouseEvent) => {
+    const r = ref.current!.getBoundingClientRect();
+    const sx = ((e.clientX - r.left) / r.width) * W;
+    onCursor(Math.min(x1, Math.max(x0, x0 + ((sx - P.l) / (W - P.l - P.r)) * (x1 - x0))));
+  };
+  let ci: number | null = null;
+  if (cursor !== null) { ci = 0; for (let i = 1; i < t.length; i++) if (Math.abs(t[i] - cursor) < Math.abs(t[ci] - cursor)) ci = i; }
+  const cv = ci !== null ? y[ci] : null;
+  return (
+    <div className="chart">
+      <svg ref={ref} viewBox={`0 0 ${W} ${Hh}`} role="img" aria-label={`${label} over time`}
+        onMouseMove={onMove} onMouseLeave={() => onCursor(null)}>
+        {bad.map(([a, b], i) => (
+          <rect key={i} x={X(a)} width={Math.max(2, X(b) - X(a))} y={P.t} height={Hh - P.t - P.b} className="badband" />
+        ))}
+        {ticks(y0, y1, 3).map((v) => (
+          <g key={v}>
+            <line x1={P.l} x2={W - P.r} y1={Y(v)} y2={Y(v)} className="grid" />
+            <text x={P.l - 6} y={Y(v) + 4} textAnchor="end" className="axis">{fmt(v)}</text>
+          </g>
+        ))}
+        {ticks(x0, x1, 6).map((v) => (
+          <text key={v} x={X(v)} y={Hh - 7} textAnchor="middle" className="axis">{fmt(v)}</text>
+        ))}
+        {refs.map((r) => (
+          <g key={r.label}>
+            <line x1={P.l} x2={W - P.r} y1={Y(r.y)} y2={Y(r.y)} className="refline" />
+            <text x={W - P.r - 4} y={Y(r.y) - 4} textAnchor="end" className="axis">{r.label}</text>
+          </g>
+        ))}
+        <path d={d} className="series" fill="none" />
+        {ci !== null && (
+          <g>
+            <line x1={X(t[ci])} x2={X(t[ci])} y1={P.t} y2={Hh - P.b} className="crosshair" />
+            {cv !== null && Number.isFinite(cv) && <circle cx={X(t[ci])} cy={Y(cv)} r={4} className="dot" />}
+          </g>
+        )}
+      </svg>
+      <div className="chart-title small"><b>{label}</b>{ci !== null && cv !== null && Number.isFinite(cv)
+        ? <span className="muted"> · {fmt(cv)}{unit && ` ${unit}`} at {fmt(t[ci])} s</span> : <span className="muted"> ({unit ? `${unit}, ` : ""}time in s)</span>}</div>
+    </div>
+  );
+}

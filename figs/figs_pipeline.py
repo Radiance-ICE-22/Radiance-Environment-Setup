@@ -807,6 +807,40 @@ def splat_to_course(p):
 course_to_splat = splat_to_course      # 180° rotation about x — self-inverse
 
 
+def course_inside(pc, lo, hi):
+    """The course step's volume test, shared with course_tools.py (Galley's editor).
+
+    pc is a course-frame position whose cells may be NaN: a null position cell means
+    "free" (unconstrained) in FiGS course files, e.g. the pass-through keyframes fo0a/fo4a
+    in circuit.json. Only constrained axes are checked against the camera bounds lo/hi
+    (splat frame). Returns (inside, fixed-axis mask in splat order).
+    """
+    import numpy as np
+    ps = course_to_splat(np.asarray(pc, dtype=float))
+    fixed = ~np.isnan(ps)
+    return bool(np.all(ps[fixed] >= lo[fixed]) and np.all(ps[fixed] <= hi[fixed])), fixed
+
+
+def course_int_cells(keyframes):
+    """fo cells stored as JSON integers (0 instead of 0.0).
+
+    FiGS's KF_to_TpFO accepts only float or null: an int cell silently takes the previous
+    cell's value (or raises on the very first cell), so `"fo": [[0.4, 0]]` would start the
+    course with x-velocity 0.4 m/s. JavaScript's JSON.stringify writes 0.0 as 0, so any
+    browser-edited file can have these.
+    """
+    return [f"{name}.fo[{i}][{j}]" for name, k in keyframes.items()
+            for i, row in enumerate(k["fo"]) for j, v in enumerate(row)
+            if isinstance(v, int) and not isinstance(v, bool)]
+
+
+def course_digest(repo, course):
+    """Content hash of configs/courses/<course>.json, so editing a course (same name)
+    invalidates the `course` and `simulate` steps instead of silently reusing them."""
+    p = Path(repo) / "configs" / "courses" / f"{course}.json"
+    return hashlib.sha256(p.read_bytes()).hexdigest()[:12] if p.exists() else None
+
+
 def step_bounds(c):
     import numpy as np
     P, lo, hi = _bounds(c)
@@ -854,15 +888,19 @@ def step_course(c):
 
     _, lo, hi = _bounds(c)
     kf = json.loads(p.read_text())["waypoints"]["keyframes"]
+    bad = course_int_cells(kf)
+    if bad:
+        raise StepFailed(
+            f"{p.name}: {len(bad)} fo cell(s) are JSON integers ({', '.join(bad[:6])}"
+            f"{', …' if len(bad) > 6 else ''}). FiGS reads an integer cell as the previous "
+            "cell's value, so the flight would be wrong without any error. Write them as "
+            "floats (0.0, not 0), or re-save the course from Galley's course editor.")
     outside = 0
     print(f"  {'keyframe':<8} {'t':>6}  {'course':<24} {'splat':<24} in?")
     for name, k in kf.items():
         pc = np.array([(f[0] if isinstance(f, list) else f) for f in k["fo"][:3]], dtype=float)
         ps = course_to_splat(pc)
-        # A null position cell means "free" (unconstrained) in FiGS course files, e.g. the
-        # pass-through keyframes fo0a/fo4a in circuit.json. Only check constrained axes.
-        fixed = ~np.isnan(ps)
-        inside = bool(np.all(ps[fixed] >= lo[fixed]) and np.all(ps[fixed] <= hi[fixed]))
+        inside, fixed = course_inside(pc, lo, hi)     # null (free) axes are not checked
         outside += not inside
         print(f"  {name:<8} {k['t']:6.2f}  "
               f"({pc[0]:+5.2f},{pc[1]:+5.2f},{pc[2]:+5.2f})        "
@@ -1014,8 +1052,9 @@ STEPS = [
      "ns-train splatfacto  (LONG, GPU)"),
     ("verify", step_verify, [], "registration rate, point cloud, single model"),
     ("bounds", step_bounds, [], "capture extent and course frame conversion"),
-    ("course", step_course, ["course"], "validate waypoints against the capture"),
-    ("simulate", step_simulate, ["course", "frame", "pilot", "method"], "fly it, render MP4"),
+    ("course", step_course, ["course", "course_digest"], "validate waypoints against the capture"),
+    ("simulate", step_simulate, ["course", "course_digest", "frame", "pilot", "method"],
+     "fly it, render MP4"),
     ("validate", step_validate, [], "check the MP4 is real, not garbage"),
     ("record", step_record, [], "write runs/<scene>_<ts>.json"),
 ]
@@ -1091,6 +1130,7 @@ def main():
             ap.error(f"unknown step '{opt}'. Options: {', '.join(names)}")
 
     c = Ctx(a)
+    a.course_digest = course_digest(c.repo, a.course)
 
     # One-time migration: a scene trained before the split has gsplat.done. Its SfM
     # parameters are the same fingerprint keys, and it was trained with the upstream

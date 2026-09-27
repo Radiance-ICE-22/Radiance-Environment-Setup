@@ -1,4 +1,4 @@
-import { StrictMode, useEffect, useState } from "react";
+import { lazy, StrictMode, Suspense, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
 import { api, ApiError, Machine, setToken } from "./api";
@@ -8,6 +8,9 @@ import Jobs from "./pages/Jobs";
 import JobPage from "./pages/Job";
 import Configs from "./pages/Configs";
 import NewCapture from "./pages/NewCapture";
+
+// three.js and the editor load only when the course editor is opened.
+const CoursePage = lazy(() => import("./pages/Course"));
 
 // Hash routes keep the static build servable from any path with no server rewrites.
 function useRoute(): string[] {
@@ -65,13 +68,14 @@ function App() {
   if (needLogin) return <Login onDone={() => { setNeedLogin(false); force((x) => x + 1); }} />;
 
   const top = r[0] ?? "";
-  const nav: [string, string][] = [["", "Overview"], ["new", "New capture"], ["jobs", "Jobs"], ["configs", "Configs"]];
+  const nav: [string, string][] = [["", "Overview"], ["new", "New capture"], ["course", "Course editor"], ["jobs", "Jobs"], ["configs", "Configs"]];
   let page;
   if (top === "scene" && r[1]) page = <ScenePage scene={r[1]} />;
   else if (top === "jobs" && r[1]) page = <JobPage id={Number(r[1])} />;
   else if (top === "jobs") page = <Jobs />;
   else if (top === "configs") page = <Configs family={r[1] as any} name={r[2]} />;
   else if (top === "new") page = <NewCapture />;
+  else if (top === "course") page = <Suspense fallback={<p className="muted">Loading the 3D editor…</p>}><CoursePage scene={r[1]} name={r[2]} /></Suspense>;
   else page = <Dashboard />;
 
   return (

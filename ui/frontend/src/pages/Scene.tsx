@@ -14,7 +14,7 @@ export default function ScenePage({ scene }: { scene: string }) {
 
   return (
     <>
-      <div className="row"><h1>{scene}</h1><span className="spacer" /><a href="#/">← Overview</a></div>
+      <div className="row"><h1>{scene}</h1><span className="spacer" /><a href={`#/course/${scene}`}>Course editor →</a><a href="#/">← Overview</a></div>
       {st.err && <p className="err">{st.err}</p>}
       {s && (
         <div className="panel">
@@ -111,7 +111,8 @@ function FlyCourse({ scene, courses }: { scene: string; courses: string[] }) {
   return (
     <div className="panel">
       <h2>Fly a course</h2>
-      <p className="muted small">Runs bounds → course check → simulate → validate → record with the Viper MPC expert.</p>
+      <p className="muted small">Runs bounds → course check → simulate → validate → record with the Viper MPC expert.
+        To build or change a course over this scene, use the <a href={`#/course/${scene}${r.course ? `/${r.course}` : ""}`}>course editor</a>.</p>
       <div className="fields">
         <Select label="Course" value={r.course} options={courses} allowDefault={false} onChange={(v) => setR({ ...r, course: v })} />
         <label className="f">Frame<input value={r.frame ?? ""} placeholder="carl" onChange={(e) => setR({ ...r, frame: e.target.value || undefined })} /></label>

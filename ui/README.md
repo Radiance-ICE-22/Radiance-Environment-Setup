@@ -12,11 +12,13 @@ Plan with diagrams: https://claude.ai/code/artifact/7f7d0bbb-6399-4f1b-bead-21ff
 | Path | |
 |---|---|
 | `backend/galley/` | FastAPI app, SQLite job queue, config models, pipeline bridge, TensorBoard reader |
-| `backend/tests/` | pytest suite (35 tests; fake pipeline; set `GALLEY_TEST_CONFIGS` to round-trip real configs) |
+| `backend/galley/course.py` | course editor backend: runs `figs/course_tools.py` (kitchen env, CPU only) for geometry and previews |
+| `backend/tests/` | pytest suite (45 tests; fake pipeline and fake course tools; set `GALLEY_TEST_CONFIGS` to round-trip real configs) |
 | `machines/<host>.toml` | per-host paths, GPU and defaults (`dummy.toml` so far) |
 | `frontend/` | React + Vite UI; `frontend/dist/` is the committed build the backend serves |
 | `deploy/phase1_gate.sh` | installs the backend on a host, runs the tests, drives the API with curl |
 | `deploy/phase2_train_probe.sh` | measures splat training on a small GPU by retraining backroom as `backroom_t4` |
+| `deploy/phase3_gate.sh` | course editor gate: tool timings, API checks, course lint, a browser-style course flown through the queue |
 
 ## Run
 
@@ -49,6 +51,7 @@ npm run dev                                    # live reload, proxies /api to :8
 | New capture | video from `video_captures/` → splat; scene-name substring check, marker fields, match-pair count, training options; stops after `bounds` by default |
 | Scene | step markers; active and archived models with Archive / Promote; reconstruction, training and flight stats; training curve (TensorBoard); ArUco detections per 10 s; flight video; fly a course; retrain; run arbitrary steps |
 | Jobs / Job | queue, live log over WebSocket with the current progress line, cancel |
+| Course editor | 3D course over the scene's sparse point cloud and camera path, in the course frame (z down); keyframe table with free cells and derivative matrix; move/yaw gizmos, click-to-add; live minimum-snap preview (FiGS `MinTimeSnap`) with speed, acceleration, thrust and body-rate charts against the expert's bounds, clearance and volume checks; re-time like the expert; save; fly the expert; semantic-goal marker. Loaded on demand (three.js is ~1 MB) |
 | Configs | JSON editor for every SousVide config family with server-side validation; captures, courses and pilots are mirrored into `figs/sousvide_overlay/` |
 
 Training forms pre-fill from the machine file's `[defaults]` (`cache_images`, `train_vis`,
@@ -69,11 +72,18 @@ Training forms pre-fill from the machine file's `[defaults]` (`cache_images`, `t
 | GET | `/api/scenes/{scene}/metrics?run=` | TensorBoard scalars of the active (or given) run |
 | GET | `/api/scenes/{scene}/flight` | the flight MP4 |
 | GET | `/api/runs`, `/api/videos` | `runs/*.json`, staged videos |
+| GET | `/api/scenes/{scene}/geometry?margin=0.5` | sparse points, camera path, camera and waypoint boxes in the course frame (gzip; cached until the files change) |
+| POST | `/api/courses/preview` | `{course, scene?, pilot, frame, mode: fixed\|expert, clearance}` → sampled trajectory, inputs vs bounds, clearance, volume check; 409 while another preview runs |
+| GET | `/api/courses/{name}/lint` | integer `fo` cells that FiGS would misread |
 | POST | `/api/jobs/figs` | queue a `figs_pipeline.py` run: flags, training options, `from_step`/`only`/`stop_after`/`redo` |
 | POST | `/api/jobs/selftest` | harmless job for testing the queue |
 | GET | `/api/jobs`, `/api/jobs/{id}`, `/api/jobs/{id}/log?after=N` | history and logs |
 | POST | `/api/jobs/{id}/cancel` | SIGTERM to the job's process group, SIGKILL after 10 s |
 | WS | `/api/jobs/{id}/stream` | backlog, then live lines, progress redraws and status |
 
-Jobs run one at a time, in order: the GPU is treated as exclusive. Work started outside the
+Course writes (`PUT /api/configs/courses/…`) are saved from the validated model, so every
+`fo` cell and `t` is a float, with each `fo` row on one line.
+
+Jobs run one at a time, in order: the GPU is treated as exclusive. Course previews and
+geometry are CPU-only calls that bypass the queue (CUDA hidden), so they work during training. Work started outside the
 UI (a shell pipeline run, `ns-viewer`) is invisible to the queue, so avoid it while jobs run.

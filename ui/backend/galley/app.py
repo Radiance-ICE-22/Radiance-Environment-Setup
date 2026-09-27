@@ -2,18 +2,21 @@
 from __future__ import annotations
 
 import asyncio
+import gzip
 import hmac
+import json
 import shutil
 import subprocess
 from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel, Field
 
 from . import pipeline as pl
 from .configs import FAMILIES, ConfigError, ConfigStore
+from .course import Busy, CourseTools, PreviewRequest, ToolError, int_cells
 from .db import DB
 from .jobs import JobRunner
 from .settings import Settings, load
@@ -36,6 +39,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     db = DB(s.db_path)
     runner = JobRunner(s, db)
     store = ConfigStore(s.configs_dir, s.overlay)
+    tools = CourseTools(s)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -135,6 +139,30 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.get("/api/scenes/{scene}/metrics", dependencies=[api])
     def metrics(scene: str, run: str | None = None):
         return _val(lambda: pl.training_metrics(s, scene, run))
+
+    # ── course editor (Phase 3) ───────────────────────────────────────────────
+    @app.get("/api/scenes/{scene}/geometry", dependencies=[api])
+    def geometry(scene: str, request: Request, margin: float = Query(0.5, ge=0, le=5)):
+        """Sparse point cloud, camera path and bounds boxes in the course frame."""
+        out = _tool(lambda: tools.geometry(pl.check_scene(scene), margin))
+        body = json.dumps(out, separators=(",", ":")).encode()
+        if "gzip" in request.headers.get("accept-encoding", "") and len(body) > 4096:
+            return Response(gzip.compress(body, 5), media_type="application/json",
+                            headers={"Content-Encoding": "gzip", "Vary": "Accept-Encoding"})
+        return Response(body, media_type="application/json")
+
+    @app.post("/api/courses/preview", dependencies=[api])
+    def course_preview(req: PreviewRequest):
+        """MinTimeSnap through the keyframes with the expert's settings; clearance; volume check."""
+        course = _cfg(lambda: store.validate("courses", req.course))   # floats, as saved
+        if req.scene:
+            pl.check_scene(req.scene)
+        return _tool(lambda: tools.preview(req, course))
+
+    @app.get("/api/courses/{name}/lint", dependencies=[api])
+    def course_lint(name: str):
+        data = _cfg(lambda: store.read("courses", name))
+        return {"int_cells": int_cells(data)}
 
     @app.get("/api/runs", dependencies=[api])
     def runs(scene: str | None = None):
@@ -237,6 +265,17 @@ def _cfg(fn):
         raise HTTPException(400, str(e))
     except ValueError as e:  # pydantic ValidationError is a ValueError
         raise HTTPException(422, str(e))
+
+
+def _tool(fn):
+    try:
+        return fn()
+    except Busy as e:
+        raise HTTPException(409, str(e))
+    except ToolError as e:
+        raise HTTPException(502, str(e))
+    except ValueError as e:
+        raise HTTPException(400, str(e))
 
 
 def _val(fn):

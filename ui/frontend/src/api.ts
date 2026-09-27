@@ -115,6 +115,44 @@ export const api = {
     "GET", `/scenes/${encodeURIComponent(s)}/metrics${run ? `?run=${encodeURIComponent(run)}` : ""}`),
 };
 
+// ── course editor (Phase 3) ──────────────────────────────────────────────────
+type V3 = [number, number, number];
+export interface Geometry {
+  scene: string;
+  camera_path: V3[];
+  camera_box: { lo: V3; hi: V3 };
+  waypoint_box: { lo: V3; hi: V3; margin: number };
+  bounds_splat: { lo: V3; hi: V3 };
+  points: number[] | null;          // flat x,y,z in the course frame
+  colors: number[] | null;          // flat r,g,b 0..255
+  points_box?: { lo: V3; hi: V3 };  // 1st..99th percentile
+  n_points: number;
+  n_points_sent: number;
+  warning?: string;
+}
+export interface Preview {
+  mode: "fixed" | "expert";
+  pilot: string; frame: string; hz: number; kT: number | null; use_l2_time: boolean; solve_s: number;
+  keyframes: { name: string; t_file: number; t_solved: number; pos: V3; yaw: number }[];
+  duration_file: number; duration_solved: number;
+  t: number[]; pos: V3[]; vel: V3[]; acc: V3[]; yaw: number[]; speed: number[]; acc_norm: number[];
+  stats: { v_max: number; v_mean: number; a_max: number; length_m: number; nonfinite_inputs: number };
+  inputs: { names: string[]; lower: number[]; upper: number[]; u: number[][]; max_use: (number | null)[];
+    violations: Record<string, [number, number][]> };
+  clearance: { threshold: number; d: number[]; min: number; at_t: number; at_pos: V3;
+    below: [number, number][]; n_points: number; note: string } | null;
+  inside: { keyframes: { name: string; inside: boolean }[]; outside_intervals: [number, number][]; outside_frac: number } | null;
+}
+export interface PreviewRequest {
+  course: unknown; scene?: string; pilot?: string; frame?: string; mode?: "fixed" | "expert"; clearance?: number;
+}
+export const courseApi = {
+  geometry: (scene: string, margin = 0.5) =>
+    req<Geometry>("GET", `/scenes/${encodeURIComponent(scene)}/geometry?margin=${margin}`),
+  preview: (r: PreviewRequest) => req<Preview>("POST", "/courses/preview", r),
+  lint: (name: string) => req<{ int_cells: string[] }>("GET", `/courses/${encodeURIComponent(name)}/lint`),
+};
+
 export function flightUrl(scene: string) {
   const tok = getToken();
   return `/api/scenes/${encodeURIComponent(scene)}/flight${tok ? `?token=${encodeURIComponent(tok)}` : ""}`;
