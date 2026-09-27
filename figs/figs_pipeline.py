@@ -472,7 +472,7 @@ def step_transcode(c):
             sh(["ffmpeg", "-y", "-i", str(c.raw_video),
                 "-vf", f"scale={c.a.width}:{c.a.height},format=yuv420p",
                 "-r", str(c.a.fps), "-c:v", "libx264", "-crf", "18",
-                "-preset", "medium", "-an", str(tmp)])
+                "-preset", "medium", "-an", "-f", "mp4", str(tmp)])
         except BaseException:
             tmp.unlink(missing_ok=True)      # never leave a truncated file behind
             raise
@@ -756,12 +756,16 @@ def step_course(c):
     for name, k in kf.items():
         pc = np.array([(f[0] if isinstance(f, list) else f) for f in k["fo"][:3]], dtype=float)
         ps = course_to_splat(pc)
-        inside = bool(np.all(ps >= lo) and np.all(ps <= hi))
+        # A null position cell means "free" (unconstrained) in FiGS course files, e.g. the
+        # pass-through keyframes fo0a/fo4a in circuit.json. Only check constrained axes.
+        fixed = ~np.isnan(ps)
+        inside = bool(np.all(ps[fixed] >= lo[fixed]) and np.all(ps[fixed] <= hi[fixed]))
         outside += not inside
         print(f"  {name:<8} {k['t']:6.2f}  "
               f"({pc[0]:+5.2f},{pc[1]:+5.2f},{pc[2]:+5.2f})        "
               f"({ps[0]:+5.2f},{ps[1]:+5.2f},{ps[2]:+5.2f})        "
-              f"{'✔' if inside else '✗ OUTSIDE'}")
+              f"{'✔' if inside else '✗ OUTSIDE'}"
+              f"{'  (free: ' + ''.join(ax for ax, f in zip('xyz', fixed) if not f) + ')' if not fixed.all() else ''}")
     print()
     c.results["course"] = {"name": c.a.course, "keyframes": len(kf), "outside": outside}
     if outside:
@@ -794,8 +798,10 @@ def step_simulate(c):
         info(f"trajectory {tA:.2f}s → {tB:.2f}s at {ctl.hz} Hz")
         info("first run for a new course triggers acados C codegen — slow once, cached after")
         Tro, Xro, Uro, Fro, Rgb, Dpt, Aux = sim.simulate(ctl, tA, tB, x0)
-        tmp = f"{c.out_mp4}.partial"
-        gv.images_to_mp4(Rgb, tmp, ctl.hz)
+        # imageio's FFMPEG writer picks the container from the extension and refuses
+        # ".partial", so keep ".mp4" last: backroom_flight.partial.mp4 -> backroom_flight.mp4
+        tmp = c.out_mp4.with_name(f"{c.out_mp4.stem}.partial.mp4")
+        gv.images_to_mp4(Rgb, str(tmp), ctl.hz)
         Path(tmp).rename(c.out_mp4)
 
     wall = elapsed(t0)
@@ -923,7 +929,7 @@ def main():
                          "this script's location; override only if that fails.")
     ap.add_argument("--marker-id", type=int, default=0)
     ap.add_argument("--marker-length", type=float, default=0.18, help="metres, tape-measured")
-    ap.add_argument("--num-images", type=int, default=300)
+    ap.add_argument("--num-images", type=int, default=600)
     ap.add_argument("--num-marked", type=int, default=40)
     ap.add_argument("--width", type=int, default=1920)
     ap.add_argument("--height", type=int, default=1080)
