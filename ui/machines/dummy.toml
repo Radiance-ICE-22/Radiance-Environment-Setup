@@ -1,0 +1,22 @@
+# dummy — MSI laptop, Ubuntu 24.04, RTX 3050 Ti Laptop 4 GB, 15 GiB RAM.
+# Install made by install_figs.sh with its default prefix (~/projects/figs_validation).
+
+[paths]
+project_root = "~/projects/figs_validation"          # figs_env.sh + SousVide/
+pipeline     = "~/FYP-Radiance/figs/figs_pipeline.py"
+overlay      = "~/FYP-Radiance/figs/sousvide_overlay" # saved captures/courses/pilots are mirrored here
+video_dir    = "~/FYP-Radiance/video_captures"        # raw footage staging (FiGS cannot see it)
+data_dir     = "~/.local/share/galley"                # galley.db
+
+[server]
+host = "0.0.0.0"   # ufw limits it to the LAN and tailscale0 (Phase 5)
+port = 8800
+
+[gpu]
+name     = "NVIDIA GeForce RTX 3050 Ti Laptop GPU"
+vram_mib = 4096
+
+[defaults]
+# 4 GB profile: simulation is fine (614 MiB peak); splat training at lab settings
+# peaked at 5203 MiB on the RTX 2080, so it needs the Phase 2 training options.
+max_data_method = "data_beta"
