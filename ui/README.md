@@ -13,7 +13,7 @@ Plan: https://claude.ai/code/artifact/7f7d0bbb-6399-4f1b-bead-21ff96f3f12e
 | `backend/galley/` | FastAPI app, SQLite job queue, config models, pipeline bridge |
 | `backend/tests/` | pytest suite (fake pipeline; set `GALLEY_TEST_CONFIGS` to round-trip real configs) |
 | `machines/<host>.toml` | per-host paths, GPU and defaults |
-| `frontend/` | React + Vite (Phase 2) |
+| `frontend/` | React + Vite UI; `frontend/dist/` is the committed build the backend serves |
 | `deploy/` | systemd units and ufw rules (Phase 5) |
 
 ## Run (development)
@@ -24,8 +24,21 @@ pipeline processes, each of which sources `figs_env.sh` itself.
 ```bash
 cd ~/FYP-Radiance/ui/backend
 uv venv .venv && uv pip install -p .venv -e '.[test]'
-GALLEY_MACHINE=../machines/dummy.toml .venv/bin/python -m galley     # http://<host>:8800/docs
+GALLEY_MACHINE=../machines/dummy.toml .venv/bin/python -m galley     # UI: http://<host>:8800  API docs: /docs
 ```
+
+The built frontend (`frontend/dist/`) is committed, so target machines need no Node.js.
+To change the UI, on any machine with Node 20+:
+
+```bash
+cd ui/frontend && npm ci && npm run build     # then commit dist/
+npm run dev                                    # live reload, proxies /api to :8800
+```
+
+Pages: Overview (scenes, jobs, run records), New capture (video → splat, stops at `bounds`
+by default), Scene (step markers, model, reconstruction and flight stats, fly a course,
+retrain with training options, run arbitrary steps), Jobs (live log, cancel), Configs
+(JSON editor with server-side validation; courses/captures/pilots mirrored to the overlay).
 
 ## API (Phase 1)
 

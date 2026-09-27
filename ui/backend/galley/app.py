@@ -48,7 +48,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     def auth(request: Request):
         if s.token:
-            got = request.headers.get("authorization", "").removeprefix("Bearer ").strip()
+            # header for fetch(); ?token= for <video src> and WebSockets, which cannot set headers
+            got = (request.headers.get("authorization", "").removeprefix("Bearer ").strip()
+                   or request.query_params.get("token", ""))
             if not hmac.compare_digest(got, s.token):
                 raise HTTPException(401, "missing or wrong token")
 

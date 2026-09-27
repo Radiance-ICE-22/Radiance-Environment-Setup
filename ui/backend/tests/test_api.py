@@ -126,6 +126,8 @@ def test_token(settings):
     with TestClient(create_app(settings)) as c:
         assert c.get("/api/scenes").status_code == 401
         assert c.get("/api/scenes", headers={"Authorization": "Bearer s3cret"}).status_code == 200
+        assert c.get("/api/scenes?token=s3cret").status_code == 200
+        assert c.get("/api/scenes?token=wrong").status_code == 401
         assert c.get("/api/health").status_code == 200
 
 
@@ -141,3 +143,18 @@ def test_train_options_reach_the_script(client):
                  "--train-vis tensorboard", "--archive-old",
                  "--train-arg=--pipeline.model.stop-split-at 10000"):
         assert frag in joined, frag
+
+
+def test_frontend_served_when_built(settings, tmp_path, monkeypatch):
+    """The API wins over the static mount; / serves index.html when frontend/dist exists."""
+    from pathlib import Path
+    dist = Path(__file__).resolve().parents[2] / "frontend" / "dist"
+    if not (dist / "index.html").exists():
+        import pytest
+        pytest.skip("frontend not built")
+    from fastapi.testclient import TestClient
+    from galley.app import create_app
+    settings.data_dir.mkdir(parents=True, exist_ok=True)
+    with TestClient(create_app(settings)) as c:
+        assert "<div id=\"root\">" in c.get("/").text
+        assert c.get("/api/health").json()["ok"] is True

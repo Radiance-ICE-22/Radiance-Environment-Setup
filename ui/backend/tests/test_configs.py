@@ -64,7 +64,7 @@ def test_capture_checks(client):
 
 def test_names_and_families(client):
     assert client.get("/api/configs/secrets/x").status_code == 400
-    assert client.put("/api/configs/courses/..%2Fx", json=CIRCUIT_LIKE).status_code in (400, 404)
+    assert client.put("/api/configs/courses/..%2Fx", json=CIRCUIT_LIKE).status_code in (400, 404, 405)  # 405 when the static frontend mount answers
     assert client.put("/api/configs/courses/a.b", json=CIRCUIT_LIKE).status_code == 400
     assert client.put("/api/configs/courses/new", params={"overwrite": False}, json=CIRCUIT_LIKE).status_code == 200
     assert client.put("/api/configs/courses/new", params={"overwrite": False}, json=CIRCUIT_LIKE).status_code == 400
