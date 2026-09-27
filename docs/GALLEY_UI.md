@@ -1,7 +1,7 @@
 # Galley — web console for the pipeline: status and handoff
 
-*Last updated 2026-09-27: Phase 3 (course editor) built; backend gate passed on dummy, the
-browser half is pending. Written so the next working session (human or
+*Last updated 2026-09-27: Phase 3 (course editor) done; its gate passed on dummy. Phase 4
+(SV-Net) is next. Written so the next working session (human or
 Claude) can pick up without the chat history. The live plan, with diagrams, is the Claude
 Doc "SOUS-VIDE Pipeline Console — Implementation Plan":
 https://claude.ai/code/artifact/7f7d0bbb-6399-4f1b-bead-21ff96f3f12e*
@@ -22,7 +22,7 @@ in the browser can be resumed from the shell and vice versa.
 | 0 | Align dummy with the lab setup | done | `figs_pipeline.py` flew backroom + circuit on dummy: 34 s, tracking error max 0.034 m, 614 MiB |
 | 1 | Backend core: job queue, config models, log streaming | done | on dummy: 26 tests, real preflight job via the queue, cancel of a running job, bad requests refused |
 | 2 | Splat page: `sfm`/`train` split, frontend, 4 GB training | done | retrain from the UI, curve shown, previous model promoted back, flight re-run |
-| 3 | Course editor (3D waypoints) | **backend gate passed; browser half pending** | a browser-built course passes the `course` step and flies. On dummy: a course sent the way a browser sends JSON saved as floats and flew (backroom, 173 frames, tracking max 0.074 m, 614 MiB, no dark frames); expert preview of circuit 12.344 s vs recorded flight 12.35 s. Remaining: build and fly one from the page (§6) |
+| 3 | Course editor (3D waypoints) | done | a browser-built course passes the `course` step and flies. Browser: `backroom_loop` (New loop, start and end keyframes dragged) saved and flew, re-timed 12 s → 8.55 s, 171 frames, tracking max 0.069 m, no dark frames. Script: a course sent the way a browser sends JSON saved as floats and flew (backroom, 173 frames, tracking max 0.074 m, 614 MiB, no dark frames); expert preview of circuit 12.344 s vs recorded flight 12.35 s |
 | 4 | SV-Net stages (`svnet_pipeline.py`) | todo | `data_alpha` to `eval_single` end to end from the UI |
 | 5 | Hardening: login, systemd, ufw, run diffs, archiving | todo | survives a reboot; reachable on LAN and Tailscale only |
 | 6 | Package + installer (cu118 and cu128 profiles) | todo | one command on a fresh clone brings everything up on the RTX 5060 Ti PC |
@@ -163,7 +163,7 @@ saved as floats and flew: re-timed 12.0 s → 8.65 s, 173 frames, tracking max 0
 
 ## 6. What comes next
 
-**Phase 3 — course editor (built; gate pending).** Page *Course editor* (`#/course/<scene>/<course>`):
+**Phase 3 — course editor (done 27 Sep).** Page *Course editor* (`#/course/<scene>/<course>`):
 
 - 3D view in the course frame (camera up = −z): SfM sparse points (RGB or altitude colours,
   up to 60k sent, gzip), camera path, camera box, recommended waypoint box (flagged when an
@@ -258,8 +258,7 @@ remove the round trip.
 
 Prompt to start the next session:
 
-> Continue the Galley web console for my FYP pipeline. Phase 3 (course editor) is built; check
-> its gate result in ~/phase3_gate.log, then start Phase 4 (SV-Net). Read
+> Continue the Galley web console for my FYP pipeline from Phase 4 (SV-Net). Read
 > `D:\Projects\FYP\FYP-Radiance\docs\GALLEY_UI.md` first, then the plan doc linked there.
 > Code is in `FYP-Radiance/ui/`; the pipeline script is `figs/figs_pipeline.py`. Work on
 > my laptop copy and give me commands to run on dummy.
