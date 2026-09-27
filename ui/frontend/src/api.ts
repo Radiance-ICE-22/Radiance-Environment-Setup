@@ -153,6 +153,56 @@ export const courseApi = {
   lint: (name: string) => req<{ int_cells: string[] }>("GET", `/courses/${encodeURIComponent(name)}/lint`),
 };
 
+// ── SV-Net cohorts (Phase 4) ─────────────────────────────────────────────────
+export const SV_STEPS = ["preflight", "rollout", "observe", "train_hist", "train_comm", "deploy"] as const;
+export type SvStep = (typeof SV_STEPS)[number];
+export interface SvnetRun {
+  cohort: string; scene?: string; courses?: string[]; method?: string; roster?: string[];
+  expert?: string; frame?: string; nro_ds?: number; use_compress?: boolean; subsample?: number;
+  hist_epochs?: number; comm_epochs?: number; lr?: number; batch_size?: number; lim_sv?: number;
+  comm_eval?: string; deploy_course?: string; deploy_method?: string;
+  fresh?: ("histNet" | "commNet")[]; from_step?: SvStep; only?: SvStep; stop_after?: SvStep; redo?: SvStep[];
+}
+export interface CohortSummary {
+  cohort: string; scene: string | null; courses: string[] | null; method: string | null; roster: string[] | null;
+  done: string[]; students: Record<string, number>; managed: boolean;
+}
+export interface LossLog {
+  log: string; epochs: number; train_s: number; n_train: number; n_test: number;
+  loss_train: [number, number][]; loss_test: [number, number][]; eval_tte_upstream: [number, number][]; n_logs: number;
+}
+export interface DeployRow {
+  role: "expert" | "student"; upstream_tte_mean: number; upstream_tte_best: number; upstream_pp: number;
+  hz_mean: number; hz_worst: number; video: string | null;
+  tte: { mean_m: number; max_m: number; "within_0.3m": number; final_mean_m: number; rollouts: number };
+}
+export interface CohortStatus {
+  cohort: string; exists: boolean; data_dir: string;
+  config: Partial<Record<keyof SvnetRun, any>>;
+  steps: { step: SvStep; done: boolean; when: string | null }[];
+  results: {
+    estimate?: { rollouts: number; samples: number; rollout_gb: number; free_gb: number };
+    rollout?: { courses: Record<string, { files: number; rollouts: number; samples: number; gb: number }>; wallclock: string; peak_vram_mib: number };
+    observe?: { pilots: Record<string, Record<string, number>>; wallclock: string; peak_vram_mib: number };
+    train_histNet?: { epochs: number; wallclock: string; peak_vram_mib: number; pilots: Record<string, LossLog> };
+    train_commNet?: { epochs: number; wallclock: string; peak_vram_mib: number; deployment: [string, string, string] | null; pilots: Record<string, LossLog> };
+    deploy?: { course: string; method: string; scene: string; pilots: Record<string, DeployRow>; wallclock: string; peak_vram_mib: number; finished: string };
+    [k: string]: any;
+  };
+  live: Record<string, Partial<Record<"histNet" | "commNet", [number, number][]>>>;
+  disk_gb: Record<string, number>;
+}
+export const svApi = {
+  cohorts: () => req<CohortSummary[]>("GET", "/cohorts"),
+  cohort: (c: string) => req<CohortStatus>("GET", `/cohorts/${encodeURIComponent(c)}`),
+  submit: (r: SvnetRun) => req<{ id: number }>("POST", "/jobs/svnet", r),
+  jobs: (c: string) => req<Job[]>("GET", `/jobs?cohort=${encodeURIComponent(c)}`),
+};
+export function cohortVideoUrl(cohort: string, file: string) {
+  const tok = getToken();
+  return `/api/cohorts/${encodeURIComponent(cohort)}/video/${encodeURIComponent(file)}${tok ? `?token=${encodeURIComponent(tok)}` : ""}`;
+}
+
 export function flightUrl(scene: string) {
   const tok = getToken();
   return `/api/scenes/${encodeURIComponent(scene)}/flight${tok ? `?token=${encodeURIComponent(tok)}` : ""}`;

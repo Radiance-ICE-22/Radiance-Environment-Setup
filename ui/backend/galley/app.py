@@ -15,6 +15,7 @@ from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel, Field
 
 from . import pipeline as pl
+from . import svnet as sv
 from .configs import FAMILIES, ConfigError, ConfigStore
 from .course import Busy, CourseTools, PreviewRequest, ToolError, int_cells
 from .db import DB
@@ -164,6 +165,22 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         data = _cfg(lambda: store.read("courses", name))
         return {"int_cells": int_cells(data)}
 
+    # ── SV-Net cohorts (Phase 4) ───────────────────────────────────────────────
+    @app.get("/api/cohorts", dependencies=[api])
+    def cohorts():
+        return sv.list_cohorts(s)
+
+    @app.get("/api/cohorts/{cohort}", dependencies=[api])
+    def cohort(cohort: str):
+        return _val(lambda: sv.cohort_status(s, cohort))
+
+    @app.get("/api/cohorts/{cohort}/video/{name}", dependencies=[api])
+    def cohort_video(cohort: str, name: str):
+        p = _val(lambda: sv.deployment_video(s, cohort, name))
+        if not p:
+            raise HTTPException(404, "no such deployment video")
+        return FileResponse(p, media_type="video/mp4")
+
     @app.get("/api/runs", dependencies=[api])
     def runs(scene: str | None = None):
         return pl.list_runs(s, scene)
@@ -182,6 +199,19 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         label = f"figs {req.scene} [{steps}]"
         return {"id": runner.submit("figs", label, argv, req.model_dump(), req.scene)}
 
+    @app.post("/api/jobs/svnet", dependencies=[api], status_code=201)
+    def submit_svnet(req: sv.SvnetRun):
+        if not sv.script(s).exists():
+            raise HTTPException(400, f"{sv.script(s)} not found (it ships next to figs_pipeline.py)")
+        argv = _val(lambda: sv.build_argv(s, req))
+        saved = sv.cohort_status(s, req.cohort)["config"]
+        scene = req.scene or saved.get("scene")
+        if not scene or not (req.courses or saved.get("courses")):
+            raise HTTPException(400, "a new cohort needs a scene and at least one course")
+        steps = req.only or f"{req.from_step or 'start'}..{req.stop_after or 'end'}"
+        # the scene column makes Archive/Promote refuse while the cohort flies in that splat
+        return {"id": runner.submit("svnet", f"svnet {req.cohort} [{steps}]", argv, req.model_dump(), scene)}
+
     @app.post("/api/jobs/selftest", dependencies=[api], status_code=201)
     def submit_selftest(req: SelfTest):
         """Harmless job for checking the queue, streaming and cancel end to end."""
@@ -189,7 +219,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return {"id": runner.submit("selftest", f"selftest {req.seconds}s", argv, req.model_dump(), None)}
 
     @app.get("/api/jobs", dependencies=[api])
-    def jobs(limit: int = Query(50, le=500), scene: str | None = None):
+    def jobs(limit: int = Query(50, le=500), scene: str | None = None, cohort: str | None = None):
+        if cohort:
+            return [j for j in db.jobs(500) if j["kind"] == "svnet" and j["params"].get("cohort") == cohort][:limit]
         return db.jobs(limit, scene)
 
     @app.get("/api/jobs/{job_id}", dependencies=[api])

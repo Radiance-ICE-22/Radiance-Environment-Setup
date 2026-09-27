@@ -22,14 +22,16 @@ function Tooltip({ x, y, children }: { x: number; y: number; children: React.Rea
   );
 }
 
-export function LineChart({ points, xLabel, yLabel, log = false }:
-  { points: [number, number][]; xLabel: string; yLabel: string; log?: boolean }) {
+export function LineChart({ points, xLabel, yLabel, log = false, second }:
+  { points: [number, number][]; xLabel: string; yLabel: string; log?: boolean;
+    second?: { points: [number, number][]; label: string; firstLabel: string } }) {
   const [hover, setHover] = useState<number | null>(null);
   const ref = useRef<SVGSVGElement>(null);
   const pts = useMemo(() => points.filter(([, v]) => Number.isFinite(v) && (!log || v > 0)), [points, log]);
+  const pts2 = useMemo(() => (second?.points ?? []).filter(([, v]) => Number.isFinite(v) && (!log || v > 0)), [second, log]);
   if (pts.length < 2) return <p className="muted small">Not enough points to plot.</p>;
   const tf = (v: number) => (log ? Math.log10(v) : v);
-  const xs = pts.map((p) => p[0]), ys = pts.map((p) => tf(p[1]));
+  const xs = [...pts, ...pts2].map((p) => p[0]), ys = [...pts, ...pts2].map((p) => tf(p[1]));
   const x0 = Math.min(...xs), x1 = Math.max(...xs);
   let y0 = Math.min(...ys), y1 = Math.max(...ys);
   if (y1 === y0) { y0 -= 1; y1 += 1; }
@@ -43,6 +45,7 @@ export function LineChart({ points, xLabel, yLabel, log = false }:
         .flatMap((e) => [1, 2, 5].map((m) => m * 10 ** e)).filter((v) => tf(v) >= y0 && tf(v) <= y1)
     : ticks(y0, y1);
   const d = pts.map(([s, v], i) => `${i ? "L" : "M"}${X(s).toFixed(1)},${Y(v).toFixed(1)}`).join("");
+  const d2 = pts2.map(([s, v], i) => `${i ? "L" : "M"}${X(s).toFixed(1)},${Y(v).toFixed(1)}`).join("");
   const onMove = (e: React.MouseEvent) => {
     const r = ref.current!.getBoundingClientRect();
     const sx = ((e.clientX - r.left) / r.width) * W;
@@ -64,6 +67,7 @@ export function LineChart({ points, xLabel, yLabel, log = false }:
         {ticks(x0, x1).map((v) => (
           <text key={v} x={X(v)} y={H - 10} textAnchor="middle" className="axis">{fmt(v)}</text>
         ))}
+        {d2 && <path d={d2} className="series2" fill="none" />}
         <path d={d} className="series" fill="none" />
         {h && (
           <g>
@@ -72,7 +76,13 @@ export function LineChart({ points, xLabel, yLabel, log = false }:
           </g>
         )}
       </svg>
-      {h && <Tooltip x={X(h[0])} y={Y(h[1])}><b>{fmt(h[1])}</b> {yLabel}<br />{xLabel} {fmt(h[0])}</Tooltip>}
+      {h && <Tooltip x={X(h[0])} y={Y(h[1])}><b>{fmt(h[1])}</b> {second ? second.firstLabel : yLabel}
+        {second && (() => { const q = pts2.find((p) => p[0] === h[0]); return q ? <><br /><b>{fmt(q[1])}</b> {second.label}</> : null; })()}
+        <br />{xLabel} {fmt(h[0])}</Tooltip>}
+      {second && pts2.length > 0 && (
+        <div className="legend-row small"><span className="swatch" style={{ background: "var(--accent)" }} />{second.firstLabel}
+          <span className="swatch dashed" style={{ marginLeft: 12 }} />{second.label}</div>
+      )}
     </div>
   );
 }

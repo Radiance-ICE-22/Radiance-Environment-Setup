@@ -1,14 +1,14 @@
 # Galley — web console for the pipeline: status and handoff
 
-*Last updated 2026-09-27: Phase 3 (course editor) done; its gate passed on dummy. Phase 4
-(SV-Net) is next. Written so the next working session (human or
+*Last updated 2026-09-27: Phase 4 (SV-Net, unchanged upstream) built and tested off-machine;
+its gate on dummy is pending. Written so the next working session (human or
 Claude) can pick up without the chat history. The live plan, with diagrams, is the Claude
 Doc "SOUS-VIDE Pipeline Console — Implementation Plan":
 https://claude.ai/code/artifact/7f7d0bbb-6399-4f1b-bead-21ff96f3f12e*
 
 Galley is a FastAPI + React web UI in `ui/` that drives this repo's pipeline scripts:
-`figs/figs_pipeline.py` today, and `figs/svnet_pipeline.py` (SV-Net rollouts, training,
-evaluation) once it exists. It edits the SousVide configs, queues pipeline runs, streams
+`figs/figs_pipeline.py` (capture → splat → course → expert flight) and `figs/svnet_pipeline.py`
+(SV-Net rollouts, training, evaluation). It edits the SousVide configs, queues pipeline runs, streams
 their logs, and shows results. **The scripts stay the source of truth**: the UI only
 chooses flags and step ranges and reads the scripts' state files, so anything started
 in the browser can be resumed from the shell and vice versa.
@@ -23,7 +23,7 @@ in the browser can be resumed from the shell and vice versa.
 | 1 | Backend core: job queue, config models, log streaming | done | on dummy: 26 tests, real preflight job via the queue, cancel of a running job, bad requests refused |
 | 2 | Splat page: `sfm`/`train` split, frontend, 4 GB training | done | retrain from the UI, curve shown, previous model promoted back, flight re-run |
 | 3 | Course editor (3D waypoints) | done | a browser-built course passes the `course` step and flies. Browser: `backroom_loop` (New loop, start and end keyframes dragged) saved and flew, re-timed 12 s → 8.55 s, 171 frames, tracking max 0.069 m, no dark frames. Script: a course sent the way a browser sends JSON saved as floats and flew (backroom, 173 frames, tracking max 0.074 m, 614 MiB, no dark frames); expert preview of circuit 12.344 s vs recorded flight 12.35 s |
-| 4 | SV-Net stages (`svnet_pipeline.py`) | todo | `data_alpha` to `eval_single` end to end from the UI |
+| 4 | SV-Net stages (`svnet_pipeline.py`) | **built, gate pending** | `data_alpha` to `eval_single` end to end from the UI. Off-machine: 55 backend tests; the script run end to end against stand-in `sousvide` modules (markers, chaining, archive, progress, metrics); headless-browser run of the SV-Net pages. Run `ui/deploy/phase4_gate.sh` on dummy (§6) |
 | 5 | Hardening: login, systemd, ufw, run diffs, archiving | todo | survives a reboot; reachable on LAN and Tailscale only |
 | 6 | Package + installer (cu118 and cu128 profiles) | todo | one command on a fresh clone brings everything up on the RTX 5060 Ti PC |
 
@@ -91,10 +91,13 @@ Browser (React)  ──HTTP + WebSocket :8800──▶  FastAPI (ui/backend/gall
 | `ui/backend/galley/course.py` | course editor: runs `figs/course_tools.py` through `figs_env.sh` (CPU only, outside the GPU queue); geometry cache; one preview at a time |
 | `figs/course_tools.py` | kitchen-env helper: point cloud, camera path and boxes in the course frame; FiGS `MinTimeSnap` + `TsFO_to_tXU` preview with the expert's input bounds; KD-tree clearance |
 | `ui/frontend/src/pages/Course.tsx`, `src/course/` | the editor page (lazy-loaded with three.js / react-three-fiber), the course model and the 3D view |
+| `figs/svnet_pipeline.py` | SOUS-VIDE's learning half: rollout, observe, train_hist, train_comm, deploy, calling upstream `sousvide` unchanged; resumable per cohort |
+| `ui/backend/galley/svnet.py` | builds `svnet_pipeline.py` command lines; reads `.svnet_pipeline_state/<cohort>/` and `SousVide/cohorts/<cohort>/` |
+| `ui/frontend/src/pages/SvNet.tsx` | SV-Net pages: cohort list, new cohort, run controls, rollouts, loss curves, evaluation table and videos |
 | `ui/backend/galley/app.py` | REST + WebSocket routes; optional token (header, or `?token=` for video and WebSocket) |
 | `ui/frontend/src/` | pages: Overview, New capture, Scene, Jobs, Job, Configs; `charts.tsx` has the line and bar charts |
 | `ui/machines/dummy.toml` | dummy's profile; add one per host |
-| `ui/deploy/phase1_gate.sh`, `phase2_train_probe.sh`, `phase3_gate.sh` | the gate and measurement scripts used so far |
+| `ui/deploy/phase1_gate.sh` … `phase4_gate.sh`, `phase2_train_probe.sh` | the gate and measurement scripts used so far |
 
 Security choices already in place: no generic shell endpoint; every job is an argv list
 (never `shell=True`); scene, course and config names are regex-checked; videos must live
@@ -198,12 +201,45 @@ pass `course`, `simulate` and `validate`. Not done: rendering the actual splat i
 (needs `ns-export gaussian-splat` plus a splat renderer), clearance against the splat rather
 than sparse points.
 
-**Phase 4 — SV-Net.** Write `figs/svnet_pipeline.py` as `figs_analysis/SVNet_enablement_plan.md`
-§5.4 describes (rollout, observe, train_hist, train_comm, deploy), reusing
-`figs_pipeline.py`'s machinery. Add the overlay patch that drops unused depth from
-rollouts, `use_compress`, and the invalidation of `train_comm` when `train_hist` reruns.
-On dummy, `data_alpha` (~8 GB) and `data_beta` (~88 GB) fit; `data_gamma` only with depth
-dropped. UI: method/pilot editors, live loss, TTE/PP table.
+**Phase 4 — SV-Net (built; gate pending).** Get SOUS-VIDE's learning half working *unchanged*
+first; semantic feature fields (LangSplat / FMGS style) come after, as a separate step.
+
+`figs/svnet_pipeline.py` replaces `notebooks/sous_vide_examples.ipynb` step for step:
+
+| Step | Upstream call | Notes |
+|---|---|---|
+| `preflight` | — | kitchen, torch 2.1.2, `sousvide` imports, configs, one model in the scene, integer course cells, data-size estimate against free disk; adds `cohorts/` to `SousVide/.git/info/exclude` |
+| `rollout` | `rollout_generator.generate_rollout_data(cohort, courses, scene, method, expert, frame, Nro_ds, use_compress)` | the expert (Viper MPC) flies each course many times, randomised; long, GPU |
+| `observe` | `observation_generator.generate_observation_data(cohort, roster, subsample)` | per-pilot network inputs |
+| `train_hist` | `train_policy.train_roster(cohort, roster, "histNet", N, lim_sv, lr, batch_size)` | |
+| `train_comm` | `train_roster(..., "commNet", N, regen=True, deployment=(course, scene, eval))` | regenerates observations through the new histNet, as upstream requires |
+| `deploy` | `deploy_figs.deploy_roster(..., mode="visualize", show_table=True)` | expert + students; metrics and last-rollout videos in `cohorts/<cohort>/deployment_data/` |
+
+Settings are saved per cohort (`.svnet_pipeline_state/<cohort>/config.json`), so a resume needs
+only `--cohort`. Each marker's fingerprint includes the previous step's marker: re-running a
+step re-runs everything after it (this is also what makes `train_comm` follow `train_hist`).
+Only three things are added around upstream, none changing what it computes: plain progress lines
+(rich's bars print nothing without a terminal) plus per-epoch losses in `live_*.jsonl`; old
+rollout/observation data moved to `cohorts/<cohort>/_archive/` before a re-run (upstream overwrites
+by index, so a smaller re-run would mix old and new files); and a second tracking-error figure in
+`deploy` (see §7). `--fresh histNet|commNet` archives an existing network, because upstream
+otherwise keeps training the one already on disk.
+
+UI: *SV-Net* page (`#/svnet`): cohort list; new cohort (scene with one model, courses, rollout
+method, students, epochs, in-loop and final evaluation; "Preflight only" prints the size
+estimate); per cohort (`#/svnet/<cohort>`): steps, Continue / run steps / force redo / fresh
+network, rollouts kept per course, live and saved loss curves (train and test), the evaluation
+table and the expert's and students' videos. An SV-Net job also counts as a job for its scene,
+so Archive/Promote on the Scene page wait for it. dummy's profile pre-fills in-loop evaluation
+with `eval_single` (`svnet_comm_eval`); the notebook's `eval_nominal` flies 10 full-course
+rollouts of expert and student at every save.
+
+Gate on dummy: `tmux new -d -s p4 'bash ~/FYP-Radiance/ui/deploy/phase4_gate.sh > ~/phase4_gate.log 2>&1'`
+(tests, preflight with the size estimate, then cohort `p4_smoke` = backroom + circuit,
+`data_alpha`, Maverick, notebook epochs 200/300, `eval_single`, through Galley's queue; a few
+hours). Watch it on the SV-Net page through the usual tunnel. Estimate for circuit: ~108
+rollouts, ~4,300 samples, ~6 GB. Deferred until it works as is: the depth-dropping overlay patch,
+`use_compress` by default, `data_beta`/`data_gamma`, pilot editors.
 
 **Phase 5 — hardening.** ufw rules for 8800 (LAN + `tailscale0`), a login, systemd units
 that run through `figs_env.sh`, run diffs, archive/delete for old runs and cohorts, and
@@ -244,6 +280,17 @@ Prototype it on the new PC as soon as Ubuntu is installed.
   limited effect on the flown timing, despite the pipeline's "stretch the t values" hint. To
   fly slower, use a copy of the expert with a smaller `kT` (time costs less) and check it with
   *Re-time like expert*, which shows the times that will actually fly.
+- **Upstream's flight metric is not a distance.** `sousvide.flight.flight_helper.compute_flight_metrics`
+  computes `np.linalg.norm(P[i] - Pd, axis=0)` (the whole reference path per axis) and takes the
+  smallest of the three, instead of `axis=1` (distance to each reference point). A path that stays
+  in one plane scores ~0 whatever the error. `deploy` reports it as `upstream_tte`/`upstream_pp` and
+  adds a per-point tracking error computed the way `rollout_generator`'s `tol_select` check does.
+  Upstream also uses its TTE to keep commNet's "best" checkpoint when in-loop evaluation is on.
+- **sousvide keeps training what is on disk.** `Pilot()` loads `roster/<pilot>/<net>.pt` if it
+  exists, so a second `train_hist` continues from the first. Use `--fresh` to start over.
+- **Rich progress bars are silent without a terminal.** Upstream's progress goes through rich,
+  which draws nothing when stdout is a pipe (Galley, `tee`, tmux logs); `svnet_pipeline.py`
+  substitutes plain lines.
 
 ---
 
@@ -258,7 +305,8 @@ remove the round trip.
 
 Prompt to start the next session:
 
-> Continue the Galley web console for my FYP pipeline from Phase 4 (SV-Net). Read
+> Continue the Galley web console for my FYP pipeline. Phase 4 (SV-Net) is built: check its gate
+> in ~/phase4_gate.log on dummy, then plan semantic feature fields. Read
 > `D:\Projects\FYP\FYP-Radiance\docs\GALLEY_UI.md` first, then the plan doc linked there.
 > Code is in `FYP-Radiance/ui/`; the pipeline script is `figs/figs_pipeline.py`. Work on
 > my laptop copy and give me commands to run on dummy.

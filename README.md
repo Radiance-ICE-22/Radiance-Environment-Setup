@@ -80,7 +80,7 @@ frame you cannot know until the splat is aligned. See
 
 `ui/` wraps `figs_pipeline.py` in a browser UI: new captures, retraining with the training
 options, archive/promote of trained models, a 3D course editor with minimum-snap previews,
-flying courses, config editing, live logs and training curves. It runs in its own venv and launches every job through `figs_env.sh`:
+flying courses, SV-Net cohorts (`figs/svnet_pipeline.py`: rollouts, training, evaluation), config editing, live logs and training curves. It runs in its own venv and launches every job through `figs_env.sh`:
 
 ```bash
 cd ~/Radiance/ui/backend

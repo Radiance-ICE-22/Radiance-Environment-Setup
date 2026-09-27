@@ -23,3 +23,6 @@ vram_mib = 4096
 cache_images = "cpu"
 train_vis = "tensorboard"
 max_data_method = "data_beta"
+# SV-Net (Phase 4): commNet's in-loop evaluation. The notebook uses eval_nominal (10 full-course
+# flights of expert + student every lim_sv epochs); eval_single flies one, ~10x cheaper on dummy.
+svnet_comm_eval = "eval_single"
