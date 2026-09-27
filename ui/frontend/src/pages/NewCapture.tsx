@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { api, FigsRun } from "../api";
-import { NumField, Select, TrainOptions, usePoll, useSubmit } from "../components";
+import { NumField, Select, TrainOptions, useMachineTrainDefaults, usePoll, useSubmit } from "../components";
 
 const NAME_RE = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;
 
@@ -8,8 +8,9 @@ export default function NewCapture() {
   const videos = usePoll(api.videos, 0);
   const scenes = usePoll(api.scenes, 0);
   const machine = usePoll(api.machine, 0);
-  const [r, setR] = useState<FigsRun>({ scene: "", marker_id: 0, stop_after: "bounds", cache_images: "cpu", train_vis: "tensorboard" });
+  const [r, setR] = useState<FigsRun>({ scene: "", marker_id: 0, stop_after: "bounds" });
   const set = (p: Partial<FigsRun>) => setR({ ...r, ...p });
+  useMachineTrainDefaults(machine.data?.defaults, setR);
   const { busy, err, submit } = useSubmit();
 
   const existing = scenes.data?.map((s) => s.scene) ?? [];

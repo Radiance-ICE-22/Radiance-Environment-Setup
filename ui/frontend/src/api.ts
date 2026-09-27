@@ -18,6 +18,7 @@ export interface Job {
 
 export interface StepState { step: string; done: boolean; when: string | null; fingerprint: string | null }
 export interface Model { run: string; config: string; checkpoint: string | null; checkpoint_mb: number | null }
+export interface ArchivedModel { run: string; complete: boolean; checkpoint_mb: number | null }
 export interface SceneStatus { scene: string; steps: StepState[]; results: Record<string, any>; models: Model[] }
 export interface SceneSummary { scene: string; has_workspace: boolean; models: number; loadable: boolean; has_state: boolean }
 export interface Machine {
@@ -107,6 +108,11 @@ export const api = {
   submitFigs: (r: FigsRun) => req<{ id: number }>("POST", "/jobs/figs", r),
   submitSelftest: (seconds: number) => req<{ id: number }>("POST", "/jobs/selftest", { seconds }),
   cancel: (id: number) => req<Job>("POST", `/jobs/${id}/cancel`),
+  models: (s: string) => req<{ active: Model[]; archived: ArchivedModel[] }>("GET", `/scenes/${encodeURIComponent(s)}/models`),
+  archiveModel: (s: string, run: string) => req<{ cleared_steps: string[] }>("POST", `/scenes/${encodeURIComponent(s)}/models/${encodeURIComponent(run)}/archive`),
+  promoteModel: (s: string, run: string) => req<{ archived: string[]; cleared_steps: string[] }>("POST", `/scenes/${encodeURIComponent(s)}/models/${encodeURIComponent(run)}/promote`),
+  metrics: (s: string, run?: string) => req<{ run: string | null; series: Record<string, [number, number][]> }>(
+    "GET", `/scenes/${encodeURIComponent(s)}/metrics${run ? `?run=${encodeURIComponent(run)}` : ""}`),
 };
 
 export function flightUrl(scene: string) {

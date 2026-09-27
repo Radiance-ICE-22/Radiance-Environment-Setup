@@ -92,3 +92,17 @@ video { width: 100%; max-width: 640px; border-radius: var(--radius); background:
   .steps { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   main { padding: 16px; }
 }
+
+.chart { position: relative; }
+.chart svg { width: 100%; height: auto; display: block; overflow: visible; }
+.chart .grid { stroke: var(--line); stroke-width: 1; }
+.chart .baseline { stroke: var(--muted); stroke-width: 1; }
+.chart .axis { fill: var(--muted); font-size: 11px; font-family: system-ui, sans-serif; }
+.chart .series { stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.chart .crosshair { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; }
+.chart .dot { fill: var(--accent); stroke: var(--panel); stroke-width: 2; }
+.chart .bar { fill: var(--accent); }
+.chart .bar.on { fill: color-mix(in srgb, var(--accent) 75%, var(--ink)); }
+.chart .tip { position: absolute; transform: translate(-50%, calc(-100% - 10px)); pointer-events: none;
+  background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 6px;
+  padding: 4px 8px; font-size: 12px; white-space: nowrap; box-shadow: 0 2px 8px rgb(0 0 0 / .15); }

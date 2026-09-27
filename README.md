@@ -19,7 +19,7 @@ artefacts either produces.
 | `figs/figs_pipeline.py` | The pipeline: 14 resumable steps from raw video to validated flight render (SfM and splat training are separate steps). |
 | `figs/tidy_sousvide.sh` | Keeps generated renders out of the upstream clone's root. |
 | `figs/sousvide_overlay/` | Capture configs and courses that must sit inside the clone. |
-| `docs/` | Flat, on purpose. `LAB_MACHINE.md` and `FiGS_pipeline_script_guide.md` are the two current ones; `FiGS_custom_video_guide.md` and `FiGS_pipeline.md` are reference. Anything mentioning `~/projects/figs_validation` or a 4 GB card is legacy — the paths and the VRAM pessimism no longer apply. |
+| `docs/` | Flat, on purpose. `LAB_MACHINE.md` and `FiGS_pipeline_script_guide.md` are the two current ones; `FiGS_custom_video_guide.md` and `FiGS_pipeline.md` are reference. Anything mentioning `~/projects/figs_validation` is legacy for paths. The old VRAM pessimism was wrong: with `--cache-images cpu` a 4 GB card trains (see the script guide §9). |
 | `runs/` | JSON run records — every measurement from every completed run. |
 | `outputs/flights/` | Rendered flight videos. |
 

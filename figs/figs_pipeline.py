@@ -402,8 +402,10 @@ def step_preflight(c):
         used = vram_now()
         ok(f"GPU: {torch.cuda.get_device_name(0)}  {total} MiB, {used} MiB in use")
         c.results["gpu"] = torch.cuda.get_device_name(0)
-        if total < 6144:
-            warn("under 6 GB — training will likely OOM; simulation is still fine")
+        if total < 6144 and c.a.cache_images != "cpu":
+            warn("under 6 GB: train with --cache-images cpu. With it, backroom trained at the "
+                 "default 960x540 in 2360 MiB on a 4 GB RTX 3050 Ti; with the images cached on the "
+                 "GPU the RTX 2080 reference peaked at 5203 MiB.")
         if used > 1000:
             warn(f"{used} MiB already allocated. ns-viewer holds ~4.6 GB — close it before "
                  "training, or the peak measurement is meaningless.")
@@ -524,10 +526,12 @@ def step_aruco(c):
         info(f"ignoring {spurious} — low counts are ArUco false positives")
 
     print(f"\n  {'window':>12}  {'hits':>5}  {'median px':>9}")
-    windows = 0
+    windows, hist = 0, []
     for lo in range(0, int(dur) + 1, 10):
         w = [(t, s) for t, s in hits if lo <= t < lo + 10]
         windows += bool(w)
+        hist.append({"t0": lo, "hits": len(w) * stride,
+                     "median_px": round(float(np.median([s for _, s in w])), 1) if w else None})
         print(f"  {lo:4d}-{lo + 10:3d}s  {len(w):5d}  "
               f"{np.median([s for _, s in w]) if w else 0:9.0f}  {'#' * min(50, len(w))}")
     print()
@@ -536,7 +540,8 @@ def step_aruco(c):
     med = float(np.median([s for _, s in hits])) if hits else 0.0
     c.results["aruco"] = {"marker_id": c.a.marker_id, "marker_length_m": c.a.marker_length,
                           "est_marked_frames": est, "median_px": round(med, 1),
-                          "windows_10s": windows, "spurious_ids": spurious}
+                          "windows_10s": windows, "spurious_ids": spurious,
+                          "duration_s": round(dur, 1), "histogram": hist}
 
     if c.a.marker_id not in all_ids:
         raise StepFailed(

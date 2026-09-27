@@ -133,9 +133,10 @@ completion markers in `.figs_install_state/`. Re-running skips completed steps.
 means **CLIPSeg or a comparable semantic-embedding model can run in the same process as the
 simulator**, not as a separate pass. That settles the question `FiGS_test_runbook.md` left open.
 
-**5203 MiB for training.** Fits with ~3 GB spare. This also confirms retroactively that the 4 GB
-card would have OOMed — the contingency in `FiGS_custom_video_guide.md` Part 3 was correct but
-is not needed here.
+**5203 MiB for training.** Fits with ~3 GB spare. *Correction (2026-09-27):* this does not mean
+a 4 GB card cannot train. The figure includes the training images cached on the GPU (nerfstudio's
+default); with `--cache-images cpu` the same 960×540 training of `backroom` peaked at 2360 MiB on the
+RTX 3050 Ti. See `FiGS_pipeline_script_guide.md` §9.
 
 **4K training is probably out of reach.** Forcing `--downscale-factor 1` quadruples the
 rasterization buffers on top of the same Gaussian count, against ~3 GB of headroom. Recorded as

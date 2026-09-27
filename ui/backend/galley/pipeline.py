@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import re
+import shutil
 from pathlib import Path
 from typing import Literal, Optional
 
@@ -201,3 +202,96 @@ def flight_video(s: Settings, scene: str) -> Path | None:
     check_scene(scene)
     p = s.repo / "outputs" / "flights" / f"{scene}_flight.mp4"
     return p if p.is_file() else None
+
+
+# ── model management ─────────────────────────────────────────────────────────
+# FiGS loads exactly one config.yml under outputs/<scene>/. Retrains archive the old
+# run to gsplats/workspace/_archive/<scene>/<run> (figs_pipeline.py --archive-old);
+# these helpers move runs between the two so a retrain can be undone.
+RUN_RE = re.compile(r"^[0-9A-Za-z][0-9A-Za-z_\-]{0,63}$")
+# Steps whose result depends on which model is active.
+MODEL_DEPENDENT = ("verify", "simulate", "validate")
+
+
+def _outputs(s: Settings, scene: str) -> Path:
+    return s.repo / "gsplats" / "workspace" / "outputs" / scene / "splatfacto"
+
+
+def _archive(s: Settings, scene: str) -> Path:
+    return s.repo / "gsplats" / "workspace" / "_archive" / scene
+
+
+def archived_models(s: Settings, scene: str) -> list[dict]:
+    check_scene(scene)
+    d = _archive(s, scene)
+    out = []
+    for run in sorted(d.iterdir(), reverse=True) if d.is_dir() else []:
+        if not (run / "config.yml").exists():
+            continue
+        ckpts = sorted((run / "nerfstudio_models").glob("*.ckpt"))
+        out.append({"run": run.name, "complete": bool(ckpts),
+                    "checkpoint_mb": round(ckpts[-1].stat().st_size / 2**20) if ckpts else None})
+    return out
+
+
+def _invalidate(s: Settings, scene: str) -> list[str]:
+    cleared = []
+    for step in MODEL_DEPENDENT:
+        m = s.state_dir / scene / f"{step}.done"
+        if m.exists():
+            m.unlink()
+            cleared.append(step)
+    return cleared
+
+
+def archive_model(s: Settings, scene: str, run: str) -> dict:
+    check_scene(scene)
+    if not RUN_RE.match(run):
+        raise ValueError("invalid run name")
+    src = _outputs(s, scene) / run
+    if not (src / "config.yml").exists():
+        raise ValueError(f"no active model run '{run}' for {scene}")
+    dest = _archive(s, scene) / run
+    if dest.exists():
+        raise ValueError(f"_archive/{scene}/{run} already exists")
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    shutil.move(str(src), str(dest))
+    return {"archived": run, "cleared_steps": _invalidate(s, scene)}
+
+
+def promote_model(s: Settings, scene: str, run: str) -> dict:
+    """Make an archived run the active model, archiving whatever is active now."""
+    check_scene(scene)
+    if not RUN_RE.match(run):
+        raise ValueError("invalid run name")
+    src = _archive(s, scene) / run
+    if not (src / "config.yml").exists():
+        raise ValueError(f"no archived run '{run}' for {scene}")
+    if not list((src / "nerfstudio_models").glob("*.ckpt")):
+        raise ValueError(f"archived run '{run}' has no checkpoint (training did not finish)")
+    moved, cleared = [], set()
+    out = _outputs(s, scene)
+    for cfg in sorted(out.glob("*/config.yml")) if out.is_dir() else []:
+        cleared |= set(archive_model(s, scene, cfg.parent.name)["cleared_steps"])
+        moved.append(cfg.parent.name)
+    out.mkdir(parents=True, exist_ok=True)
+    shutil.move(str(src), str(out / run))
+    cleared |= set(_invalidate(s, scene))
+    return {"promoted": run, "archived": moved, "cleared_steps": sorted(cleared)}
+
+
+def training_metrics(s: Settings, scene: str, run: str | None = None) -> dict:
+    from .tfevents import read_scalars
+    check_scene(scene)
+    if run is not None and not RUN_RE.match(run):
+        raise ValueError("invalid run name")
+    candidates = []
+    if run:
+        candidates = [_outputs(s, scene) / run, _archive(s, scene) / run]
+    else:
+        out = _outputs(s, scene)
+        candidates = sorted((p.parent for p in out.glob("*/config.yml")), reverse=True) if out.is_dir() else []
+    for d in candidates:
+        if d.is_dir():
+            return {"run": d.name, "series": read_scalars(d)}
+    return {"run": run, "series": {}}

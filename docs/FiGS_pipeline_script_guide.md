@@ -448,8 +448,8 @@ every axis — that is also your noise floor when comparing captures.
 | `--num-images` | `300` | total training frames |
 | `--num-marked` | `40` | of those, marker-visible; raised from FiGS's 20 |
 | `--train-iters` | nerfstudio's (30000) | splatfacto iterations |
-| `--downscale` | nerfstudio's (auto, ≤1600 px) | training image downscale; 4 GB cards need more than the default |
-| `--cache-images` | nerfstudio's | `cpu` keeps training images out of VRAM |
+| `--downscale` | nerfstudio's (auto, ≤1600 px) | training image downscale; not needed on 4 GB with `--cache-images cpu` |
+| `--cache-images` | nerfstudio's (gpu) | `cpu` keeps training images out of VRAM: the difference between 5203 and 2360 MiB |
 | `--train-vis` | nerfstudio's (`viewer`) | `tensorboard` writes loss curves the UI can plot |
 | `--train-arg=ARG` | — | extra `ns-train` option before the dataparser, repeatable; use the `=` form |
 | `--archive-old` | off | move an existing trained model to `_archive/` before training |
@@ -509,7 +509,9 @@ From the validated `intellisense` run, RTX 2080 8 GB, 2026-08-06.
 | Simulation VRAM | 635 MiB (371 MB ckpt) |
 | Total pipeline | ~1 h 40 m |
 
-**Implications.** Training fits on 8 GB with ~3 GB spare — the 4 GB card would have OOMed.
+**Implications.** Training fits on 8 GB with ~3 GB spare.
+
+**Correction, 2026-09-27: a 4 GB card does train.** On `dummy` (RTX 3050 Ti Laptop, 4 GB), `backroom` retrained at the same default 960×540 and 30k steps with `--cache-images cpu` peaked at **2360 MiB** and took **60 min**. Its checkpoint (375 MB), registration (300/300) and circuit flight (tracking error max 0.034 m, pixel std 52.7 vs 52.6) matched the shipped model. Most of the 5203 MiB reference is the 300 training images held on the GPU, not the Gaussians. A denser scene (intellisense: 751 MB checkpoint, about twice backroom's) will need more; if it runs out, add `--train-arg='--pipeline.model.stop-split-at 10000'` before reaching for `--downscale`.
 Simulation is cheap enough that CLIPSeg or a comparable model can run in the same process.
 4K training is expected to exceed the budget and has not been attempted.
 

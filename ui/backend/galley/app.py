@@ -112,6 +112,30 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             raise HTTPException(404, "no flight video for this scene")
         return FileResponse(p, media_type="video/mp4")
 
+    def scene_busy(scene: str) -> bool:
+        return any(j["scene"] == scene and j["status"] in ("queued", "running") for j in db.jobs(200, scene))
+
+    @app.get("/api/scenes/{scene}/models", dependencies=[api])
+    def models(scene: str):
+        return _val(lambda: {"active": pl.trained_models(s, pl.check_scene(scene)),
+                             "archived": pl.archived_models(s, scene)})
+
+    @app.post("/api/scenes/{scene}/models/{run}/archive", dependencies=[api])
+    def model_archive(scene: str, run: str):
+        if scene_busy(scene):
+            raise HTTPException(409, "a job for this scene is queued or running")
+        return _val(lambda: pl.archive_model(s, scene, run))
+
+    @app.post("/api/scenes/{scene}/models/{run}/promote", dependencies=[api])
+    def model_promote(scene: str, run: str):
+        if scene_busy(scene):
+            raise HTTPException(409, "a job for this scene is queued or running")
+        return _val(lambda: pl.promote_model(s, scene, run))
+
+    @app.get("/api/scenes/{scene}/metrics", dependencies=[api])
+    def metrics(scene: str, run: str | None = None):
+        return _val(lambda: pl.training_metrics(s, scene, run))
+
     @app.get("/api/runs", dependencies=[api])
     def runs(scene: str | None = None):
         return pl.list_runs(s, scene)

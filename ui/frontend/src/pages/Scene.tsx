@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { api, ago, FigsRun, flightUrl, Step, STEPS } from "../api";
-import { Badge, Select, TrainOptions, usePoll, useSubmit } from "../components";
+import { useEffect, useState } from "react";
+import { api, ago, ApiError, ArchivedModel, FigsRun, flightUrl, Model, Step, STEPS } from "../api";
+import { BarChart, LineChart } from "../charts";
+import { Badge, Select, TrainOptions, useMachineTrainDefaults, usePoll, useSubmit } from "../components";
 
 export default function ScenePage({ scene }: { scene: string }) {
   const st = usePoll(() => api.scene(scene), 5000, [scene]);
@@ -33,12 +34,7 @@ export default function ScenePage({ scene }: { scene: string }) {
       <div className="grid2">
         <div className="panel">
           <h2>Trained model</h2>
-          {s?.models.length === 0 && <p className="bad">No trained model: FiGS cannot load this scene.</p>}
-          {s && s.models.length > 1 && <p className="bad">{s.models.length} models: FiGS refuses to guess. Retrain with “archive existing model”, or archive one by hand.</p>}
-          {s?.models.map((m) => (
-            <div key={m.run} className="small"><span className="mono">{m.run}</span> · {m.checkpoint_mb ?? "?"} MB checkpoint
-              <div className="muted mono">{m.config}</div></div>
-          ))}
+          <Models scene={scene} onChange={st.reload} />
           {res.sfm && (
             <>
               <h3>Reconstruction</h3>
@@ -79,6 +75,11 @@ export default function ScenePage({ scene }: { scene: string }) {
           )}
           <button onClick={() => setVideoKey((k) => k + 1)}>Reload video</button>
         </div>
+      </div>
+
+      <div className="grid2">
+        <TrainingCurve scene={scene} runKey={s?.models.map((m) => m.run).join(",") ?? ""} />
+        {res.aruco?.histogram && <ArucoPanel a={res.aruco} />}
       </div>
 
       <div className="grid2">
@@ -128,7 +129,9 @@ function FlyCourse({ scene, courses }: { scene: string; courses: string[] }) {
 }
 
 function Retrain({ scene, vram }: { scene: string; vram?: number }) {
-  const [r, setR] = useState<FigsRun>({ scene, from_step: "train", stop_after: "verify", archive_old: true, train_vis: "tensorboard" });
+  const [r, setR] = useState<FigsRun>({ scene, from_step: "train", stop_after: "verify", archive_old: true });
+  const machine = usePoll(api.machine, 0);
+  useMachineTrainDefaults(machine.data?.defaults, setR);
   const { busy, err, submit } = useSubmit();
   return (
     <div className="panel">
@@ -169,6 +172,96 @@ function Advanced({ scene }: { scene: string }) {
         <button className="primary" disabled={busy} onClick={() => submit(r)}>Queue</button>
         <button onClick={() => setOpen(false)}>Close</button>
       </div>
+    </div>
+  );
+}
+
+function Models({ scene, onChange }: { scene: string; onChange: () => void }) {
+  const [m, setM] = useState<{ active: Model[]; archived: ArchivedModel[] } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+  const load = () => api.models(scene).then(setM).catch((e) => setMsg(String(e.message ?? e)));
+  useEffect(() => { load(); }, [scene]);
+  const act = async (fn: () => Promise<{ cleared_steps: string[] }>, what: string) => {
+    setBusy(true); setMsg(null);
+    try {
+      const r = await fn();
+      setMsg(`${what}.${r.cleared_steps.length ? ` Cleared ${r.cleared_steps.join(", ")}: fly again to refresh the flight.` : ""}`);
+      await load(); onChange();
+    } catch (e) { setMsg(e instanceof ApiError ? e.message : String(e)); }
+    finally { setBusy(false); }
+  };
+  if (!m) return null;
+  return (
+    <>
+      {m.active.length === 0 && <p className="bad">No active model: FiGS cannot load this scene.</p>}
+      {m.active.length > 1 && <p className="bad">{m.active.length} active models: FiGS refuses to guess. Archive all but one.</p>}
+      <table><tbody>
+        {m.active.map((x) => (
+          <tr key={x.run}>
+            <td><span className="badge ok">active</span></td>
+            <td className="mono small">{x.run}</td><td className="small">{x.checkpoint_mb ?? "?"} MB</td>
+            <td><button disabled={busy} title="Move to gsplats/workspace/_archive/" onClick={() => {
+              if (confirm(`Archive ${x.run}? The scene will have no active model until you promote one.`))
+                act(() => api.archiveModel(scene, x.run), `Archived ${x.run}`);
+            }}>Archive</button></td>
+          </tr>
+        ))}
+        {m.archived.map((x) => (
+          <tr key={x.run}>
+            <td><span className="badge muted">{x.complete ? "archived" : "incomplete"}</span></td>
+            <td className="mono small">{x.run}</td><td className="small">{x.checkpoint_mb ?? "—"}{x.checkpoint_mb ? " MB" : ""}</td>
+            <td><button disabled={busy || !x.complete} title={x.complete ? "Make this the active model" : "Training did not finish"}
+              onClick={() => act(() => api.promoteModel(scene, x.run), `Promoted ${x.run}`)}>Promote</button></td>
+          </tr>
+        ))}
+      </tbody></table>
+      {msg && <p className="small">{msg}</p>}
+    </>
+  );
+}
+
+function TrainingCurve({ scene, runKey }: { scene: string; runKey: string }) {
+  const [data, setData] = useState<{ run: string | null; series: Record<string, [number, number][]> } | null>(null);
+  const [tag, setTag] = useState<string | null>(null);
+  const [log, setLog] = useState(true);
+  useEffect(() => { api.metrics(scene).then(setData).catch(() => setData(null)); }, [scene, runKey]);
+  const tags = Object.keys(data?.series ?? {}).sort();
+  const pick = tag && tags.includes(tag) ? tag
+    : tags.find((t) => /^train[ _]loss$/i.test(t)) ?? tags.find((t) => /loss/i.test(t)) ?? tags[0];
+  return (
+    <div className="panel">
+      <div className="row">
+        <h2 style={{ margin: 0 }}>Training curve</h2><span className="spacer" />
+        {tags.length > 0 && (
+          <>
+            <select value={pick} onChange={(e) => setTag(e.target.value)}>{tags.map((t) => <option key={t}>{t}</option>)}</select>
+            <label className="check small"><input type="checkbox" checked={log} onChange={(e) => setLog(e.target.checked)} /> log scale</label>
+          </>
+        )}
+      </div>
+      {!data || tags.length === 0
+        ? <p className="muted small">No TensorBoard events for the active model. Train with logging set to “tensorboard” to record curves.</p>
+        : <>
+            <LineChart points={data.series[pick!]} xLabel="step" yLabel={pick!} log={log} />
+            <p className="muted small mono">{data.run}</p>
+          </>}
+    </div>
+  );
+}
+
+function ArucoPanel({ a }: { a: any }) {
+  const hist: { t0: number; hits: number; median_px: number | null }[] = a.histogram;
+  return (
+    <div className="panel">
+      <h2>ArUco detections of marker {a.marker_id} per 10 s</h2>
+      <BarChart bars={hist.map((h) => ({ label: `${h.t0}s`, value: h.hits }))} xLabel="from" yLabel="frames with the marker"
+        detail={(i) => (hist[i].median_px ? `median size ${hist[i].median_px} px` : "not seen")} />
+      <p className="small">
+        ~{a.est_marked_frames} marked frames · spread over {a.windows_10s} windows
+        <span className={a.windows_10s < 3 ? " bad" : " ok"}>{a.windows_10s < 3 ? " (short baseline)" : ""}</span>
+        {" · "}median size <span className={a.median_px < 40 ? "bad" : ""}>{a.median_px} px</span>
+      </p>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import { api, ApiError, FigsRun, JobStatus } from "./api";
 
 export function Badge({ s }: { s: JobStatus | string }) {
@@ -56,8 +56,9 @@ export function TrainOptions({ r, set, vramMib }: { r: FigsRun; set: (p: Partial
   return (
     <fieldset>
       <legend>Splat training</legend>
-      {small && <p className="note small">This machine has {vramMib} MiB of VRAM. The reference run peaked at 5203 MiB at
-        960×540 (8 GB card), so use a CPU image cache and a larger downscale or fewer Gaussians.</p>}
+      {small && <p className="note small">This machine has {vramMib} MiB of VRAM: keep the image cache on the CPU.
+        With it, backroom trained at the default 960×540 in 2360 MiB on a 4 GB card; with images on the GPU the
+        8 GB reference peaked at 5203 MiB. For denser scenes, add stop-split-at before raising the downscale.</p>}
       <div className="fields">
         <NumField label="Iterations" value={r.train_iters} min={100} max={200000} placeholder="30000"
           onChange={(v) => set({ train_iters: v })} />
@@ -97,4 +98,17 @@ export function useSubmit() {
     } finally { setBusy(false); }
   };
   return { busy, err, submit };
+}
+
+/** Pre-fill training fields from the machine profile (ui/machines/<host>.toml [defaults]) once it loads. */
+export function useMachineTrainDefaults(defaults: Record<string, unknown> | undefined, setR: Dispatch<SetStateAction<FigsRun>>) {
+  useEffect(() => {
+    if (!defaults) return;
+    setR((r) => ({
+      ...r,
+      cache_images: r.cache_images ?? (defaults.cache_images as FigsRun["cache_images"]),
+      train_vis: r.train_vis ?? (defaults.train_vis as FigsRun["train_vis"]),
+      downscale: r.downscale ?? (defaults.downscale as number | undefined),
+    }));
+  }, [defaults, setR]);
 }

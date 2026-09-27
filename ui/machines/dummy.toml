@@ -17,6 +17,9 @@ name     = "NVIDIA GeForce RTX 3050 Ti Laptop GPU"
 vram_mib = 4096
 
 [defaults]
-# 4 GB profile: simulation is fine (614 MiB peak); splat training at lab settings
-# peaked at 5203 MiB on the RTX 2080, so it needs the Phase 2 training options.
+# Measured 2026-09-27 (ui/deploy/phase2_train_probe.sh): backroom at the default 960x540,
+# 30k steps, --cache-images cpu -> peak 2360 MiB, 60 min, flight identical to the shipped
+# model. Simulation peaks at ~614 MiB. The UI pre-fills these in its training forms.
+cache_images = "cpu"
+train_vis = "tensorboard"
 max_data_method = "data_beta"
