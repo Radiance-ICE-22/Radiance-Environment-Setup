@@ -244,6 +244,10 @@ false positives and are ignored.
 **Hard-fails** if the marker ID never appears. No configuration change fixes that; it is a
 re-shoot.
 
+The histogram is also saved to `results.json` as `aruco.histogram` (one entry per 10 s window:
+`t0`, `hits`, `median_px`), which the web console draws as a chart. Scenes whose `aruco` step ran
+before 2026-09-27 need `--redo aruco` to get it.
+
 ### `config`
 
 Writes the capture config. Two numbers matter:

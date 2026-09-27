@@ -19,14 +19,18 @@ artefacts either produces.
 | `figs/figs_pipeline.py` | The pipeline: 14 resumable steps from raw video to validated flight render (SfM and splat training are separate steps). |
 | `figs/tidy_sousvide.sh` | Keeps generated renders out of the upstream clone's root. |
 | `figs/sousvide_overlay/` | Capture configs and courses that must sit inside the clone. |
-| `docs/` | Flat, on purpose. `LAB_MACHINE.md` and `FiGS_pipeline_script_guide.md` are the two current ones; `FiGS_custom_video_guide.md` and `FiGS_pipeline.md` are reference. Anything mentioning `~/projects/figs_validation` is legacy for paths. The old VRAM pessimism was wrong: with `--cache-images cpu` a 4 GB card trains (see the script guide §9). |
+| `ui/` | **Galley**, the web console for the pipeline (FastAPI + React). Status, how to run it, and what comes next: `docs/GALLEY_UI.md`. |
+| `docs/` | Flat, on purpose. `LAB_MACHINE.md`, `FiGS_pipeline_script_guide.md` and `GALLEY_UI.md` are the current ones; `FiGS_custom_video_guide.md` and `FiGS_pipeline.md` are reference. Anything mentioning `~/projects/figs_validation` is legacy for paths. The old VRAM pessimism was wrong: with `--cache-images cpu` a 4 GB card trains (see the script guide §9). |
 | `runs/` | JSON run records — every measurement from every completed run. |
 | `outputs/flights/` | Rendered flight videos. |
 
 ## From clone to a working pipeline
 
-Requires an NVIDIA GPU with **at least 8 GB** of VRAM (training peaks at 5203 MiB),
-CUDA 11.8-compatible drivers, ~60 GB free disk, and Ubuntu 22.04.
+Requires an NVIDIA GPU with **4 GB or more** of VRAM (training peaks at 2360 MiB with
+`--cache-images cpu`, 5203 MiB with nerfstudio's default GPU image cache), CUDA
+11.8-compatible drivers, ~60 GB free disk, and Ubuntu 22.04 or 24.04. RTX 50-series
+(Blackwell) cards need CUDA 12.8+ and PyTorch 2.7+, which this torch 2.1.2 stack does not
+support yet; see `docs/GALLEY_UI.md` §6.
 
 ```bash
 git clone <this repo> ~/Radiance
@@ -71,6 +75,20 @@ source ~/Radiance/figs/figs_env.sh
 First run for a new room stops at the `course` step — waypoints live in a metric
 frame you cannot know until the splat is aligned. See
 `docs/FiGS_pipeline_script_guide.md` §6.
+
+## Web console
+
+`ui/` wraps `figs_pipeline.py` in a browser UI: new captures, retraining with the training
+options, archive/promote of trained models, flying courses, config editing, live logs and
+training curves. It runs in its own venv and launches every job through `figs_env.sh`:
+
+```bash
+cd ~/Radiance/ui/backend
+uv venv .venv && uv pip install -p .venv -e '.[test]'
+GALLEY_MACHINE=../machines/<host>.toml .venv/bin/python -m galley     # http://<host>:8800
+```
+
+See `ui/README.md` for the API and `docs/GALLEY_UI.md` for status and next steps.
 
 **Read `docs/FiGS_custom_video_guide.md` before filming.** Most failures in
 this pipeline are filming failures, and they surface an hour later as something that
