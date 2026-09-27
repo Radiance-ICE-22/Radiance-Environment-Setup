@@ -1,7 +1,7 @@
 # Galley — web console for the pipeline: status and handoff
 
-*Last updated 2026-09-27: Phase 3 (course editor) written and tested off-machine; its gate on
-dummy is pending. Written so the next working session (human or
+*Last updated 2026-09-27: Phase 3 (course editor) built; backend gate passed on dummy, the
+browser half is pending. Written so the next working session (human or
 Claude) can pick up without the chat history. The live plan, with diagrams, is the Claude
 Doc "SOUS-VIDE Pipeline Console — Implementation Plan":
 https://claude.ai/code/artifact/7f7d0bbb-6399-4f1b-bead-21ff96f3f12e*
@@ -22,7 +22,7 @@ in the browser can be resumed from the shell and vice versa.
 | 0 | Align dummy with the lab setup | done | `figs_pipeline.py` flew backroom + circuit on dummy: 34 s, tracking error max 0.034 m, 614 MiB |
 | 1 | Backend core: job queue, config models, log streaming | done | on dummy: 26 tests, real preflight job via the queue, cancel of a running job, bad requests refused |
 | 2 | Splat page: `sfm`/`train` split, frontend, 4 GB training | done | retrain from the UI, curve shown, previous model promoted back, flight re-run |
-| 3 | Course editor (3D waypoints) | **built, gate pending** | a browser-built course passes the `course` step and flies. Off-machine: 45 tests, real FiGS `MinTimeSnap` previews, headless-browser run through save → `course` step. Run `ui/deploy/phase3_gate.sh` on dummy, then the browser half (§6) |
+| 3 | Course editor (3D waypoints) | **backend gate passed; browser half pending** | a browser-built course passes the `course` step and flies. On dummy: a course sent the way a browser sends JSON saved as floats and flew (backroom, 173 frames, tracking max 0.074 m, 614 MiB, no dark frames); expert preview of circuit 12.344 s vs recorded flight 12.35 s. Remaining: build and fly one from the page (§6) |
 | 4 | SV-Net stages (`svnet_pipeline.py`) | todo | `data_alpha` to `eval_single` end to end from the UI |
 | 5 | Hardening: login, systemd, ufw, run diffs, archiving | todo | survives a reboot; reachable on LAN and Tailscale only |
 | 6 | Package + installer (cu118 and cu128 profiles) | todo | one command on a fresh clone brings everything up on the RTX 5060 Ti PC |
@@ -139,6 +139,14 @@ Most of the reference 5203 MiB was the training images held on the GPU. Denser s
 `--train-arg='--pipeline.model.stop-split-at 10000'` on 4 GB; the 16 GB PC will not.
 Not yet measured on dummy: SfM time (hloc exhaustive matching on the laptop GPU).
 
+**Course editor on dummy (phase3_gate.sh, 27 Sep):** `course_tools.py geometry` 0.13 s
+(backroom: 53,286 sparse points, 300 cameras); fixed-time preview 0.58 s; expert re-time 19 s for
+circuit, whose solved duration (12.344 s) matches the recorded flight (12.35 s) against the
+file's 12.107 s. Nearest-point clearance put circuit, a known-good flight, 2.7 cm from a sparse
+point: isolated SfM outliers. Clearance is now the distance to the 5th-nearest point.
+`gate3_loop` (built from the recommended box, sent with integer cells the way a browser does)
+saved as floats and flew: re-timed 12.0 s → 8.65 s, 173 frames, tracking max 0.074 m.
+
 **dummy's environment** (audited 2026-09-27):
 
 - Install made by `install_figs.sh` at its default prefix `~/projects/figs_validation`
@@ -173,7 +181,8 @@ Not yet measured on dummy: SfM time (hloc exhaustive matching on the laptop GPU)
   ~2 min): with Viper's kT = 10 the file's `t` values are only SLSQP's starting guess, so the
   flight's timing differs from the file; *Write solved times into the keyframes* makes them
   agree. Charts: speed, acceleration, thrust as a fraction of Viper's limit, largest body rate
-  against its limit, clearance to the nearest sparse point (threshold adjustable), altitude.
+  against its limit, clearance (distance to the k-th nearest sparse point, k = 5 by default, so a
+  lone SfM outlier does not count; threshold and k adjustable), altitude.
 - Save writes floats and one-line `fo` rows (upstream layout), mirrored to the overlay.
   *Save and fly* queues `figs_pipeline.py --from course --stop-after record` with
   `--redo course simulate validate` and shows the tracking error, render check and video.

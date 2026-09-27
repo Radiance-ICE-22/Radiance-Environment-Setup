@@ -38,6 +38,7 @@ class PreviewRequest(BaseModel):
     frame: str = "carl"
     mode: Literal["fixed", "expert"] = "fixed"
     clearance: float = Field(0.3, ge=0, le=5)
+    clearance_k: int = Field(5, ge=1, le=50)
 
     @field_validator("scene", "pilot", "frame")
     @classmethod
@@ -100,7 +101,8 @@ class CourseTools:
             raise Busy("another preview is still solving; try again when it finishes")
         try:
             args = ["preview", "--project-root", str(self.s.project_root), "--pilot", req.pilot,
-                    "--frame", req.frame, "--mode", req.mode, "--clearance", str(req.clearance)]
+                    "--frame", req.frame, "--mode", req.mode, "--clearance", str(req.clearance),
+                    "--clearance-k", str(req.clearance_k)]
             if req.scene:
                 args += ["--scene", req.scene]
             return self._run(args, json.dumps(course), self.TIMEOUT[req.mode])

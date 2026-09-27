@@ -139,12 +139,12 @@ export interface Preview {
   stats: { v_max: number; v_mean: number; a_max: number; length_m: number; nonfinite_inputs: number };
   inputs: { names: string[]; lower: number[]; upper: number[]; u: number[][]; max_use: (number | null)[];
     violations: Record<string, [number, number][]> };
-  clearance: { threshold: number; d: number[]; min: number; at_t: number; at_pos: V3;
-    below: [number, number][]; n_points: number; note: string } | null;
+  clearance: { threshold: number; k: number; d: number[]; min: number; at_t: number; at_pos: V3;
+    below: [number, number][]; n_points: number; nearest_min: number; nearest_at_t: number; note: string } | null;
   inside: { keyframes: { name: string; inside: boolean }[]; outside_intervals: [number, number][]; outside_frac: number } | null;
 }
 export interface PreviewRequest {
-  course: unknown; scene?: string; pilot?: string; frame?: string; mode?: "fixed" | "expert"; clearance?: number;
+  course: unknown; scene?: string; pilot?: string; frame?: string; mode?: "fixed" | "expert"; clearance?: number; clearance_k?: number;
 }
 export const courseApi = {
   geometry: (scene: string, margin = 0.5) =>

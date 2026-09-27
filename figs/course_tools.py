@@ -282,14 +282,23 @@ def cmd_preview(a):
         if ply_path.exists():
             from scipy.spatial import cKDTree
             xyz, _ = read_ply(ply_path)
-            d, _ = cKDTree(to_course(xyz)).query(pos)
-            i = int(np.argmin(d))
+            # Distance to the k-th nearest sparse point, not the nearest: a lone SfM outlier
+            # floating in the room is one point, a real surface is many. On dummy's backroom the
+            # plain nearest-point distance put circuit (a known-good flight) 2.7 cm from "something".
+            k = max(1, a.clearance_k)
+            dk, _ = cKDTree(to_course(xyz)).query(pos, k=k)
+            dk = dk.reshape(len(pos), -1)
+            d, d1 = dk[:, -1], dk[:, 0]
+            i, i1 = int(np.argmin(d)), int(np.argmin(d1))
             out["clearance"] = {
-                "threshold": a.clearance, "d": r(d, 3), "min": round(float(d[i]), 3),
+                "threshold": a.clearance, "k": k, "d": r(d, 3), "min": round(float(d[i]), 3),
                 "at_t": round(float(Tsd[i]), 3), "at_pos": r(pos[i], 3),
                 "below": intervals(d < a.clearance, Tsd), "n_points": int(len(xyz)),
-                "note": "distance to the nearest SfM sparse point; sparse points miss "
-                        "textureless surfaces and include some outliers",
+                "nearest_min": round(float(d1[i1]), 3), "nearest_at_t": round(float(Tsd[i1]), 3),
+                "note": (f"distance to the {k}th-nearest SfM sparse point, so isolated outliers are ignored; "
+                         if k > 1 else "distance to the nearest SfM sparse point; ")
+                        + "sparse points miss textureless surfaces (plain walls, floors), so a "
+                          "clear reading is not proof of free space",
             }
     emit(out)
 
@@ -308,6 +317,8 @@ def main():
     p.add_argument("--pilot", default="Viper")
     p.add_argument("--frame", default="carl")
     p.add_argument("--clearance", type=float, default=0.3)
+    p.add_argument("--clearance-k", type=int, default=5,
+                   help="clearance = distance to the k-th nearest sparse point (1 = nearest)")
     p.add_argument("--mode", choices=["fixed", "expert"], default="fixed",
                    help="fixed: the file's keyframe times (fast); expert: re-timed with the pilot's kT")
     a = ap.parse_args()

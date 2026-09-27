@@ -29,8 +29,10 @@ echo "=== sync FYP-Radiance"
 cd ~/FYP-Radiance && git pull --ff-only && git log --oneline -3 || exit 1
 [ -f $TOOLS ] || { echo "figs/course_tools.py missing: push the Phase 3 commit first"; exit 1; }
 
-echo; echo "=== backend tests"
+echo; echo "=== backend tests (venv refreshed: test extras gained tensorboardX in Phase 2)"
 cd $UI/backend
+UV=$(command -v uv || echo ~/.local/bin/uv)
+$UV pip install -q -p .venv -e '.[test]'
 GALLEY_TEST_CONFIGS=$ROOT/SousVide/configs .venv/bin/python -m pytest -q 2>&1 | tail -3
 
 echo; echo "=== course_tools.py in kitchen (CPU only)"

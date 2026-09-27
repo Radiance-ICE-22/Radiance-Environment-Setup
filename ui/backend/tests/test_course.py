@@ -67,7 +67,7 @@ def test_preview_passes_float_course_and_flags(client, tools):
     d = r.json()
     a = d["args"]
     assert a[a.index("--mode") + 1] == "expert" and a[a.index("--scene") + 1] == "backroom"
-    assert a[a.index("--clearance") + 1] == "0.4"
+    assert a[a.index("--clearance") + 1] == "0.4" and a[a.index("--clearance-k") + 1] == "5"
     cell = d["course"]["waypoints"]["keyframes"]["a"]["fo"][0][1]
     assert cell == 0.0 and isinstance(cell, float)
 

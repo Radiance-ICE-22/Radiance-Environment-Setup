@@ -72,6 +72,7 @@ export default function CoursePage({ scene, name }: { scene?: string; name?: str
   const [frame, setFrame] = useState("carl");
   const [method, setMethod] = useState("eval_single");
   const [clearance, setClearance] = useState(0.3);
+  const [clearanceK, setClearanceK] = useState(5);
   const [auto, setAuto] = useState(true);
   const [pv, setPv] = useState<Preview | null>(null);
   const [pvFor, setPvFor] = useState<string>("");            // fileJson the preview belongs to
@@ -85,21 +86,21 @@ export default function CoursePage({ scene, name }: { scene?: string; name?: str
     const my = ++seq.current, snapshot = fileJson;
     setPvBusy(mode); setPvErr(null);
     try {
-      const r = await courseApi.preview({ course: file, scene, pilot, frame, mode, clearance });
+      const r = await courseApi.preview({ course: file, scene, pilot, frame, mode, clearance, clearance_k: clearanceK });
       if (my === seq.current) { setPv(r); setPvFor(snapshot); }
     } catch (e) {
       if (my !== seq.current) return;
       if (e instanceof ApiError && e.status === 409) { setPvErr("waiting for the running solve to finish…"); setTimeout(() => my === seq.current && runPreview(mode), 2000); return; }
       setPvErr(e instanceof ApiError ? e.message : String(e));
     } finally { if (my === seq.current) setPvBusy(null); }
-  }, [file, fileJson, probs.length, scene, pilot, frame, clearance]);
+  }, [file, fileJson, probs.length, scene, pilot, frame, clearance, clearanceK]);
 
   useEffect(() => {
     if (!auto || !file || probs.length || pvBusy === "expert") return;
     const t = setTimeout(() => runPreview("fixed"), 600);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fileJson, auto, scene, pilot, frame, clearance]);
+  }, [fileJson, auto, scene, pilot, frame, clearance, clearanceK]);
   const stale = !!pv && pvFor !== fileJson;
 
   // ── keyframe editing helpers ───────────────────────────────────────────────
@@ -288,7 +289,7 @@ export default function CoursePage({ scene, name }: { scene?: string; name?: str
             </div>
             {course && <PreviewPanel pv={pv} stale={stale} busy={pvBusy} err={pvErr} cursor={cursor} setCursor={setCursor}
               auto={auto} setAuto={setAuto} run={runPreview} applyTimes={applySolvedTimes} canRun={!probs.length}
-              clearance={clearance} setClearance={setClearance} />}
+              clearance={clearance} setClearance={setClearance} clearanceK={clearanceK} setClearanceK={setClearanceK} />}
           </div>
 
           <div>
@@ -421,7 +422,7 @@ function PreviewPanel(p: {
   pv: Preview | null; stale: boolean; busy: null | "fixed" | "expert"; err: string | null;
   cursor: number | null; setCursor: (t: number | null) => void; auto: boolean; setAuto: (b: boolean) => void;
   run: (m: "fixed" | "expert") => void; applyTimes: () => void; canRun: boolean;
-  clearance: number; setClearance: (v: number) => void;
+  clearance: number; setClearance: (v: number) => void; clearanceK: number; setClearanceK: (v: number) => void;
 }) {
   const { pv } = p;
   const u = pv?.inputs;
@@ -473,7 +474,7 @@ function PreviewPanel(p: {
             <TimeChart t={pv.t} y={rate} label="Largest body rate |ω|" unit="rad/s" refs={[{ y: rateLim, label: "limit" }]}
               bad={[...(u?.violations.wx ?? []), ...(u?.violations.wy ?? []), ...(u?.violations.wz ?? [])]} cursor={p.cursor} onCursor={p.setCursor} />
             {pv.clearance && (
-              <TimeChart t={pv.t} y={pv.clearance.d} label="Clearance to nearest sparse point" unit="m"
+              <TimeChart t={pv.t} y={pv.clearance.d} label={pv.clearance.k > 1 ? `Clearance (${pv.clearance.k}th-nearest sparse point)` : "Clearance to nearest sparse point"} unit="m"
                 refs={[{ y: pv.clearance.threshold, label: `${pv.clearance.threshold} m` }]} bad={pv.clearance.below}
                 cursor={p.cursor} onCursor={p.setCursor} />
             )}
@@ -483,7 +484,10 @@ function PreviewPanel(p: {
           <div className="row small">
             <label className="f">Clearance threshold (m)<input type="number" step={0.05} min={0} max={2} value={p.clearance}
               onChange={(e) => p.setClearance(Math.max(0, Number(e.target.value) || 0))} /></label>
-            {pv.clearance && <span className="muted" style={{ maxWidth: 420 }}>{pv.clearance.note}.</span>}
+            <label className="f">Ignore outliers: k-th point<input type="number" step={1} min={1} max={50} value={p.clearanceK}
+              onChange={(e) => p.setClearanceK(Math.min(50, Math.max(1, Math.round(Number(e.target.value) || 1))))} /></label>
+            {pv.clearance && <span className="muted" style={{ maxWidth: 420 }}>{pv.clearance.note}.
+              {pv.clearance.k > 1 && ` Nearest single point: ${pv.clearance.nearest_min} m at ${pv.clearance.nearest_at_t} s.`}</span>}
           </div>
         </>
       )}
