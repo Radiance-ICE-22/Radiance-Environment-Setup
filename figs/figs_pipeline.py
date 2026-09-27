@@ -98,9 +98,10 @@ _DIAGNOSES = [
      "output and consider lowering --num-marked (at the cost of alignment quality)."),
 
     (r"CUDA out of memory|CUDA error: out of memory",
-     "GPU OOM. Close ns-viewer first — it holds ~4.6 GB. If training still OOMs, run "
-     "ns-train manually with --downscale-factor 2, reusing the existing transforms.json "
-     "and sparse_pc.ply (SfM does not need repeating)."),
+     "GPU OOM. Close ns-viewer first — it holds ~4.6 GB. If training still OOMs, retrain "
+     "without repeating SfM: --from train --archive-old with --cache-images cpu and/or "
+     "--downscale 4, or fewer Gaussians via "
+     "--train-arg '--pipeline.model.stop-split-at 10000'."),
 
     (r"Could not reconstruct any model",
      "COLMAP found no consistent reconstruction. Almost always insufficient overlap or "
@@ -615,35 +616,132 @@ def step_patch(c):
     c.results["pycolmap_version"] = pycolmap.__version__
 
 
-# ── gsplat ───────────────────────────────────────────────────────────────────────
+# ── sfm ────────────────────────────────────────────────────────────────────────
+# FiGS's generate_gsplat() does frame extraction → hloc → COLMAP → ArUco alignment and
+# then shells out to `ns-train` with hard-coded flags. `sfm` runs it with that one
+# subprocess call intercepted, so SfM output is produced exactly as upstream does it;
+# `train` then runs ns-train itself, with the training options exposed. Splitting them
+# means a retrain (new downscale, fewer iterations, a 4 GB card) never repeats SfM.
 
-def step_gsplat(c):
-    existing = sorted(c.out_dir.rglob("config.yml")) if c.out_dir.exists() else []
-    if existing:
-        warn(f"outputs/{c.scene}/ already holds {len(existing)} trained model(s). Training "
-             "adds another, and FiGS refuses to load a scene with more than one.")
-    if vram_now() > 1000:
-        warn(f"{vram_now()} MiB allocated — close ns-viewer (holds ~4.6 GB) before training")
+_SFM_SCRIPT = r"""
+import subprocess, sys
+import figs.render.capture_generation as pg
 
-    log = c.logs / f"gsplat_{datetime.now():%Y-%m-%d_%H%M}.log"
+class _Skip:
+    returncode, stdout, stderr = 0, "", ""
+
+def _run(cmd, *a, **kw):
+    if isinstance(cmd, (list, tuple)) and cmd and cmd[0] == "ns-train":
+        print("[figs_pipeline] ns-train deferred to the `train` step", flush=True)
+        return _Skip()
+    return subprocess.run(cmd, *a, **kw)
+
+class _SubprocessShim:
+    def __getattr__(self, name):
+        return _run if name == "run" else getattr(subprocess, name)
+
+pg.subprocess = _SubprocessShim()
+pg.generate_gsplat(sys.argv[1], capture_cfg_name=sys.argv[1])
+"""
+
+
+def step_sfm(c):
+    log = c.logs / f"sfm_{datetime.now():%Y-%m-%d_%H%M}.log"
     info(f"log: {log}")
-    info("frame extraction → hloc features → SuperGlue matching → COLMAP → alignment → "
-         "splatfacto. Reference: ~1h 20m, peak 5203 MiB.")
+    info("frame extraction → hloc features → SuperGlue matching → COLMAP → ArUco alignment. "
+         "Reference (300 images): ~45 min, dominated by SuperGlue matching.")
     info("hloc caches features/matches to h5, so an interrupt here resumes cheaply.")
-
-    script = (f"import figs.render.capture_generation as pg\n"
-              f"pg.generate_gsplat({c.scene!r}, capture_cfg_name={c.scene!r})\n")
+    n = c.a.num_images or 0
+    if n:
+        info(f"{n} images → {n * (n - 1) // 2:,} exhaustive match pairs")
     t0 = time.time()
     with VramMonitor() as vm:
-        rc, out = sh([sys.executable, "-c", script], cwd=c.repo, check=False)
+        rc, out = sh([sys.executable, "-c", _SFM_SCRIPT, c.scene], cwd=c.repo, check=False)
     log.write_text(out)
     if rc != 0:
         d = diagnose(out)
         raise StepFailed(f"{d}\n\n  full log: {log}" if d
-                         else f"generate_gsplat failed (rc={rc}); see {log}")
+                         else f"generate_gsplat (SfM part) failed (rc={rc}); see {log}")
+    if "ns-train deferred" not in out:
+        raise StepFailed("generate_gsplat finished without reaching its ns-train call — the "
+                         f"upstream function may have changed; see {log}")
+    for f in ("transforms.json", "sparse_pc.ply"):
+        if not (c.workspace / f).exists():
+            raise StepFailed(f"SfM finished but {c.workspace / f} is missing; see {log}")
+    c.results["sfm_run"] = {"wallclock": elapsed(t0), "peak_vram_mib": vm.peak}
+    ok(f"SfM + alignment completed in {elapsed(t0)}, peak VRAM {vm.peak} MiB")
+
+
+# ── train ────────────────────────────────────────────────────────────────────────
+
+def _archive_models(c, configs):
+    arch = c.repo / "gsplats" / "workspace" / "_archive" / c.scene
+    arch.mkdir(parents=True, exist_ok=True)
+    for cfg in configs:
+        run = cfg.parent
+        dest = arch / run.name
+        shutil.move(str(run), str(dest))
+        ok(f"archived {run.relative_to(c.out_dir)} → {dest.relative_to(c.repo)}")
+
+
+def train_command(c):
+    """The upstream ns-train invocation from generate_gsplat(), plus the exposed options."""
+    cmd = ["ns-train", "splatfacto",
+           "--data", c.scene,
+           "--viewer.quit-on-train-completion", "True",
+           "--output-dir", "outputs",
+           "--pipeline.model.camera-optimizer.mode", "SO3xR3"]
+    if c.a.train_iters:
+        cmd += ["--max-num-iterations", str(c.a.train_iters)]
+    if c.a.cache_images:
+        cmd += ["--pipeline.datamanager.cache-images", c.a.cache_images]
+    if c.a.train_vis:
+        cmd += ["--vis", c.a.train_vis]
+    for extra in c.a.train_arg:
+        cmd += extra.split(maxsplit=1) if extra.startswith("--") and " " in extra else [extra]
+    cmd += ["nerfstudio-data",
+            "--orientation-method", "none",
+            "--center-method", "none",
+            "--auto-scale-poses", "False"]
+    if c.a.downscale:
+        cmd += ["--downscale-factor", str(c.a.downscale)]
+    return cmd
+
+
+def step_train(c):
+    for f in ("transforms.json", "sparse_pc.ply"):
+        if not (c.workspace / f).exists():
+            raise StepFailed(f"{c.workspace / f} missing — run the `sfm` step first")
+    existing = sorted(c.out_dir.rglob("config.yml")) if c.out_dir.exists() else []
+    if existing:
+        if not c.a.archive_old:
+            listing = "\n      ".join(str(p.parent.relative_to(c.out_dir)) for p in existing)
+            raise StepFailed(
+                f"outputs/{c.scene}/ already holds {len(existing)} trained model(s):\n      {listing}\n\n"
+                "FiGS loads exactly one per scene, so training another would make the scene "
+                "unloadable. Re-run with --archive-old to move the existing model(s) to "
+                "gsplats/workspace/_archive/<scene>/ first.")
+        _archive_models(c, existing)
+    if vram_now() > 1000:
+        warn(f"{vram_now()} MiB allocated — close ns-viewer (holds ~4.6 GB) before training")
+
+    cmd = train_command(c)
+    log = c.logs / f"train_{datetime.now():%Y-%m-%d_%H%M}.log"
+    info(f"log: {log}")
+    info("cmd: " + " ".join(cmd))
+    info("Reference: 30k steps in 34 min, peak 5203 MiB at 960x540 on an RTX 2080 (8 GB).")
+    t0 = time.time()
+    with VramMonitor() as vm:
+        rc, out = sh(cmd, cwd=c.repo / "gsplats" / "workspace", check=False)
+    log.write_text(out)
+    c.results["train"] = {"cmd": cmd[2:], "wallclock": elapsed(t0), "peak_vram_mib": vm.peak,
+                          "rc": rc, "iters": c.a.train_iters, "downscale": c.a.downscale,
+                          "cache_images": c.a.cache_images}
     c.results["train_peak_vram_mib"] = vm.peak
-    c.results["gsplat_wallclock"] = elapsed(t0)
-    ok(f"completed in {elapsed(t0)}, peak VRAM {vm.peak} MiB")
+    if rc != 0:
+        d = diagnose(out)
+        raise StepFailed(f"{d}\n\n  full log: {log}" if d else f"ns-train failed (rc={rc}); see {log}")
+    ok(f"trained in {elapsed(t0)}, peak VRAM {vm.peak} MiB")
 
 
 # ── verify ───────────────────────────────────────────────────────────────────────
@@ -904,8 +1002,11 @@ STEPS = [
     ("config", step_config, ["marker_id", "marker_length", "num_images", "num_marked"],
      "write configs/captures/<scene>.json"),
     ("patch", step_patch, ["dataloader_workers"], "re-apply hloc submodule fixes"),
-    ("gsplat", step_gsplat, ["marker_id", "marker_length", "num_images", "num_marked"],
-     "extract → SfM → align → train  (LONG)"),
+    ("sfm", step_sfm, ["marker_id", "marker_length", "num_images", "num_marked"],
+     "extract → hloc → COLMAP → ArUco alignment  (LONG)"),
+    ("train", step_train, ["marker_id", "marker_length", "num_images", "num_marked",
+                           "train_iters", "downscale", "cache_images", "train_vis", "train_arg"],
+     "ns-train splatfacto  (LONG, GPU)"),
     ("verify", step_verify, [], "registration rate, point cloud, single model"),
     ("bounds", step_bounds, [], "capture extent and course frame conversion"),
     ("course", step_course, ["course"], "validate waypoints against the capture"),
@@ -931,6 +1032,19 @@ def main():
     ap.add_argument("--marker-length", type=float, default=0.18, help="metres, tape-measured")
     ap.add_argument("--num-images", type=int, default=600)
     ap.add_argument("--num-marked", type=int, default=40)
+    ap.add_argument("--train-iters", type=int, default=None,
+                    help="splatfacto iterations (nerfstudio default 30000)")
+    ap.add_argument("--downscale", type=int, default=None,
+                    help="training image downscale factor (nerfstudio default: auto, ≤1600 px)")
+    ap.add_argument("--cache-images", choices=["cpu", "gpu"], default=None,
+                    help="where training images are cached; cpu saves VRAM")
+    ap.add_argument("--train-vis", default=None,
+                    help="nerfstudio --vis (viewer, tensorboard, viewer+tensorboard, ...)")
+    ap.add_argument("--train-arg", action="append", default=[], metavar="ARG",
+                    help="extra ns-train argument before the dataparser, repeatable, "
+                         "e.g. --train-arg='--pipeline.model.stop-split-at 10000' (use '=')")
+    ap.add_argument("--archive-old", action="store_true",
+                    help="move existing trained models of this scene to _archive/ before training")
     ap.add_argument("--width", type=int, default=1920)
     ap.add_argument("--height", type=int, default=1080)
     ap.add_argument("--fps", type=int, default=30)
@@ -957,11 +1071,42 @@ def main():
             print(f"  {n:<10} {d}" + (f"   {_C['d']}[{','.join(keys)}]{_C['x']}" if keys else ""))
         return 0
 
+    # `gsplat` was split into `sfm` + `train`; accept the old name everywhere.
+    _alias = {"gsplat": ["sfm", "train"]}
+    a.redo = [x for r in a.redo for x in _alias.get(r, [r])]
+    if a.from_step == "gsplat":
+        a.from_step = "sfm"
+    if a.stop_after == "gsplat":
+        a.stop_after = "train"
+    if a.only == "gsplat":
+        ap.error("--only gsplat is now two steps: use --from sfm --stop-after train")
+
     for opt in (a.from_step, a.only, a.stop_after, *a.redo):
         if opt and opt not in names:
             ap.error(f"unknown step '{opt}'. Options: {', '.join(names)}")
 
     c = Ctx(a)
+
+    # One-time migration: a scene trained before the split has gsplat.done. Its SfM
+    # parameters are the same fingerprint keys, and it was trained with the upstream
+    # defaults, i.e. with every train_* option unset.
+    old = c.state / "gsplat.done"
+    if old.exists() and not (c.state / "sfm.done").exists():
+        fp_old = old.read_text().strip().split("\n")[0]
+        fp_sfm = c.fingerprint(["marker_id", "marker_length", "num_images", "num_marked"])
+        if fp_old == fp_sfm:
+            c.mark_done("sfm", fp_sfm)
+            saved = {k: getattr(a, k) for k in ("train_iters", "downscale", "cache_images",
+                                                 "train_vis", "train_arg")}
+            a.train_iters = a.downscale = a.cache_images = a.train_vis = None
+            a.train_arg = []
+            c.mark_done("train", c.fingerprint(["marker_id", "marker_length", "num_images",
+                                                "num_marked", "train_iters", "downscale",
+                                                "cache_images", "train_vis", "train_arg"]))
+            for k, v in saved.items():
+                setattr(a, k, v)
+            info("migrated gsplat.done → sfm.done + train.done")
+            old.rename(old.with_suffix(".migrated"))
 
     if a.status:
         section(f"Status — {a.scene}")

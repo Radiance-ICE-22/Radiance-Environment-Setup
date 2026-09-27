@@ -16,7 +16,7 @@ artefacts either produces.
 | `setup_scripts/install_figs.sh` | Full install: miniconda, acados, tiny-cuda-nn, nerfstudio, the SousVide clone. Resumable, step-addressable. |
 | `setup_scripts/verify_figs.sh` | Verification suite — imports, binaries, GPU, an end-to-end render of a shipped scene. |
 | `setup_scripts/apply_overlay.sh` | Restores our configs into the freshly cloned SousVide. |
-| `figs/figs_pipeline.py` | The pipeline: 13 resumable steps from raw video to validated flight render. |
+| `figs/figs_pipeline.py` | The pipeline: 14 resumable steps from raw video to validated flight render (SfM and splat training are separate steps). |
 | `figs/tidy_sousvide.sh` | Keeps generated renders out of the upstream clone's root. |
 | `figs/sousvide_overlay/` | Capture configs and courses that must sit inside the clone. |
 | `docs/` | Flat, on purpose. `LAB_MACHINE.md` and `FiGS_pipeline_script_guide.md` are the two current ones; `FiGS_custom_video_guide.md` and `FiGS_pipeline.md` are reference. Anything mentioning `~/projects/figs_validation` or a 4 GB card is legacy — the paths and the VRAM pessimism no longer apply. |

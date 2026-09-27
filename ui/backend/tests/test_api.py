@@ -96,6 +96,11 @@ def test_websocket_stream(client):
     {"scene": "x", "num_images": 10, "num_marked": 40},
     {"scene": "x", "redo": ["rm -rf"]},
     {"scene": "x", "course": "circuit; reboot"},
+    {"scene": "x", "only": "gsplat"},
+    {"scene": "x", "downscale": 0},
+    {"scene": "x", "train_args": ["--data /etc"]},
+    {"scene": "x", "train_args": ["--pipeline.model.x 1; rm -rf ~"]},
+    {"scene": "x", "train_args": ["--output-dir /tmp"]},
 ])
 def test_rejects_bad_requests(client, bad):
     assert client.post("/api/jobs/figs", json=bad).status_code in (400, 422)
@@ -122,3 +127,17 @@ def test_token(settings):
         assert c.get("/api/scenes").status_code == 401
         assert c.get("/api/scenes", headers={"Authorization": "Bearer s3cret"}).status_code == 200
         assert c.get("/api/health").status_code == 200
+
+
+def test_train_options_reach_the_script(client):
+    body = {"scene": "backroom", "only": "train", "train_iters": 5000, "downscale": 2,
+            "cache_images": "cpu", "train_vis": "tensorboard", "archive_old": True,
+            "train_args": ["--pipeline.model.stop-split-at 10000", "--pipeline.model.cull-alpha-thresh 0.2"]}
+    j = wait(client, client.post("/api/jobs/figs", json=body).json()["id"])
+    argv = json.loads(next(l["line"] for l in client.get(f"/api/jobs/{j['id']}/log").json()
+                          if l["line"].startswith("argv:"))[5:])
+    joined = " ".join(argv)
+    for frag in ("--only train", "--train-iters 5000", "--downscale 2", "--cache-images cpu",
+                 "--train-vis tensorboard", "--archive-old",
+                 "--train-arg=--pipeline.model.stop-split-at 10000"):
+        assert frag in joined, frag

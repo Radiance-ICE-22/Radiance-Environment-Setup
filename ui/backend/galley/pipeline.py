@@ -14,11 +14,15 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 from .settings import Settings
 
-STEPS = ["preflight", "probe", "transcode", "aruco", "config", "patch", "gsplat",
+STEPS = ["preflight", "probe", "transcode", "aruco", "config", "patch", "sfm", "train",
          "verify", "bounds", "course", "simulate", "validate", "record"]
-Step = Literal["preflight", "probe", "transcode", "aruco", "config", "patch", "gsplat",
+Step = Literal["preflight", "probe", "transcode", "aruco", "config", "patch", "sfm", "train",
                "verify", "bounds", "course", "simulate", "validate", "record"]
 SCENE_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_\-]{0,63}$")
+# Extra ns-train arguments: one nerfstudio option (pipeline/optimizer/trainer tree) and an
+# optional plain value. Nothing that could name a file or open a shell.
+TRAIN_ARG_RE = re.compile(r"^--(pipeline|optimizers|steps-per-[a-z-]+|mixed-precision)"
+                          r"[a-z0-9_.\-]*( [A-Za-z0-9_.+\-]{1,32})?$")
 
 
 class FigsRun(BaseModel):
@@ -39,6 +43,13 @@ class FigsRun(BaseModel):
     margin: Optional[float] = Field(None, ge=0, le=5)
     dataloader_workers: Optional[int] = Field(None, ge=0, le=32)
     allow_outside: bool = False
+    # training (the `train` step)
+    train_iters: Optional[int] = Field(None, ge=100, le=200000)
+    downscale: Optional[int] = Field(None, ge=1, le=16)
+    cache_images: Optional[Literal["cpu", "gpu"]] = None
+    train_vis: Optional[Literal["viewer", "tensorboard", "viewer+tensorboard"]] = None
+    train_args: list[str] = Field(default_factory=list, max_length=16)
+    archive_old: bool = False
     from_step: Optional[Step] = None
     only: Optional[Step] = None
     stop_after: Optional[Step] = None
@@ -49,6 +60,14 @@ class FigsRun(BaseModel):
     def _name(cls, v):
         if v is not None and not SCENE_RE.match(v):
             raise ValueError("names use letters, digits, '_' and '-'")
+        return v
+
+    @field_validator("train_args")
+    @classmethod
+    def _train_args(cls, v):
+        for a in v:
+            if not TRAIN_ARG_RE.match(a):
+                raise ValueError(f"not an allowed ns-train option: {a!r}")
         return v
 
     @model_validator(mode="after")
@@ -72,6 +91,8 @@ def build_argv(s: Settings, r: FigsRun) -> list[str]:
         "--width": r.width, "--height": r.height, "--fps": r.fps,
         "--course": r.course, "--frame": r.frame, "--pilot": r.pilot, "--method": r.method,
         "--margin": r.margin, "--dataloader-workers": r.dataloader_workers,
+        "--train-iters": r.train_iters, "--downscale": r.downscale,
+        "--cache-images": r.cache_images, "--train-vis": r.train_vis,
         "--from": r.from_step, "--only": r.only, "--stop-after": r.stop_after,
     }
     for k, v in flags.items():
@@ -79,8 +100,12 @@ def build_argv(s: Settings, r: FigsRun) -> list[str]:
             argv += [k, str(v)]
     for step in r.redo:
         argv += ["--redo", step]
+    for extra in r.train_args:
+        argv.append(f"--train-arg={extra}")   # '=' form: argparse would read a bare '--x' as an option
     if r.allow_outside:
         argv.append("--allow-outside")
+    if r.archive_old:
+        argv.append("--archive-old")
     return argv
 
 

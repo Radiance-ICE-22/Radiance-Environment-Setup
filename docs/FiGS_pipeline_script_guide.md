@@ -47,7 +47,7 @@ happily until `Simulator()` dies on `libqpOASES_e.so: cannot open shared object 
 `LD_LIBRARY_PATH` is read once by glibc at process start, so this genuinely cannot be repaired
 from inside a running process. Re-source and re-run.
 
-**Use `tmux`.** The `gsplat` step is ~80 minutes and a dropped SSH session kills it.
+**Use `tmux`.** The `sfm` and `train` steps together are ~80 minutes and a dropped SSH session kills it.
 
 ```bash
 tmux new -s figs
@@ -72,7 +72,7 @@ source ~/FYP-Radiance/figs/figs_env.sh
   --course lab3_loop
 ```
 
-That runs all 13 steps. On a first run for a new room it will **stop at `course`**, because the
+That runs all 14 steps. On a first run for a new room it will **stop at `course`**, because the
 course file does not exist yet and the waypoints depend on bounds you cannot know until the
 splat is aligned. That is expected — see §6.
 
@@ -111,7 +111,7 @@ Everything else the script creates itself. `PROJECT_ROOT` is `~/FYP-Radiance/fig
 | `aruco` | histogram only, into the run record | | | |
 | `config` | capture config | `configs/captures/<scene>.json` | JSON | <1 KB |
 | `patch` | edited submodule + backup | `FiGS/Hierarchical-Localization/hloc/{reconstruction,extract_features}.py{,.bak}` | Python | — |
-| **`gsplat`** | *see breakdown below* | `gsplats/workspace/<scene>/` and `gsplats/workspace/outputs/<scene>/` | | **~7 GB** |
+| **`sfm`** + **`train`** | *see breakdown below* | `gsplats/workspace/<scene>/` and `gsplats/workspace/outputs/<scene>/` | | **~7 GB** |
 | `verify` | — (reads only) | | | |
 | `bounds` | — (reads only) | | | |
 | `course` | — (reads `configs/courses/<course>.json`) | | | |
@@ -119,7 +119,7 @@ Everything else the script creates itself. `PROJECT_ROOT` is `~/FYP-Radiance/fig
 | `validate` | — (reads only) | | | |
 | `record` | run record | `runs/<scene>_<timestamp>.json` | JSON | ~2 KB |
 
-### What `gsplat` produces
+### What `sfm` and `train` produce
 
 This is where essentially all the disk goes. Sizes are from the reference 300-image 1080p run.
 
@@ -180,7 +180,8 @@ so moving `images/` breaks them.
 | 4 | `aruco` | 30 s | — | marker ID confirmation + time histogram |
 | 5 | `config` | instant | — | `configs/captures/<scene>.json` |
 | 6 | `patch` | 1 s | — | re-applies two hloc submodule fixes |
-| 7 | **`gsplat`** | **~80 min** | ✔ | images, SfM, `transforms.json`, `.ckpt` |
+| 7a | **`sfm`** | **~45 min** | ✔ | images, SfM, metrically aligned `transforms.json`, `sparse_pc.ply` |
+| 7b | **`train`** | **~34 min** | ✔ | `ns-train splatfacto` → `config.yml`, `.ckpt` |
 | 8 | `verify` | 5 s | — | registration rate, point count |
 | 9 | `bounds` | 1 s | — | capture extent, waypoint box |
 | 10 | `course` | 1 s | — | per-keyframe inside/outside check |
@@ -196,7 +197,7 @@ Checks conda env, acados environment variables, shared-library resolution, nine 
 torch pin, five binaries, and the GPU.
 
 **Expect:** all ✔, and a warning if VRAM is already in use. `ns-viewer` holds ~4.6 GB — close it
-before `gsplat` or the peak measurement is meaningless and you risk an OOM.
+before `train` or the peak measurement is meaningless and you risk an OOM.
 
 **`sousvide` is not checked.** It is the SOUS VIDE policy-distillation layer, downstream of
 everything FiGS does, and is not installed here. Its absence is expected.
@@ -269,7 +270,21 @@ them. `.bak` files are kept.
    version.
 2. **`extract_features.py`** — sets the DataLoader to `num_workers=0`. See §7.
 
-### `gsplat` — the long one
+### `sfm` + `train` — the long ones
+
+*Until 2026-09-27 these were one step, `gsplat`. `--redo gsplat` still works (it means both), and an existing `gsplat.done` marker is migrated to `sfm.done` + `train.done` the first time the script sees it.*
+
+`sfm` runs FiGS's `generate_gsplat()` with its final `ns-train` call intercepted, so SfM and ArUco alignment happen exactly as upstream does them. `train` then runs `ns-train splatfacto` itself, with upstream's flags plus the options below. A retrain never repeats SfM:
+
+```bash
+figs_pipeline.py --scene lab3 --from train --archive-old \
+    --downscale 4 --cache-images cpu --train-iters 30000 \
+    --train-arg='--pipeline.model.stop-split-at 10000'
+```
+
+`train` refuses to add a second model to a scene (FiGS loads exactly one); `--archive-old` first moves the existing run to `gsplats/workspace/_archive/<scene>/`.
+
+The original single-step description follows.
 
 Frame extraction → hloc SuperPoint → SuperGlue matching → COLMAP incremental mapping → ArUco
 metric alignment → `ns-train splatfacto` to 30,000 steps. Runs as a subprocess so a crash cannot
@@ -383,7 +398,7 @@ Three further protections:
 success. A killed process cannot leave a truncated file that a later existence check accepts.
 
 **Parameter fingerprints.** Each step hashes the arguments it depends on. Change
-`--marker-length` and the `config` and `gsplat` steps invalidate themselves rather than reusing a
+`--marker-length` and the `config`, `sfm` and `train` steps invalidate themselves rather than reusing a
 splat built at the old scale. You will see
 `'gsplat' was completed with different parameters — redoing`.
 
@@ -432,6 +447,12 @@ every axis — that is also your noise floor when comparing captures.
 | `--marker-length` | `0.18` | **metres, tape-measured, black square only** |
 | `--num-images` | `300` | total training frames |
 | `--num-marked` | `40` | of those, marker-visible; raised from FiGS's 20 |
+| `--train-iters` | nerfstudio's (30000) | splatfacto iterations |
+| `--downscale` | nerfstudio's (auto, ≤1600 px) | training image downscale; 4 GB cards need more than the default |
+| `--cache-images` | nerfstudio's | `cpu` keeps training images out of VRAM |
+| `--train-vis` | nerfstudio's (`viewer`) | `tensorboard` writes loss curves the UI can plot |
+| `--train-arg=ARG` | — | extra `ns-train` option before the dataparser, repeatable; use the `=` form |
+| `--archive-old` | off | move an existing trained model to `_archive/` before training |
 | `--width/--height/--fps` | `1920/1080/30` | transcode target |
 | `--course` | `intellisense_loop` | under `configs/courses/` |
 | `--frame` / `--pilot` / `--method` | `carl` / `Viper` / `eval_single` | generic; fine to reuse |
