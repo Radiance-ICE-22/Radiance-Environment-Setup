@@ -1,0 +1,30 @@
+# intellisense08 — lab workstation (EWIS Pro 9900G), Ubuntu 22.04, RTX 2080 8 GB (compute 7.5),
+# 62 GB RAM, 12 cores, ~520 GB free on /home. Reached over Tailscale.
+# Install: install_figs.sh --prefix ~/Radiance/figs; repo: ~/Radiance/Radiance-Environment-Setup
+# (github.com/Radiance-ICE-22/Radiance-Environment-Setup).
+
+[paths]
+project_root = "~/Radiance/figs"                                        # figs_env.sh + SousVide/
+pipeline     = "~/Radiance/Radiance-Environment-Setup/figs/figs_pipeline.py"
+overlay      = "~/Radiance/Radiance-Environment-Setup/figs/sousvide_overlay"
+video_dir    = "~/Radiance/video_captures"                              # raw footage staging
+data_dir     = "~/.local/share/galley"                                  # galley.db
+
+[server]
+# Loopback only: this machine sits on the campus LAN and Galley has no login until Phase 5.
+# Reach it with  ssh -L 8800:localhost:8800 yutharsan@<tailscale name or IP>
+host = "127.0.0.1"
+port = 8800
+
+[gpu]
+name     = "NVIDIA GeForce RTX 2080"
+vram_mib = 8192
+
+[defaults]
+# 8 GB: nerfstudio's defaults fit (the RTX 2080 reference peaked at 5203 MiB with images cached
+# on the GPU), so no cache_images override here.
+train_vis = "tensorboard"
+# ~520 GB free: data_gamma (~265 GB per 16 s course, half without depth) fits once.
+max_data_method = "data_gamma"
+# The notebook's in-loop evaluation; affordable on this card.
+svnet_comm_eval = "eval_nominal"

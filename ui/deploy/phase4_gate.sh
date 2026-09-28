@@ -17,23 +17,26 @@
 # stop any other Galley first.
 #
 # Overrides: COHORT=… SCENE=… COURSE=… METHOD=… HIST=… COMM=… EVAL=…
+#
+# Paths per machine (dummy, intellisense08) come from host.sh next to this script.
 set -u
-ROOT=~/projects/figs_validation
-UI=~/FYP-Radiance/ui
-PIPE=~/FYP-Radiance/figs/svnet_pipeline.py
+source "$(dirname "$(readlink -f "$0")")/host.sh"
+ROOT=$FIGS_ROOT
+UI=$RADIANCE_REPO/ui
+PIPE=$RADIANCE_REPO/figs/svnet_pipeline.py
 COHORT=${COHORT:-p4_smoke}; SCENE=${SCENE:-backroom}; COURSE=${COURSE:-circuit}; METHOD=${METHOD:-data_alpha}
 HIST=${HIST:-200}; COMM=${COMM:-300}; EVAL=${EVAL:-eval_single}
 API=http://127.0.0.1:8800/api
-export GALLEY_MACHINE=$UI/machines/dummy.toml
 stamp() { date '+%F %T'; }
 
 echo "=== $(stamp) sync FYP-Radiance"
-cd ~/FYP-Radiance && git pull --ff-only && git log --oneline -3 || exit 1
+cd $RADIANCE_REPO && git pull --ff-only && git log --oneline -3 || exit 1
 [ -f $PIPE ] || { echo "figs/svnet_pipeline.py missing: push the Phase 4 commit first"; exit 1; }
 
 echo; echo "=== backend venv + tests"
 cd $UI/backend
 UV=$(command -v uv || echo ~/.local/bin/uv)
+[ -d .venv ] || $UV venv -q .venv
 $UV pip install -q -p .venv -e '.[test]'
 GALLEY_TEST_CONFIGS=$ROOT/SousVide/configs .venv/bin/python -m pytest -q 2>&1 | tail -2
 

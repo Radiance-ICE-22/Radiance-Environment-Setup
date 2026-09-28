@@ -31,6 +31,13 @@ Machines: **dummy** (MSI laptop, RTX 3050 Ti Laptop 4 GB, 15 GiB RAM, Ubuntu 24.
 build-and-test host now. The **new home PC** (RTX 5060 Ti 16 GB, 16 GB RAM) becomes the main
 host once Ubuntu is installed, which is why Phase 6 matters. The **lab machine**
 (intellisense05, RTX 2080 8 GB) is campus-only: an install target, not a remote worker.
+**intellisense08** (lab workstation, RTX 2080 8 GB, 62 GB RAM, Ubuntu 22.04, user `yutharsan`) is
+reachable over Tailscale. Its install lives at `~/Radiance/figs` (install_figs.sh, every step
+done, `sousvide` importable) and the repo at `~/Radiance/Radiance-Environment-Setup`
+(github.com/Radiance-ICE-22/Radiance-Environment-Setup, the team copy of this repo). Profile:
+`ui/machines/intellisense08.toml` (Galley on loopback; reach it with `ssh -L`). Bring it up
+with `ui/deploy/bringup.sh`; the deploy scripts find each machine's paths through
+`ui/deploy/host.sh`. Claude's Cowork sandbox has no route to the Tailscale network either.
 
 ---
 

@@ -14,24 +14,27 @@
 # a runs/*.json record). kitchen is untouched.
 #
 #   bash ~/FYP-Radiance/ui/deploy/phase3_gate.sh 2>&1 | tee ~/phase3_gate.log
+#
+# Paths per machine (dummy, intellisense08) come from host.sh next to this script.
 set -u
-ROOT=~/projects/figs_validation
-UI=~/FYP-Radiance/ui
-TOOLS=~/FYP-Radiance/figs/course_tools.py
+source "$(dirname "$(readlink -f "$0")")/host.sh"
+ROOT=$FIGS_ROOT
+UI=$RADIANCE_REPO/ui
+TOOLS=$RADIANCE_REPO/figs/course_tools.py
 SCENE=${SCENE:-backroom}
 PORT=8800
 API=http://127.0.0.1:$PORT/api
-export GALLEY_MACHINE=$UI/machines/dummy.toml
 j() { python3 -c "import json,sys; d=json.load(sys.stdin); print(eval(sys.argv[1]))" "$1"; }
 gj() { sed -n 's/^GALLEY_JSON //p'; }
 
 echo "=== sync FYP-Radiance"
-cd ~/FYP-Radiance && git pull --ff-only && git log --oneline -3 || exit 1
+cd $RADIANCE_REPO && git pull --ff-only && git log --oneline -3 || exit 1
 [ -f $TOOLS ] || { echo "figs/course_tools.py missing: push the Phase 3 commit first"; exit 1; }
 
 echo; echo "=== backend tests (venv refreshed: test extras gained tensorboardX in Phase 2)"
 cd $UI/backend
 UV=$(command -v uv || echo ~/.local/bin/uv)
+[ -d .venv ] || $UV venv -q .venv
 $UV pip install -q -p .venv -e '.[test]'
 GALLEY_TEST_CONFIGS=$ROOT/SousVide/configs .venv/bin/python -m pytest -q 2>&1 | tail -3
 
@@ -61,9 +64,9 @@ echo; echo "=== API: geometry (gzip), preview, lint"
 curl -s --compressed -o /tmp/geo.json -w "  geometry: %{http_code}, %{size_download} bytes gzipped, %{time_total} s\n" $API/scenes/$SCENE/geometry
 j "d['waypoint_box']" < /tmp/geo.json
 python3 - "$API" "$SCENE" <<'EOF'
-import json, sys, urllib.request
+import json, os, sys, urllib.request
 api, scene = sys.argv[1], sys.argv[2]
-course = json.load(open(__import__("os").path.expanduser("~/projects/figs_validation/SousVide/configs/courses/circuit.json")))
+course = json.load(open(os.path.join(os.environ["FIGS_ROOT"], "SousVide/configs/courses/circuit.json")))
 req = urllib.request.Request(f"{api}/courses/preview", json.dumps({"course": course, "scene": scene}).encode(), {"Content-Type": "application/json"})
 d = json.load(urllib.request.urlopen(req))
 print(f"  preview via API: {d['mode']} {d['duration_solved']} s, {len(d['t'])} samples, solved in {d['solve_s']} s")
