@@ -13,7 +13,7 @@
 #   6. figs_pipeline.py: fly backroom + circuit (the known-good pair) and validate the video
 #   7. start Galley once, query it, stop it
 #
-#   bash ~/Radiance/Radiance-Environment-Setup/ui/deploy/bringup.sh 2>&1 | tee ~/bringup.log
+#   bash ~/Radiance/FYP-Radiance/ui/deploy/bringup.sh 2>&1 | tee ~/bringup.log
 #
 # Changes: the repo checkout (pull), SousVide/configs (overlay files that are missing),
 # ui/backend/.venv, ~/.local/share/galley/galley.db, one backroom flight (outputs/flights/,

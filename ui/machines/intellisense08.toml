@@ -1,12 +1,13 @@
 # intellisense08 — lab workstation (EWIS Pro 9900G), Ubuntu 22.04, RTX 2080 8 GB (compute 7.5),
 # 62 GB RAM, 12 cores, ~520 GB free on /home. Reached over Tailscale.
-# Install: install_figs.sh --prefix ~/Radiance/figs; repo: ~/Radiance/Radiance-Environment-Setup
-# (github.com/Radiance-ICE-22/Radiance-Environment-Setup).
+# Install: install_figs.sh --prefix ~/Radiance/figs; repo: ~/Radiance/FYP-Radiance
+# (github.com/Platinum-Saber/FYP-Radiance; the team copy, Radiance-ICE-22/Radiance-Environment-Setup,
+# sits next to it at an older commit and is not used).
 
 [paths]
 project_root = "~/Radiance/figs"                                        # figs_env.sh + SousVide/
-pipeline     = "~/Radiance/Radiance-Environment-Setup/figs/figs_pipeline.py"
-overlay      = "~/Radiance/Radiance-Environment-Setup/figs/sousvide_overlay"
+pipeline     = "~/Radiance/FYP-Radiance/figs/figs_pipeline.py"
+overlay      = "~/Radiance/FYP-Radiance/figs/sousvide_overlay"
 video_dir    = "~/Radiance/video_captures"                              # raw footage staging
 data_dir     = "~/.local/share/galley"                                  # galley.db
 

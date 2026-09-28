@@ -8,7 +8,7 @@
 case "$(hostname)" in
     intellisense08*)            # lab workstation, RTX 2080 8 GB (reached over Tailscale)
         _root=~/Radiance/figs
-        _repo=~/Radiance/Radiance-Environment-Setup
+        _repo=~/Radiance/FYP-Radiance      # clone of Platinum-Saber/FYP-Radiance
         _machine=intellisense08.toml ;;
     *)                          # dummy, the home server (RTX 3050 Ti 4 GB)
         _root=~/projects/figs_validation
