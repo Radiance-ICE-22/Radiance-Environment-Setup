@@ -95,5 +95,6 @@ kill $SRV; wait $SRV 2>/dev/null
 
 say "summary"
 if [ ${#PROBLEMS[@]} -eq 0 ]; then echo "  no blocking problems found"; else printf '  ! %s\n' "${PROBLEMS[@]}"; fi
-echo "  Galley:  cd $REPO/ui/backend && .venv/bin/python -m galley   (loopback :8800)"
-echo "  from the laptop:  ssh -L 8800:localhost:8800 $(whoami)@<this machine's Tailscale name>  →  http://localhost:8800"
+echo "  Galley:  tmux new -d -s galley 'cd $REPO/ui/backend && GALLEY_MACHINE=$GALLEY_MACHINE .venv/bin/python -m galley'   (loopback :8800)"
+echo "  from the laptop:  ssh -N -L 18800:localhost:8800 $(whoami)@$(hostname)  →  http://localhost:18800"
+echo "  (18800 on the laptop side: Windows often reserves 8800, which fails with 'bind … Permission denied')"

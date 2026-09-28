@@ -30,7 +30,9 @@ pipeline processes, each of which sources `figs_env.sh` itself.
 ```bash
 cd ~/FYP-Radiance/ui/backend
 uv venv .venv && uv pip install -p .venv -e '.[test]'
-GALLEY_MACHINE=../machines/dummy.toml .venv/bin/python -m galley     # UI: http://<host>:8800  API docs: /docs
+.venv/bin/python -m galley     # UI: http://<host>:8800  API docs: /docs
+# The profile is ui/machines/<hostname prefix>.toml (dummy.toml, intellisense08.toml);
+# GALLEY_MACHINE=<file> overrides it.
 ```
 
 Port 8800 is not opened in ufw yet; from another machine use
