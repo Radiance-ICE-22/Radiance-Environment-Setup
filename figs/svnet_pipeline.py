@@ -31,6 +31,10 @@ of memory. Inside a step, deploy_roster calls (the in-loop evaluation during com
 are followed by gc.collect() + torch.cuda.empty_cache(): FiGS's splat objects hold reference
 cycles, so they are otherwise freed only whenever Python's collector happens to run.
 
+Also inside training, upstream's per-epoch test pass runs without autograd (see
+_no_grad_on_test_files): identical numbers, but the last test batch's activation graph no
+longer survives into the next epoch.
+
 Only three things are added around upstream, none of which changes what it computes:
   * progress output: sousvide draws rich progress bars, which print nothing when stdout is not
     a terminal (Galley jobs, `tee`, tmux logs). They are replaced by plain lines, and training
@@ -494,6 +498,38 @@ def _losses(c, net):
     return out
 
 
+def _no_grad_on_test_files(tp):
+    """Run upstream's per-epoch test pass without autograd. Same numbers, less memory.
+
+    train_student's test loop calls network(xnn) with gradients enabled and never calls
+    backward, so the last test batch's graph (SqueezeNet activations for 64 images at 224x224,
+    about a gigabyte) stays referenced by its local `ypd`/`loss` into the next epoch's first
+    forward pass. On dummy's 4 GB card that is exactly where commNet ran out of memory (epoch 2,
+    first forward), twice. Upstream loads each epoch's files in a fixed order — train files, then
+    test files — through get_data_paths() and generate_dataset(), both imported into
+    train_policy's namespace, so wrapping those two switches autograd off for the test files and
+    back on at the next epoch. The test loss and every trained weight are identical.
+    """
+    import torch
+    if getattr(tp.generate_dataset, "_galley", False):
+        return
+    up_paths, up_dataset = tp.get_data_paths, tp.generate_dataset
+    st = {"n_train": 0, "loaded": 0}
+
+    def get_data_paths(*args, **kw):
+        train, test = up_paths(*args, **kw)
+        st["n_train"], st["loaded"] = len(train), 0
+        torch.set_grad_enabled(True)                    # a new epoch starts with training
+        return train, test
+
+    def generate_dataset(*args, **kw):
+        st["loaded"] += 1
+        torch.set_grad_enabled(st["loaded"] <= st["n_train"])
+        return up_dataset(*args, **kw)
+    generate_dataset._galley = True
+    tp.get_data_paths, tp.generate_dataset = get_data_paths, generate_dataset
+
+
 def _train(c, net, epochs, regen, deployment):
     a = c.a
     _fresh(c, net)
@@ -503,11 +539,16 @@ def _train(c, net, epochs, regen, deployment):
         if (rdir / f"{net}.pt").exists():
             info(f"{p}: {net}.pt exists — upstream continues training it (use --fresh {net} to start over)")
     os.chdir(c.repo)
+    import torch
     import sousvide.instruct.train_policy as tp
+    _no_grad_on_test_files(tp)
     t0 = time.time()
-    with VramMonitor(interval=5) as vm:
-        tp.train_roster(a.cohort, a.roster, net, epochs, regen=regen, deployment=deployment,
-                        lim_sv=a.lim_sv, lr=a.lr, batch_size=a.batch_size)
+    try:
+        with VramMonitor(interval=5) as vm:
+            tp.train_roster(a.cohort, a.roster, net, epochs, regen=regen, deployment=deployment,
+                            lim_sv=a.lim_sv, lr=a.lr, batch_size=a.batch_size)
+    finally:
+        torch.set_grad_enabled(True)
     c.results[f"train_{net}"] = {"epochs": epochs, "regen": regen, "deployment": deployment,
                                  "wallclock": elapsed(t0), "peak_vram_mib": vm.peak,
                                  "pilots": _losses(c, net)}
