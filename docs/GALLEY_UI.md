@@ -33,9 +33,9 @@ host once Ubuntu is installed, which is why Phase 6 matters. The **lab machine**
 (intellisense05, RTX 2080 8 GB) is campus-only: an install target, not a remote worker.
 **intellisense08** (lab workstation, RTX 2080 8 GB, 62 GB RAM, Ubuntu 22.04, user `yutharsan`) is
 reachable over Tailscale. Its install lives at `~/Radiance/figs` (install_figs.sh, every step
-done, `sousvide` importable) and this repo is cloned at `~/Radiance/FYP-Radiance` (read-only
-deploy key). The team copy, `~/Radiance/Radiance-Environment-Setup`
-(Radiance-ICE-22/Radiance-Environment-Setup), is at an older commit and unused. Profile:
+done, `sousvide` importable) and this repo is cloned at `~/Radiance/Radiance-Environment-Setup`.
+This repo now lives at github.com/Radiance-ICE-22/Radiance-Environment-Setup (moved from
+Platinum-Saber/FYP-Radiance, which redirects). Profile:
 `ui/machines/intellisense08.toml` (Galley on loopback; reach it with `ssh -L`). Bring it up
 with `ui/deploy/bringup.sh`; the deploy scripts find each machine's paths through
 `ui/deploy/host.sh`. Claude's Cowork sandbox has no route to the Tailscale network either.
