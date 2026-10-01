@@ -4,7 +4,9 @@
 whole SV-Net chain runs through Galley in 49 min), but the trained student does not fly the
 course yet (§6). intellisense08 is brought up and is now the SV-Net host. `./run_ui.sh`
 starts Galley on any host (§2). The team's airframe is drawn in the course editor and the
-clearance check subtracts its size (§6, "Drone model"). Written so the next working session (human or
+clearance check subtracts its size (§6, "Drone model"). The UI has a new design — a
+Windows 7-style window with a ribbon — finished in Figma and waiting to be built into
+`ui/frontend` (§6, "UI redesign"). Written so the next working session (human or
 Claude) can pick up without the chat history. The live plan, with diagrams, is the Claude
 Doc "SOUS-VIDE Pipeline Console — Implementation Plan":
 https://claude.ai/code/artifact/7f7d0bbb-6399-4f1b-bead-21ff96f3f12e*
@@ -29,6 +31,7 @@ in the browser can be resumed from the shell and vice versa.
 | 4 | SV-Net stages (`svnet_pipeline.py`) | **pipeline done; policy not flying yet** | intellisense08, 1 Oct, cohort `p4_smoke` (backroom + circuit, `data_alpha`, Maverick, 200/300 epochs, `eval_single`) through Galley's queue: all six steps succeeded in 49 min, commNet peak 6785 MiB. The expert tracks to 1.7 cm; the student Maverick does not fly circuit (per-point tracking mean 9.4 m, 16 % within 0.3 m). Next: watch its video, then a `data_beta` cohort (§6) |
 | 5 | Hardening: login, systemd, ufw, run diffs, archiving | todo | survives a reboot; reachable on LAN and Tailscale only |
 | 6 | Package + installer (cu118 and cu128 profiles) | todo | one command on a fresh clone brings everything up on the RTX 5060 Ti PC |
+| UI | Redesign: Windows 7 ribbon window | **design done; build next** | Figma "Galley — Win7 Ribbon UI": design system, every ribbon tab with hover help, five 1920 × 1080 screens (Course workspace, Scene & Splat, SV-Net cohort, Monitor, Configs), reviewed 1 Oct. Next: implement in `ui/frontend` (§6) |
 
 Machines: **dummy** (MSI laptop, RTX 3050 Ti Laptop 4 GB, 15 GiB RAM, Ubuntu 24.04) is the
 build-and-test host now. The **new home PC** (RTX 5060 Ti 16 GB, 16 GB RAM) becomes the main
@@ -116,6 +119,7 @@ Browser (React)  ──HTTP + WebSocket :8800──▶  FastAPI (ui/backend/gall
 | `ui/deploy/phase1_gate.sh` … `phase4_gate.sh`, `phase2_train_probe.sh` | the gate and measurement scripts used so far |
 | `ui/deploy/host.sh`, `bringup.sh` | per-host paths; bring an installed host up to date and check it end to end |
 | `run_ui.sh` (repo root) | start / stop / status / logs for Galley; creates or updates the backend venv |
+| `ui/design/galley-figma-plugin/` | Figma development plugin that builds the five redesign screens from the file's components (§6, "UI redesign") |
 
 Security choices already in place: no generic shell endpoint; every job is an argv list
 (never `shell=True`); scene, course and config names are regex-checked; videos must live
@@ -337,6 +341,71 @@ Next, in order:
 3. Then: the depth-dropping overlay patch and `use_compress` (storage), `data_gamma`, pilot editors. Deferred until it works as is: the depth-dropping overlay patch,
 `use_compress` by default, `data_beta`/`data_gamma`, pilot editors.
 
+**UI redesign: Windows 7 ribbon (designed 1 Oct; build next).** Goal: denser and faster to
+use. Similar tasks shouldn't mean switching whole pages, and every control explains itself on hover.
+
+- **Figma file:** "Galley — Win7 Ribbon UI" (Suhan's drafts,
+  https://www.figma.com/design/BrWJM7jWbW9BKGXxu2IEEK). Three pages, the Starter plan's maximum:
+  - *Design System:* `Win7` colour variables (Aero Blue); Noto Sans 12 px standing in for
+    Segoe UI 9 pt; Source Code Pro 11 px for logs, paths and flags; 84 two-tone icons
+    (`icon/<name>`, 24 px source, used at 16/32 px). Components: `ribbon/large-button`,
+    `ribbon/small-button`, `ribbon/field`, `ribbon/checkbox`, `ribbon/tab` (incl. amber
+    contextual), `tooltip/super`, `tree/item`, `doc/tab`, `pane/header`, `status/pill`,
+    `button/push`.
+  - *Ribbon & Help:* one ribbon component per tab — Home, Capture & Splat, Course, SV-Net,
+    Jobs, Configs, View, and the contextual Keyframe Tools and Model Tools — plus the
+    minimized ribbon and a catalogue of every command's hover help (what it does, the exact
+    script and flags it runs, shortcut). The same text is attached to each button as a
+    Dev Mode annotation.
+  - *Screens:* five 1920 × 1080 windows built from those components, filled with the
+    project's real numbers where known.
+- **Layout (same on every screen):**
+  - title bar with a Quick Access toolbar (Save, Undo, Run, Cancel)
+  - the ribbon, which works as both toolkit and navigation: large buttons are a group's
+    main action, small buttons and fields its options, so a run is set up and started from
+    one tab
+  - an Explorer tree (scenes ▸ models/courses/flights, cohorts, configs, jobs) instead of
+    page navigation
+  - tabbed documents that can split side by side
+  - a Properties pane for whatever is selected
+  - a docked Output panel (live log, queue, problems, GPU)
+  - a status bar (machine, GPU, disk, queue, connection)
+- **Screens:**
+  1. *Course workspace:* 3D view, keyframe grid, preview headline numbers, six charts on one
+     cursor, and the selected keyframe's constraint matrix.
+  2. *Scene & Splat:* the 14-step strip, reconstruction, training curve, ArUco chart, model
+     archive/promote, and the last flight.
+  3. *SV-Net cohort:* the 6-step strip with time and GPU memory, both loss curves, in-loop
+     evaluation, data, the expert vs student table with a diagnosis, and both videos.
+  4. *Monitor:* queue, GPU memory, live log with progress, and a run diff.
+  5. *Configs:* a property grid next to the raw JSON, validation, and problems.
+- **Regenerating the screens:** in the Figma desktop app, Plugins ▸ Development ▸ Import plugin
+  from manifest… → `ui/design/galley-figma-plugin/manifest.json`, then run *Galley screens
+  (Win7 ribbon UI)*. It can be re-run: it deletes the screens it made and rebuilds them. It
+  also replaces the ribbon strip/body gradients with solid fills, because they painted only
+  about 1,375 of 1,920 px. `code.js` is plain Plugin API code (no network access).
+- **Review fixes (1 Oct):**
+  - ribbon field values no longer wrap onto two lines (single line, ellipsis, 92 px box)
+  - glyphs that Noto Sans lacks (→ ▬ ┅ ≤) are reworded in UI text; logs keep them because
+    Source Code Pro has them
+  - the sample path is now C1-smooth, so the speed and acceleration charts have no spikes
+  - the evaluation status column is wider
+- **Sample values:** the 3D point cloud, the pillar and the 0.12 m minimum gap; the curve
+  shapes of the preview, training and GPU charts; the ArUco window counts; job #8 shown
+  mid-run on Monitor. The pipeline values themselves (flights, p4_smoke, models, configs)
+  are real.
+- **Build plan (next):** rebuild `ui/frontend` in this layout with real hover tooltips
+  (≈600 ms delay, the catalogue's text) and keyboard shortcuts. The existing pages become
+  documents:
+  - Course editor → Course workspace
+  - Scene → Scene & Splat
+  - SV-Net page → cohort document
+  - Jobs / Job → Monitor and the Output panel
+  - Configs → Configs
+
+  The backend API stays as it is; only the frontend changes. Contextual tabs appear while a
+  keyframe or a model is selected.
+
 **Phase 5 — hardening.** ufw rules for 8800 (LAN + `tailscale0`), a login, systemd units
 that run through `figs_env.sh` (`run_ui.sh` covers starting by hand until then), run diffs,
 archive/delete for old runs and cohorts, and treating `ns-viewer` as a queued GPU job.
@@ -389,6 +458,12 @@ Prototype it on the new PC as soon as Ubuntu is installed.
 - **Don't stop Galley while a job runs.** Jobs run in their own session, so the job keeps going
   (and keeps the GPU) but its log is lost and it is marked `interrupted`. `run_ui.sh stop`
   refuses unless `--force`.
+- **Figma Starter plan limits.** At most 3 pages per file, and 20 Figma MCP tool calls a month for
+  Claude (reads and writes; used up on 1 Oct while building the design system and ribbons).
+  Screens are therefore built by the local plugin in `ui/design/galley-figma-plugin/`, which has
+  no limit. Figma's Education plan (free for students) raises it to 200 calls a day.
+- **Noto Sans in Figma has no →, ▬, ┅ or ≤**: they render as gaps. Use words in UI labels, or
+  Source Code Pro (logs) where the glyph matters.
 - **Rich progress bars are silent without a terminal.** Upstream's progress goes through rich,
   which draws nothing when stdout is a pipe (Galley, `tee`, tmux logs); `svnet_pipeline.py`
   substitutes plain lines.
@@ -411,6 +486,7 @@ Prompt to start the next session:
 > Continue the Galley web console for my FYP pipeline. Read
 > `D:\Projects\FYP\FYP-Radiance\docs\GALLEY_UI.md` first (§1 status, §6 next steps).
 > Phase 4's pipeline runs on intellisense08 but the student policy does not fly yet: I have
-> the Maverick video / the `p4_beta` (data_beta) result to look at. Code is in `ui/`; the
+> the Maverick video / the `p4_beta` (data_beta) result to look at. The UI redesign (Windows 7
+> ribbon) is finished in Figma (§6, "UI redesign"); next is building it in `ui/frontend`. Code is in `ui/`; the
 > pipeline scripts are `figs/figs_pipeline.py` and `figs/svnet_pipeline.py`. Work on my laptop
 > copy and give me commands to run on intellisense08 (VS Code Remote-SSH, `./run_ui.sh`).

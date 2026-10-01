@@ -18,6 +18,7 @@ Plan with diagrams: https://claude.ai/code/artifact/7f7d0bbb-6399-4f1b-bead-21ff
 | `machines/<host>.toml` | per-host paths, GPU and defaults (`dummy.toml`, `intellisense08.toml`) |
 | `../run_ui.sh` | start / stop / status / logs for Galley on any host (creates the venv when needed) |
 | `tools/drone_model.py` | CAD OBJ/MTL → `frontend/public/models/drone.glb` + `drone.json` for the course editor |
+| `design/galley-figma-plugin/` | Figma dev plugin that builds the Windows 7 ribbon redesign screens (see `docs/GALLEY_UI.md` §6) |
 | `deploy/host.sh`, `deploy/bringup.sh` | per-host paths for the deploy scripts; bring an installed host up to date and check it end to end |
 | `frontend/` | React + Vite UI; `frontend/dist/` is the committed build the backend serves |
 | `deploy/phase1_gate.sh` | installs the backend on a host, runs the tests, drives the API with curl |
