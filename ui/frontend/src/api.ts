@@ -108,6 +108,7 @@ export const api = {
   submitFigs: (r: FigsRun) => req<{ id: number }>("POST", "/jobs/figs", r),
   submitSelftest: (seconds: number) => req<{ id: number }>("POST", "/jobs/selftest", { seconds }),
   cancel: (id: number) => req<Job>("POST", `/jobs/${id}/cancel`),
+  log: (id: number, after = -1, limit = 20000) => req<{ seq: number; ts: number; line: string }[]>("GET", `/jobs/${id}/log?after=${after}&limit=${limit}`),
   models: (s: string) => req<{ active: Model[]; archived: ArchivedModel[] }>("GET", `/scenes/${encodeURIComponent(s)}/models`),
   archiveModel: (s: string, run: string) => req<{ cleared_steps: string[] }>("POST", `/scenes/${encodeURIComponent(s)}/models/${encodeURIComponent(run)}/archive`),
   promoteModel: (s: string, run: string) => req<{ archived: string[]; cleared_steps: string[] }>("POST", `/scenes/${encodeURIComponent(s)}/models/${encodeURIComponent(run)}/promote`),
@@ -240,4 +241,13 @@ export function duration(j: Job): string {
   if (!j.started) return "—";
   const s = (j.finished ?? Date.now() / 1000) - j.started;
   return s < 60 ? `${s.toFixed(0)} s` : s < 3600 ? `${Math.floor(s / 60)} min ${Math.round(s % 60)} s` : `${(s / 3600).toFixed(1)} h`;
+}
+
+/** Queue a finished job again with the parameters it was submitted with. */
+export function rerun(j: Job): Promise<{ id: number }> {
+  const p = Object.fromEntries(Object.entries(j.params ?? {}).filter(([, v]) => v !== null && v !== undefined));
+  if (j.kind === "figs") return api.submitFigs(p as unknown as FigsRun);
+  if (j.kind === "svnet") return svApi.submit(p as unknown as SvnetRun);
+  if (j.kind === "selftest") return api.submitSelftest(Number(p.seconds ?? 20));
+  return Promise.reject(new Error(`cannot re-run a ${j.kind} job`));
 }

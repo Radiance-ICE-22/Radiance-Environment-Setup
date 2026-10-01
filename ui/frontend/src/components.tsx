@@ -1,5 +1,7 @@
 import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import { api, ApiError, FigsRun, JobStatus } from "./api";
+import { useUi } from "./shell/core";
+import { useAppData } from "./shell/data";
 
 export function Badge({ s }: { s: JobStatus | string }) {
   return <span className={`badge s-${s}`}>{s}</span>;
@@ -83,7 +85,14 @@ export function TrainOptions({ r, set, vramMib }: { r: FigsRun; set: (p: Partial
   );
 }
 
+/** After a submit: select the new job in the Output panel instead of leaving the document. */
+export function useShowJob() {
+  const { setUi } = useUi(); const d = useAppData();
+  return (id: number) => { setUi({ focus: id }); d.reload("jobs"); };
+}
+
 export function useSubmit() {
+  const show = useShowJob();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const submit = async (r: FigsRun) => {
@@ -92,7 +101,7 @@ export function useSubmit() {
       const clean = Object.fromEntries(Object.entries(r).filter(([, v]) =>
         v !== undefined && v !== "" && !(Array.isArray(v) && v.length === 0) && v !== false)) as FigsRun;
       const { id } = await api.submitFigs(clean);
-      location.hash = `#/jobs/${id}`;
+      show(id);
     } catch (e) {
       setErr(e instanceof ApiError ? e.message : String(e));
     } finally { setBusy(false); }

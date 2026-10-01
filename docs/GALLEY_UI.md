@@ -1,12 +1,12 @@
 # Galley — web console for the pipeline: status and handoff
 
-*Last updated 2026-10-01 (evening): Phase 4's pipeline gate passed on intellisense08 (the
+*Last updated 2026-10-01 (night): Phase 4's pipeline gate passed on intellisense08 (the
 whole SV-Net chain runs through Galley in 49 min), but the trained student does not fly the
 course yet (§6). intellisense08 is brought up and is now the SV-Net host. `./run_ui.sh`
 starts Galley on any host (§2). The team's airframe is drawn in the course editor and the
-clearance check subtracts its size (§6, "Drone model"). The UI has a new design — a
-Windows 7-style window with a ribbon — finished in Figma and waiting to be built into
-`ui/frontend` (§6, "UI redesign"). Written so the next working session (human or
+clearance check subtracts its size (§6, "Drone model"). The frontend is rebuilt in the
+Figma redesign: a Windows 7-style window with a ribbon, Explorer, tabbed documents,
+Properties and a docked Output panel (§6, "UI redesign"); the backend API is unchanged. Written so the next working session (human or
 Claude) can pick up without the chat history. The live plan, with diagrams, is the Claude
 Doc "SOUS-VIDE Pipeline Console — Implementation Plan":
 https://claude.ai/code/artifact/7f7d0bbb-6399-4f1b-bead-21ff96f3f12e*
@@ -31,7 +31,7 @@ in the browser can be resumed from the shell and vice versa.
 | 4 | SV-Net stages (`svnet_pipeline.py`) | **pipeline done; policy not flying yet** | intellisense08, 1 Oct, cohort `p4_smoke` (backroom + circuit, `data_alpha`, Maverick, 200/300 epochs, `eval_single`) through Galley's queue: all six steps succeeded in 49 min, commNet peak 6785 MiB. The expert tracks to 1.7 cm; the student Maverick does not fly circuit (per-point tracking mean 9.4 m, 16 % within 0.3 m). Next: watch its video, then a `data_beta` cohort (§6) |
 | 5 | Hardening: login, systemd, ufw, run diffs, archiving | todo | survives a reboot; reachable on LAN and Tailscale only |
 | 6 | Package + installer (cu118 and cu128 profiles) | todo | one command on a fresh clone brings everything up on the RTX 5060 Ti PC |
-| UI | Redesign: Windows 7 ribbon window | **design done; build next** | Figma "Galley — Win7 Ribbon UI": design system, every ribbon tab with hover help, five 1920 × 1080 screens (Course workspace, Scene & Splat, SV-Net cohort, Monitor, Configs), reviewed 1 Oct. Next: implement in `ui/frontend` (§6) |
+| UI | Redesign: Windows 7 ribbon window | **built (cloud-tested); check on the hosts** | Figma "Galley — Win7 Ribbon UI" reviewed 1 Oct, then built into `ui/frontend` the same day: ribbon with every tab and hover help, Explorer, document tabs, Properties, Output, status bar, shortcuts. Every document rendered and the main flows driven in headless Chromium against the cloud backend (59 backend tests pass). Next: use it on dummy and intellisense08 (§6) |
 
 Machines: **dummy** (MSI laptop, RTX 3050 Ti Laptop 4 GB, 15 GiB RAM, Ubuntu 24.04) is the
 build-and-test host now. The **new home PC** (RTX 5060 Ti 16 GB, 16 GB RAM) becomes the main
@@ -114,7 +114,9 @@ Browser (React)  ──HTTP + WebSocket :8800──▶  FastAPI (ui/backend/gall
 | `ui/backend/galley/svnet.py` | builds `svnet_pipeline.py` command lines; reads `.svnet_pipeline_state/<cohort>/` and `SousVide/cohorts/<cohort>/` |
 | `ui/frontend/src/pages/SvNet.tsx` | SV-Net pages: cohort list, new cohort, run controls, rollouts, loss curves, evaluation table and videos |
 | `ui/backend/galley/app.py` | REST + WebSocket routes; optional token (header, or `?token=` for video and WebSocket) |
-| `ui/frontend/src/` | pages: Overview, New capture, Scene, Jobs, Job, Configs; `charts.tsx` has the line and bar charts |
+| `ui/frontend/src/main.tsx` | the window: routes → documents (kept mounted while open), app-wide ribbon bindings, shortcuts, layout (saved in localStorage) |
+| `ui/frontend/src/shell/` | `ribbonSpec.ts` (every tab, group, command and its hover help), `core.tsx` (command registry, Properties/Problems portals), `Ribbon.tsx`, `Tip.tsx` (super tooltips), `Panes.tsx` (title bar, Explorer, document tabs, Properties, Output, status bar, tiles), `data.tsx` (polled data shared by the window), `icons.tsx` |
+| `ui/frontend/src/pages/` | documents: Home, Scene & Splat, New capture, Course workspace, SV-Net (new cohort) and cohort, Monitor, Job, Configs; `charts.tsx` has the line and bar charts |
 | `ui/machines/dummy.toml` | dummy's profile; add one per host |
 | `ui/deploy/phase1_gate.sh` … `phase4_gate.sh`, `phase2_train_probe.sh` | the gate and measurement scripts used so far |
 | `ui/deploy/host.sh`, `bringup.sh` | per-host paths; bring an installed host up to date and check it end to end |
@@ -341,7 +343,7 @@ Next, in order:
 3. Then: the depth-dropping overlay patch and `use_compress` (storage), `data_gamma`, pilot editors. Deferred until it works as is: the depth-dropping overlay patch,
 `use_compress` by default, `data_beta`/`data_gamma`, pilot editors.
 
-**UI redesign: Windows 7 ribbon (designed 1 Oct; build next).** Goal: denser and faster to
+**UI redesign: Windows 7 ribbon (designed and built 1 Oct).** Goal: denser and faster to
 use. Similar tasks shouldn't mean switching whole pages, and every control explains itself on hover.
 
 - **Figma file:** "Galley — Win7 Ribbon UI" (Suhan's drafts,
@@ -394,18 +396,42 @@ use. Similar tasks shouldn't mean switching whole pages, and every control expla
   shapes of the preview, training and GPU charts; the ArUco window counts; job #8 shown
   mid-run on Monitor. The pipeline values themselves (flights, p4_smoke, models, configs)
   are real.
-- **Build plan (next):** rebuild `ui/frontend` in this layout with real hover tooltips
-  (≈600 ms delay, the catalogue's text) and keyboard shortcuts. The existing pages become
-  documents:
-  - Course editor → Course workspace
-  - Scene → Scene & Splat
-  - SV-Net page → cohort document
-  - Jobs / Job → Monitor and the Output panel
-  - Configs → Configs
-
-  The backend API stays as it is; only the frontend changes. Contextual tabs appear while a
-  keyframe or a model is selected.
-
+- **Built in `ui/frontend` (1 Oct).** The design is the app now; the backend is unchanged
+  (the client now also calls the existing `GET /api/jobs/{id}/log`, for *Save log*).
+  - *Documents:* every hash route is a document tab, kept mounted (hidden) while open, so a
+    scene, its course and a running job keep their state when you switch. Home (`#/`),
+    Scene & Splat (`#/scene/<s>`), New capture (`#/new`), Course workspace
+    (`#/course/<s>/<c>`, one document), SV-Net new cohort (`#/svnet`), cohort
+    (`#/svnet/<c>`), Monitor (`#/jobs`), Job (`#/jobs/<id>`), Configs (`#/configs/<f>/<n>`,
+    one document). Up to 14 stay open; the list is remembered.
+  - *Ribbon:* `src/shell/ribbonSpec.ts` holds every tab, group and command with the
+    catalogue's hover help (what it does, the script and flags, the shortcut). The active
+    document binds commands with `useCommands()`; the window binds the global ones. A
+    command with no binding is greyed and its tooltip says what to open. The ribbon switches
+    to the document's tab when you change document; Keyframe Tools and Model Tools appear
+    while a keyframe or a model is selected. Fields on the ribbon edit the document's run
+    (marker, images, training options, step range, preview checks, fly settings, cohort
+    data and training settings).
+  - *Panes:* Explorer (search; tree state remembered), Properties (filled by the active
+    document: the selected keyframe with its derivative matrix and the values at the chart
+    cursor, a model, a job's parameters and command, the machine profile), Output (live log
+    of the running or selected job next to the queue, Problems from the active document,
+    GPU chart), status bar. Splitters resize the panes; View hides them, sets density, and
+    has three layouts (Edit, Train, Monitor).
+  - *Submitting* a job no longer jumps to the job page: the job is selected in Output, whose
+    log follows it. Double-click a queue row to open it as a document.
+  - *Shortcuts:* F5 Run (the document's job: queue the capture, run the scene's step range,
+    fly the course, continue the cohort), Shift+F5 Cancel, Ctrl+S Save, Ctrl+Z Undo, F6
+    Preview, F7 Validate config, Ctrl+F1 minimize the ribbon, F1 Help; in the course editor
+    M / R / A tools, Ins insert, Del delete, Esc deselect.
+  - *Shown greyed, with the reason, because the backend has no endpoint yet:* Pause queue,
+    Move up, Upload video, Viewer (ns-viewer as a job), Export splat, Diff runs, Compare
+    cohorts, Diff upstream, Restore from overlay, Split right. They are Phase 5 material.
+  - *Tested* in the cloud copy: `npm run build` (tsc clean), 59 backend tests, and headless
+    Chromium against the cloud backend: every document rendered; selecting a keyframe shows
+    Keyframe Tools and the matrix in Properties; Self-test from the Jobs tab streams into
+    Output and Shift+F5 cancels it; F7 validates a config; Ctrl+F1, closing tabs and F1 work.
+    Not yet seen on the hosts' real data (dummy, intellisense08).
 **Phase 5 — hardening.** ufw rules for 8800 (LAN + `tailscale0`), a login, systemd units
 that run through `figs_env.sh` (`run_ui.sh` covers starting by hand until then), run diffs,
 archive/delete for old runs and cohorts, and treating `ns-viewer` as a queued GPU job.
@@ -486,7 +512,7 @@ Prompt to start the next session:
 > Continue the Galley web console for my FYP pipeline. Read
 > `D:\Projects\FYP\FYP-Radiance\docs\GALLEY_UI.md` first (§1 status, §6 next steps).
 > Phase 4's pipeline runs on intellisense08 but the student policy does not fly yet: I have
-> the Maverick video / the `p4_beta` (data_beta) result to look at. The UI redesign (Windows 7
-> ribbon) is finished in Figma (§6, "UI redesign"); next is building it in `ui/frontend`. Code is in `ui/`; the
+> the Maverick video / the `p4_beta` (data_beta) result to look at. The Windows 7 ribbon UI
+> is built (§6, "UI redesign"); I have notes from using it on the hosts. Code is in `ui/`; the
 > pipeline scripts are `figs/figs_pipeline.py` and `figs/svnet_pipeline.py`. Work on my laptop
 > copy and give me commands to run on intellisense08 (VS Code Remote-SSH, `./run_ui.sh`).

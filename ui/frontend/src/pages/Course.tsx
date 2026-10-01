@@ -1,11 +1,17 @@
-// Course editor (Phase 3): build a SousVide course over a captured scene, preview the
+// Course workspace (Phase 3): build a SousVide course over a captured scene, preview the
 // expert's minimum-snap trajectory, check clearance and the capture volume, save, fly.
+// The Course tab (File, Edit, Preview, Checks, Show, Fly) and Keyframe Tools drive it; the
+// selected keyframe's details and derivative matrix are in Properties, problems in Output.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { active, api, ApiError, courseApi, flightUrl, Geometry, Job, Preview } from "../api";
 import { TimeChart } from "../charts";
-import { Badge, usePoll } from "../components";
+import { usePoll } from "../components";
+import { Problem as PaneProblem, ToProblems, ToProperties, useCommands, useDoc } from "../shell/core";
+import { useAppData } from "../shell/data";
+import { Icon } from "../shell/icons";
+import { Pill, Prop, PropSection, Tile } from "../shell/Panes";
 import Scene3D, { Tool, ViewOpts } from "../course/Scene3D";
-import { DroneMeta, useDrone } from "../course/Drone";
+import { useDrone } from "../course/Drone";
 import {
   AXES, blankLoop, Cell, emptyAxes, Course, CourseFile, displayPos, fromFile, insertAfter, inside, MAX_ORDERS, ORDERS,
   pos0, problems, round, toFile, Vec3,
@@ -18,8 +24,8 @@ const go = (scene?: string, name?: string) => {
 };
 
 export default function CoursePage({ scene, name }: { scene?: string; name?: string }) {
-  const scenes = usePoll(api.scenes, 0);
-  const courses = usePoll(() => api.configs("courses"), 0);
+  const d = useAppData();
+  const courses = { data: d.courses, reload: () => d.reload("courses") };
   const pilots = usePoll(() => api.configs("pilots"), 0);
   const frames = usePoll(() => api.configs("frames"), 0);
 
@@ -161,13 +167,17 @@ export default function CoursePage({ scene, name }: { scene?: string; name?: str
     ...c, kfs: c.kfs.map((k) => { const s = pv.keyframes.find((x) => x.name === k.name); return s ? { ...k, t: round(s.t_solved, 3) } : k; }),
   }));
 
-  // keyboard: ctrl+z undo, Delete removes, Esc deselects, M/R/A tools
+  // keyboard (document-local): Delete removes, Esc deselects, Ins inserts, M/R/A tools.
+  // Ctrl+Z, Ctrl+S, F5 and F6 are global and reach this document through its bindings.
+  const docActive = useRef(false);
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
+      if (!docActive.current) return;
       const el = e.target as HTMLElement;
       if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT")) return;
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") { e.preventDefault(); undo(); }
-      else if ((e.key === "Delete" || e.key === "Backspace") && sel !== null) remove(sel);
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.key === "Delete" && sel !== null) remove(sel);
+      else if (e.key === "Insert" && sel !== null) insertSel();
       else if (e.key === "Escape") { setSel(null); setGoalSel(false); }
       else if (e.key === "m") setTool("move");
       else if (e.key === "r") setTool("yaw");
@@ -178,21 +188,27 @@ export default function CoursePage({ scene, name }: { scene?: string; name?: str
   });
 
   // ── save ───────────────────────────────────────────────────────────────────
-  const save = async (): Promise<boolean> => {
-    if (!file || probs.length) { setMsg({ ok: false, text: "Fix the problems listed under the table first." }); return false; }
-    const n = saveName.trim();
+  const save = async (as?: string): Promise<boolean> => {
+    if (!file || probs.length) { setMsg({ ok: false, text: "Fix the problems listed in Output ▸ Problems first." }); return false; }
+    const n = (as ?? saveName).trim();
     if (!/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/.test(n)) { setMsg({ ok: false, text: "Course name: letters, digits, _ and -." }); return false; }
     const exists = courses.data?.some((c) => c.name === n);
     if (exists && n !== name && !confirm(`Overwrite the existing course “${n}”?`)) return false;
     if (UPSTREAM.includes(n) && !confirm(`“${n}” is an upstream SousVide course: a re-clone restores the original. Save anyway?`)) return false;
     try {
       const r = await api.saveConfig("courses", n, file, true);
-      setSaved(fileJson); setIntCells([]);
+      setSaved(fileJson); setIntCells([]); setSaveName(n);
       setMsg({ ok: true, text: `Saved ${r.path}${r.mirrored ? ` (copied to the overlay)` : ""}.` });
       courses.reload();
       if (n !== name) go(scene, n);
       return true;
     } catch (e) { setMsg({ ok: false, text: e instanceof ApiError ? e.message : String(e) }); return false; }
+  };
+  const saveAs = () => { const n = prompt("Save the course as:", saveName || `${scene}_course`)?.trim(); if (n) save(n); };
+  const newLoop = () => {
+    if (dirty && !confirm("Discard unsaved changes?")) return;
+    const c = blankLoop(geo?.waypoint_box ?? null, geo?.camera_box ?? null); hist.current = []; setCourse(c); setSaved(""); setSaveName(`${scene}_loop`);
+    setIntCells([]); setSel(null); if (name) go(scene);
   };
 
   // ── fly the expert through the existing pipeline job ───────────────────────
@@ -200,11 +216,7 @@ export default function CoursePage({ scene, name }: { scene?: string; name?: str
   const [job, setJob] = useState<Job | null>(null);
   const [flyErr, setFlyErr] = useState<string | null>(null);
   const sceneSt = usePoll(() => (scene ? api.scene(scene) : Promise.resolve(null)), job && active(job.status) ? 5000 : 0, [scene, job?.status]);
-  useEffect(() => {
-    if (!job || !active(job.status)) return;
-    const t = setInterval(() => api.job(job.id).then(setJob).catch(() => {}), 3000);
-    return () => clearInterval(t);
-  }, [job?.id, job?.status]);
+  useEffect(() => { const j = job && d.jobs.find((x) => x.id === job.id); if (j && j.status !== job!.status) setJob(j); }, [d.jobs, job]);
   const fly = async () => {
     setFlyErr(null);
     if (!scene) return;
@@ -215,334 +227,340 @@ export default function CoursePage({ scene, name }: { scene?: string; name?: str
         scene, course: n, pilot, frame, method, from_step: "course", stop_after: "record",
         redo: ["course", "simulate", "validate"], ...(allowOutside ? { allow_outside: true } : {}),
       });
-      setJob(await api.job(id));
+      setJob(await api.job(id)); d.reload("jobs");
     } catch (e) { setFlyErr(e instanceof ApiError ? e.message : String(e)); }
   };
 
   const experts = (pilots.data ?? []).filter((p) => p.kind === "expert").map((p) => p.name);
-  const loadable = (scenes.data ?? []).filter((s) => s.has_workspace);
   const box = geo?.camera_box ?? null;
   const selKf = sel !== null && course ? course.kfs[sel] : null;
   const res = sceneSt.data?.results;
+  const solvedKf = (k: { name: string } | null) => (k && pv && !stale ? pv.keyframes.find((x) => x.name === k.name) ?? null : null);
+  const insertSel = () => { if (sel === null || !course) return; edit((c) => insertAfter(c, sel)); setSel(Math.min(sel, course.kfs.length - 2) + 1); };
+  const placeGoal = () => {
+    if (!course) return;
+    if (course.goal) { setGoalSel(true); setSel(null); return; }
+    const b = geo?.waypoint_box;
+    const p: Vec3 = sel !== null ? displayPos(course, sel) : b ? [0, 1, 2].map((a) => round((b.lo[a] + b.hi[a]) / 2)) as Vec3 : [0, 0, -1];
+    edit((c) => ({ ...c, goal: { label: "", position: p } })); setGoalSel(true); setSel(null);
+  };
+  const editSel = (fn: (fo: Cell[][]) => Cell[][]) => sel !== null && edit((c) => ({ ...c, kfs: c.kfs.map((k, j) => (j === sel ? { ...k, fo: fn(k.fo.map((r) => [...r])) } : k)) }));
+  const [showMatrix, setShowMatrix] = useState(true);
+  const [cursorAt, setCursorAt] = useState<number | null>(null);
+  const ci = pv && !stale && cursor !== null ? nearest(pv.t, cursor) : null;
+  useEffect(() => setCursorAt(ci), [ci]);
+
+  // ── ribbon ─────────────────────────────────────────────────────────────────
+  const loadable = d.scenes.filter((s) => s.has_workspace);
+  const noCourse = !course && "Load a course (Course box) or start a New loop.";
+  const noPv = !course ? noCourse : probs.length ? "Fix the course problems first." : false;
+  const yes = (v: string) => v === "true";
+  useCommands({
+    "course.scene": { value: scene ?? "", options: loadable.map((s) => [s.scene, s.loadable ? s.scene : `${s.scene} (no single model)`] as [string, string]), set: (v) => go(v || undefined, name) },
+    "course.name": { value: name ?? "", options: (courses.data ?? []).map((c) => c.name), set: (v) => { if (dirty && !confirm("Discard unsaved changes?")) return; go(scene, v || undefined); }, disabled: !scene && "Pick a scene first." },
+    "course.newloop": { run: newLoop, disabled: !geo && (scene ? "Loading the scene…" : "Pick a scene first.") },
+    "file.save": { run: () => save(), disabled: noCourse || (!dirty && saveName === name && "Saved.") },
+    "course.saveas": { run: saveAs, disabled: noCourse },
+    "edit.undo": { run: undo, disabled: !hist.current.length && "Nothing to undo." },
+    "course.lint": name ? { run: () => courseApi.lint(name).then((l) => { setIntCells(l.int_cells); setMsg({ ok: !l.int_cells.length, text: l.int_cells.length ? `${l.int_cells.length} integer cell(s): ${l.int_cells.slice(0, 6).join(", ")}. Saving writes floats.` : "No integer cells." }); }) } : { disabled: "Save the course first." },
+    "tool.move": { checked: tool === "move", run: () => setTool("move"), disabled: noCourse },
+    "tool.yaw": { checked: tool === "yaw", run: () => setTool("yaw"), disabled: noCourse },
+    "tool.add": { checked: tool === "add", run: () => setTool("add"), disabled: noCourse },
+    "tool.goal": { checked: goalSel, run: placeGoal, disabled: noCourse },
+    "prev.run": { run: () => runPreview("fixed"), disabled: noPv || (pvBusy ? "Solving…" : false) },
+    "prev.retime": { run: () => runPreview("expert"), disabled: noPv || (pvBusy ? "Solving…" : false), label: pvBusy === "expert" ? "Re-timing…" : undefined },
+    "prev.live": { checked: auto, set: (v) => setAuto(yes(v)) },
+    "prev.play": { checked: playing, run: () => setPlaying(!playing), disabled: (!pv || stale) && "Preview first.", label: playing ? "Pause" : undefined },
+    "prev.speed": { value: String(speed), options: [["0.25", "0.25×"], ["0.5", "0.5×"], ["1", "1×"], ["2", "2×"]], set: (v) => setSpeed(Number(v)) },
+    "chk.gap": { value: clearance, set: (v) => setClearance(Math.max(0, Number(v) || 0)) },
+    "chk.k": { value: clearanceK, set: (v) => setClearanceK(Math.min(50, Math.max(1, Math.round(Number(v) || 1)))) },
+    "chk.body": drone ? { checked: useBody, set: (v) => setUseBody(yes(v)) } : { disabled: "No drone model (public/models/drone.json)." },
+    "view.points": { checked: opts.points, run: () => setOpts({ ...opts, points: !opts.points }) },
+    "view.alt": { checked: opts.colorBy === "altitude", run: () => setOpts({ ...opts, colorBy: opts.colorBy === "rgb" ? "altitude" : "rgb" }) },
+    "view.cam": { checked: opts.cameraPath, run: () => setOpts({ ...opts, cameraPath: !opts.cameraPath }) },
+    "view.boxes": { checked: opts.boxes, run: () => setOpts({ ...opts, boxes: !opts.boxes }) },
+    "view.drone": drone ? { checked: opts.drone, run: () => setOpts({ ...opts, drone: !opts.drone }) } : { disabled: "No drone model (public/models/drone.json)." },
+    "view.psize": { value: opts.pointSize, set: (v) => setOpts({ ...opts, pointSize: Math.min(0.2, Math.max(0.002, Number(v) || 0.025)) }) },
+    "fly.expert": { value: pilot, options: experts.length ? experts : ["Viper"], set: setPilot },
+    "fly.frame": { value: frame, options: frames.data?.map((f) => f.name) ?? ["carl"], set: setFrame },
+    "fly.method": { value: method, set: (v) => setMethod(v || "eval_single") },
+    "fly.outside": { checked: allowOutside, set: (v) => setAllowOutside(yes(v)) },
+    "fly.go": { run: fly, disabled: !scene ? "Pick a scene." : noPv || (!!job && active(job.status) && `Job #${job.id} is ${job.status}.`), label: dirty || saveName !== name ? "Save + fly" : undefined },
+    "run": { run: fly, disabled: !scene ? "Pick a scene." : noPv || (!!job && active(job.status) && `Job #${job.id} is ${job.status}.`) },
+    "ctx.keyframe": { checked: sel !== null && !!course },
+    "kf.insert": { run: insertSel },
+    "kf.delete": { run: () => sel !== null && remove(sel), disabled: (course?.kfs.length ?? 0) <= 2 && "A course keeps at least 2 keyframes." },
+    "kf.up": { run: () => { if (sel) { shift(sel, -1); setSel(sel - 1); } }, disabled: sel === 0 && "Already first." },
+    "kf.down": { run: () => { if (sel !== null && course && sel < course.kfs.length - 1) { shift(sel, 1); setSel(sel + 1); } }, disabled: !!course && sel === course.kfs.length - 1 && "Already last." },
+    "kf.matrix": { checked: showMatrix, run: () => setShowMatrix(!showMatrix) },
+    "kf.stop": { run: () => editSel((fo) => fo.map((r) => { while (r.length < 2) r.push(null); r[1] = 0; return r; })) },
+    "kf.free": { run: () => editSel((fo) => fo.map((r) => r.map((v, c) => (c === 0 ? v : null)))) },
+    "kf.fix": { run: () => sel !== null && course && editSel((fo) => { const p = displayPos(course, sel, solvedKf(selKf)?.pos as Vec3 | undefined); return fo.map((r, ax) => (ax < 3 && r[0] === null ? [round(p[ax]), ...r.slice(1)] : r)); }),
+      disabled: !!selKf && [0, 1, 2].every((a) => selKf.fo[a][0] !== null) && "x, y and z are fixed already." },
+    "kf.t": { value: selKf?.t ?? "", set: (v) => sel !== null && Number.isFinite(Number(v)) && v !== "" && setKf(sel, { t: Number(v) }) },
+    "kf.solved": { run: applySolvedTimes, disabled: !(pv && pv.mode === "expert") && "Re-time first (Preview ▸ Re-time)." },
+  });
+
+  // ── problems ───────────────────────────────────────────────────────────────
+  const paneProbs: PaneProblem[] = [
+    ...(msg && !msg.ok ? [{ severity: "error" as const, where: "course", message: msg.text }] : []),
+    ...(geoErr ? [{ severity: "error" as const, where: `scene ${scene}`, message: geoErr }] : []),
+    ...(geo?.warning ? [{ severity: "warning" as const, where: `scene ${scene}`, message: geo.warning }] : []),
+    ...probs.map((p) => ({ severity: "error" as const, where: p.kf !== undefined && course ? `keyframe ${course.kfs[p.kf]?.name}` : "course", message: p.msg })),
+    ...(intCells.length ? [{ severity: "warning" as const, where: `${name}.json`, message: `${intCells.length} integer cell(s) (${intCells.slice(0, 4).join(", ")}${intCells.length > 4 ? ", …" : ""}): FiGS reads an integer as the previous cell's value. Saving from this editor writes floats.` }] : []),
+    ...(course && box ? course.kfs.filter((k) => !inside(pos0(k), box)).map((k) => ({ severity: "warning" as const, where: `keyframe ${k.name}`, message: "Outside the captured volume: the splat renders mush there." })) : []),
+    ...(pv && !stale && pv.clearance && pv.clearance.min < pv.clearance.threshold ? [{ severity: "warning" as const, where: `t = ${pv.clearance.at_t} s`, message: `${(pv.clearance.body_radius ?? 0) > 0 ? "Gap" : "Clearance"} ${pv.clearance.min} m, under ${pv.clearance.threshold} m (${pv.clearance.below.map(([a, b]) => `${a}–${b} s`).join(", ")}).` }] : []),
+    ...(pv && !stale ? Object.entries(pv.inputs.violations).map(([k, iv]) => ({ severity: "warning" as const, where: `input ${k}`, message: `Beyond ${pv.pilot}'s bounds at ${iv.map(([a, b]) => `${a}–${b} s`).join(", ")}: the MPC will saturate. Move the keyframes around it apart, or use an expert copy with a smaller kT.` })) : []),
+    ...(pv && !stale && pv.inside && pv.inside.outside_frac > 0 ? [{ severity: "warning" as const, where: "path", message: `${Math.round(pv.inside.outside_frac * 100)}% of the path is outside the captured volume.` }] : []),
+    ...(pv && !stale && pv.stats.nonfinite_inputs > 0 ? [{ severity: "error" as const, where: "path", message: `${pv.stats.nonfinite_inputs} samples have undefined inputs (free fall or a singular yaw).` }] : []),
+    ...(pvErr ? [{ severity: "error" as const, where: "preview", message: pvErr }] : []),
+    ...(flyErr ? [{ severity: "error" as const, where: "fly", message: flyErr }] : []),
+  ];
 
   // ── render ─────────────────────────────────────────────────────────────────
+  const solvedSel = solvedKf(selKf);
+  const moved = pv ? pv.keyframes.filter((k) => Math.abs(k.t_solved - k.t_file) > 0.005).length : 0;
   return (
-    <>
-      <div className="row">
-        <h1 style={{ margin: 0 }}>Course editor</h1>
-        <span className="muted small">course frame (x, −y, −z): z points down, altitude is −z</span>
-        <span className="spacer" />
-        {scene && <a href={`#/scene/${scene}`}>Scene {scene} →</a>}
-      </div>
-
-      <div className="panel row" style={{ marginTop: 12 }}>
-        <label className="f">Scene
-          <select value={scene ?? ""} onChange={(e) => go(e.target.value || undefined, name)}>
-            <option value="">choose…</option>
-            {loadable.map((s) => <option key={s.scene} value={s.scene}>{s.scene}{s.loadable ? "" : " (no single model)"}</option>)}
-          </select>
-        </label>
-        <label className="f">Course
-          <select value={name ?? ""} onChange={(e) => {
-            if (dirty && !confirm("Discard unsaved changes?")) return;
-            go(scene, e.target.value || undefined);
-          }}>
-            <option value="">choose…</option>
-            {courses.data?.map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}
-          </select>
-        </label>
-        <button disabled={!geo} title="Four-corner loop inside the recommended waypoint box"
-          onClick={() => { if (dirty && !confirm("Discard unsaved changes?")) return;
-            const c = blankLoop(geo?.waypoint_box ?? null, geo?.camera_box ?? null); hist.current = []; setCourse(c); setSaved(""); setSaveName(`${scene}_loop`);
-            setIntCells([]); if (name) go(scene); }}>New loop</button>
-        <span className="spacer" />
-        {course && (
-          <>
-            <label className="f">Save as<input value={saveName} onChange={(e) => setSaveName(e.target.value.trim())} style={{ width: 170 }} /></label>
-            <button onClick={undo} disabled={!hist.current.length} title="Ctrl+Z">Undo</button>
-            <button className="primary" disabled={!dirty && saveName === name} onClick={save}>Save</button>
-            {dirty && <span className="warn small">unsaved</span>}
-          </>
-        )}
-      </div>
-      {msg && <p className={msg.ok ? "ok" : "err"}>{msg.text}</p>}
-      {geoErr && <p className="err">{geoErr}</p>}
-      {geo?.warning && <p className="note small">{geo.warning}</p>}
-      {intCells.length > 0 && (
-        <p className="note small">This file has {intCells.length} integer cell(s) ({intCells.slice(0, 4).join(", ")}{intCells.length > 4 ? ", …" : ""}).
-          FiGS reads an integer as the previous cell's value, so it would not fly as written, and the <span className="mono">course</span> step now refuses it.
-          Saving from this editor writes floats and fixes it.</p>
-      )}
-      {!scene && <p className="muted">Pick a scene: the editor needs its SfM output (point cloud and camera path).</p>}
-
-      {scene && (
-        <div className="course-grid">
-          <div>
-            <div className="viewport">
-              {course || geo ? (
-                <Scene3D geo={geo} course={course ?? { Nco: 6, kfs: [], forces: null, goal: null, extra: {}, wpExtra: {} }}
-                  sel={sel} onSelect={setSel} preview={stale ? null : pv} cursor={cursor} tool={tool} opts={opts} drone={drone}
-                  goalSelected={goalSel} onGoalSelect={setGoalSel}
-                  onDragStart={() => course && hist.current.push(course)}
-                  onMove={moveTo}
-                  onYaw={(i, y) => setCell(i, 3, 0, round(y), false)}
-                  onAdd={(v) => { if (!course) return; const i = sel ?? course.kfs.length - 2;
-                    edit((c) => insertAfter(c, i, v)); setSel(Math.min(i, course.kfs.length - 2) + 1); setTool("move"); }}
-                  onGoalMove={(v) => edit((c) => ({ ...c, goal: c.goal && { ...c.goal, position: v.map((x) => round(x)) as Vec3 } }), false)} />
-              ) : <p className="muted" style={{ padding: 16 }}>Loading scene…</p>}
-              <div className="overlay">
-                <div className="seg">
-                  {([["move", "Move", "M"], ["yaw", "Yaw", "R"], ["add", "Add", "A"]] as const).map(([k, l, key]) => (
-                    <button key={k} className={tool === k ? "on" : ""} title={`${l} (${key})`} onClick={() => setTool(k)}>{l}</button>
-                  ))}
+    <DocActive refObj={docActive}>
+      {msg && <div className={msg.ok ? "ok" : "err"} style={{ padding: "2px 8px", marginBottom: 4, background: msg.ok ? "var(--ok-bg)" : "var(--bad-bg)", border: "1px solid var(--line)", flex: "none" }}>
+        {msg.text} <button className="lnk" onClick={() => setMsg(null)}>dismiss</button></div>}
+      {!scene ? (
+        <Tile title="Course workspace" icon="route"><p>Pick a scene in the ribbon (Course ▸ File ▸ Scene): the editor draws the course over its SfM point cloud and camera path.</p>
+          <div className="row">{loadable.map((s) => <button key={s.scene} onClick={() => go(s.scene)}>{s.scene}</button>)}</div></Tile>
+      ) : (
+        <>
+          <div className="cw-top">
+            <div className="cw-view">
+              <div className="viewport">
+                {course || geo ? (
+                  <Scene3D geo={geo} course={course ?? { Nco: 6, kfs: [], forces: null, goal: null, extra: {}, wpExtra: {} }}
+                    sel={sel} onSelect={(i) => { setSel(i); if (i !== null) setGoalSel(false); }} preview={stale ? null : pv} cursor={cursor} tool={tool} opts={opts} drone={drone}
+                    goalSelected={goalSel} onGoalSelect={setGoalSel}
+                    onDragStart={() => course && hist.current.push(course)}
+                    onMove={moveTo}
+                    onYaw={(i, y) => setCell(i, 3, 0, round(y), false)}
+                    onAdd={(v) => { if (!course) return; const i = sel ?? course.kfs.length - 2;
+                      edit((c) => insertAfter(c, i, v)); setSel(Math.min(i, course.kfs.length - 2) + 1); setTool("move"); }}
+                    onGoalMove={(v) => edit((c) => ({ ...c, goal: c.goal && { ...c.goal, position: v.map((x) => round(x)) as Vec3 } }), false)} />
+                ) : <p className="muted" style={{ padding: 16 }}>{geoErr ?? "Loading scene…"}</p>}
+                <div className="vtag">{scene}{name ? ` / ${name}` : course ? ` / ${saveName} (unsaved)` : ""}{dirty ? " ●" : ""} · course frame (x, −y, −z): z down</div>
+                <div className="overlay">
+                  <div className="seg">
+                    {([["move", "move", "Move (M)"], ["yaw", "yaw", "Yaw (R)"], ["add", "addpt", "Add (A)"]] as const).map(([k, ic, t]) => (
+                      <button key={k} className={`seg-b ${tool === k ? "on" : ""}`} title={t} onClick={() => setTool(k)}><Icon name={ic} size={18} /></button>))}
+                  </div>
                 </div>
-                <div className="seg">
-                  <button className={opts.points ? "on" : ""} onClick={() => setOpts({ ...opts, points: !opts.points })}>Points</button>
-                  <button className={opts.colorBy === "altitude" ? "on" : ""} title="Colour points by altitude"
-                    onClick={() => setOpts({ ...opts, colorBy: opts.colorBy === "rgb" ? "altitude" : "rgb" })}>Altitude</button>
-                  <button className={opts.cameraPath ? "on" : ""} onClick={() => setOpts({ ...opts, cameraPath: !opts.cameraPath })}>Camera path</button>
-                  <button className={opts.boxes ? "on" : ""} onClick={() => setOpts({ ...opts, boxes: !opts.boxes })}>Boxes</button>
-                  {drone && <button className={opts.drone ? "on" : ""} title="Your airframe at true scale: on the preview cursor, else on the selected keyframe"
-                    onClick={() => setOpts({ ...opts, drone: !opts.drone })}>Drone</button>}
+                <div className="legend">
+                  {tool === "add" && <div><b>Add:</b> click the tinted plane to insert a keyframe after the selected one, at its altitude.</div>}
+                  <div><span className="swatch" style={{ background: "#8a8f98" }} />camera box (where the camera went, not free space)
+                    {" · "}<span className="swatch" style={{ background: "#2f9e6e" }} />waypoint box (inset {geo?.waypoint_box.margin ?? 0.5} m)
+                    {emptyAxes(geo?.waypoint_box ?? null).length > 0 && <span className="warn"> · empty in {emptyAxes(geo!.waypoint_box).join(", ")}</span>}</div>
+                  <div><span className="swatch" style={{ background: "linear-gradient(90deg,#3b82f6,#f59e0b)" }} />path, slow → fast
+                    {pv && !stale ? ` (0–${pv.stats.v_max} m/s)` : ""} · <span className="swatch" style={{ background: "#e5484d" }} />too close / outside
+                    {geo && ` · ${geo.n_points_sent.toLocaleString()} of ${geo.n_points.toLocaleString()} points`}</div>
                 </div>
-                <input type="range" min={0.005} max={0.08} step={0.005} value={opts.pointSize} title="Point size"
-                  onChange={(e) => setOpts({ ...opts, pointSize: Number(e.target.value) })} style={{ width: 90 }} />
-              </div>
-              <div className="legend">
-                {tool === "add" && <div><b>Add:</b> click the tinted plane to insert a keyframe after the selected one, at its altitude.</div>}
-                <div><span className="swatch" style={{ background: "#8a8f98" }} />camera box (where the camera went, not free space)</div>
-                <div><span className="swatch" style={{ background: "#2f9e6e" }} />waypoint box (inset {geo?.waypoint_box.margin ?? 0.5} m)
-                  {emptyAxes(geo?.waypoint_box ?? null).length > 0 && <span className="warn"> · empty in {emptyAxes(geo!.waypoint_box).join(", ")}: the camera spanned less than twice the margin</span>}</div>
-                <div><span className="swatch" style={{ background: "linear-gradient(90deg,#3b82f6,#f59e0b)" }} />path, slow → fast
-                  {pv && !stale ? ` (0–${pv.stats.v_max} m/s)` : ""} · <span className="swatch" style={{ background: "#e5484d" }} />too close / outside</div>
-                {geo && <div>{geo.n_points_sent.toLocaleString()} of {geo.n_points.toLocaleString()} sparse points</div>}
-                {drone && opts.drone && <div>drone {cm(drone.meta.size[0])} long × {cm(drone.meta.size[1])} wide × {cm(drone.meta.size[2])} cm
-                  {drone.meta.guards ? " with prop guards" : ""}: {pv && !stale && cursor !== null ? "attitude from the preview at the cursor" : "level, on the selected keyframe"}</div>}
               </div>
             </div>
-            {course && <PreviewPanel pv={pv} stale={stale} busy={pvBusy} err={pvErr} cursor={cursor} setCursor={setCursor}
-              auto={auto} setAuto={setAuto} run={runPreview} applyTimes={applySolvedTimes} canRun={!probs.length}
-              clearance={clearance} setClearance={setClearance} clearanceK={clearanceK} setClearanceK={setClearanceK}
-              drone={drone?.meta ?? null} useBody={useBody} setUseBody={setUseBody}
-              playing={playing} setPlaying={setPlaying} speed={speed} setSpeed={setSpeed} />}
+            <div className="cw-side">
+              <Tile title={course ? `Keyframes · ${name ?? saveName}` : "Keyframes"} icon="matrix" className="fill flush" meta={course ? `${course.kfs.length} keyframes · Nco ${course.Nco} · ${dirty ? "unsaved" : "saved"}` : undefined}>
+                {course ? (
+                  <>
+                    <table className="kf">
+                      <thead><tr><th style={{ width: 70 }}>name</th><th>t file</th>{pv?.mode === "expert" && !stale && <th>t solved</th>}<th>x</th><th>y</th><th>z</th><th>yaw</th></tr></thead>
+                      <tbody>
+                        {course.kfs.map((k, i) => {
+                          const out = box ? !inside(pos0(k), box) : false;
+                          const sk = solvedKf(k);
+                          return (
+                            <tr key={i} className={`${sel === i ? "sel" : ""} ${out ? "outside" : ""}`} onClick={() => { setSel(i); setGoalSel(false); }}
+                              title={out ? "outside the captured volume" : undefined}>
+                              <td><TextIn value={k.name} onCommit={(v) => setKf(i, { name: v })} /></td>
+                              <td><NumIn value={k.t} onCommit={(v) => v !== null && setKf(i, { t: v })} /></td>
+                              {pv?.mode === "expert" && !stale && <td className={`num ${sk && Math.abs(sk.t_solved - k.t) > 0.005 ? "warn" : "muted"}`}>{sk?.t_solved.toFixed(3) ?? "—"}</td>}
+                              {[0, 1, 2, 3].map((r) => (
+                                <td key={r}><NumIn value={k.fo[r][0] ?? null} nullable placeholder={r < 3 && sk
+                                  ? `≈${displayPos(course, i, sk.pos)[r].toFixed(2)}` : "free"}
+                                  onCommit={(v) => setCell(i, r, 0, v)} /></td>
+                              ))}
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                    <p className="muted small" style={{ padding: "4px 6px" }}>Empty = free (the solver chooses; ≈ shows its value after a preview). The first and last keyframes fix x, y, z and yaw.
+                      Select a row for Keyframe Tools; its derivative matrix is in Properties.{moved > 0 && pv?.mode === "expert" && !stale && <> The expert re-timed {moved} keyframe(s): <button className="lnk" onClick={applySolvedTimes}>write solved times</button>.</>}</p>
+                  </>
+                ) : <p className="empty pad">Load a course (Course ▸ File ▸ Course) or start a <button className="lnk" onClick={newLoop} disabled={!geo}>new loop</button>.</p>}
+              </Tile>
+              {course && (job || course.goal) && (
+                <div className="tiles cols-2" style={{ flex: "none" }}>
+                  <Tile title="Semantic goal" icon="goal" meta="thesis hook">
+                    {course.goal ? (
+                      <>
+                        <label className="f">Label<input value={course.goal.label} placeholder="e.g. the red chair"
+                          onChange={(e) => edit((c) => ({ ...c, goal: c.goal && { ...c.goal, label: e.target.value } }))} /></label>
+                        <div className="row small" style={{ marginTop: 3 }}><span className="mono">{course.goal.position.map((v) => v.toFixed(2)).join(", ")}</span><span className="spacer" />
+                          <button className="lnk" onClick={() => { setGoalSel(true); setSel(null); }}>select</button>
+                          <button className="lnk" onClick={() => { edit((c) => ({ ...c, goal: null })); setGoalSel(false); }}>remove</button></div>
+                      </>) : <p className="empty">None: Edit ▸ Goal places one.</p>}
+                  </Tile>
+                  <Tile title="Last flight" icon="fly" meta={job ? <Pill s={job.status} label={`#${job.id}`} /> : undefined}>
+                    {job ? (
+                      <>
+                        {!active(job.status) && res?.sim && res?.course?.name === name ? (
+                          <table className="kv"><tbody>
+                            <tr><td>Tracking</td><td className={res.sim.track_err_max_m > 0.5 ? "bad" : ""}>{res.sim.track_err_mean_m} / {res.sim.track_err_max_m} m</td></tr>
+                            <tr><td>Render</td><td className={res.sim.dark_frames > 0 || res.sim.pixel_std < 5 ? "bad" : ""}>std {res.sim.pixel_std} · dark {res.sim.dark_frames}</td></tr>
+                          </tbody></table>) : <p className="small">{job.label}</p>}
+                        <div className="row small"><a href={`#/jobs/${job.id}`}>log</a>{!active(job.status) && <a href={flightUrl(scene)} target="_blank" rel="noreferrer">video</a>}<a href={`#/scene/${scene}`}>scene</a></div>
+                      </>) : <p className="empty">Not flown in this session.</p>}
+                  </Tile>
+                </div>
+              )}
+            </div>
           </div>
-
-          <div>
-            {course ? (
-              <div className="panel">
-                <div className="row"><h2 style={{ margin: 0 }}>Keyframes</h2><span className="spacer" />
-                  <button disabled={sel === null} onClick={() => { if (sel === null) return; edit((c) => insertAfter(c, sel)); setSel(Math.min(sel, course.kfs.length - 2) + 1); }}>Insert after</button>
-                </div>
-                <p className="muted small">Position cells; empty = free (the solver chooses). Click a row or a sphere to select; drag the gizmo to move.
-                  The first and last keyframes must fix x, y, z and yaw.</p>
-                <table className="kf">
-                  <thead><tr><th>name</th><th>t (s)</th><th>x</th><th>y</th><th>z</th><th>yaw</th><th /></tr></thead>
-                  <tbody>
-                    {course.kfs.map((k, i) => {
-                      const out = box ? !inside(pos0(k), box) : false;
-                      return (
-                        <tr key={i} className={`${sel === i ? "sel" : ""} ${out ? "outside" : ""}`} onClick={() => { setSel(i); setGoalSel(false); }}
-                          title={out ? "outside the captured volume" : undefined}>
-                          <td><TextIn value={k.name} onCommit={(v) => setKf(i, { name: v })} className="num" /></td>
-                          <td><NumIn value={k.t} onCommit={(v) => v !== null && setKf(i, { t: v })} /></td>
-                          {[0, 1, 2, 3].map((r) => (
-                            <td key={r}><NumIn value={k.fo[r][0] ?? null} nullable placeholder={r < 3 && pvFor === fileJson && pv
-                              ? `≈${displayPos(course, i, pv.keyframes.find((x) => x.name === k.name)?.pos)[r].toFixed(2)}` : "free"}
-                              onCommit={(v) => setCell(i, r, 0, v)} /></td>
-                          ))}
-                          <td style={{ whiteSpace: "nowrap" }}>
-                            <button className="small" style={{ padding: "2px 6px" }} disabled={i === 0} onClick={(e) => { e.stopPropagation(); shift(i, -1); }} title="Move up">↑</button>
-                            <button className="small" style={{ padding: "2px 6px" }} disabled={course.kfs.length <= 2} onClick={(e) => { e.stopPropagation(); remove(i); }} title="Delete (Del)">✕</button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-                {probs.length > 0 && <ul className="err small">{probs.map((p, i) => <li key={i}>{p.msg}</li>)}</ul>}
-                {selKf && sel !== null && (
-                  <>
-                    <h3>{selKf.name}: derivative constraints</h3>
-                    <div className="matrix">
-                      <span />{ORDERS.map((o) => <span key={o} className="muted">{o}</span>)}
-                      {AXES.map((ax, r) => (
-                        <FragmentRow key={ax} label={ax} row={selKf.fo[r]} onCommit={(c, v) => setCell(sel, r, c, v)} />
-                      ))}
-                    </div>
-                    <p className="muted small">Units: m, m/s, m/s², … and rad for yaw. Empty = free. Endpoints normally pin velocity to 0;
-                      FiGS pads missing columns as free. Yaw is unwrapped: keep consecutive values within π of each other.</p>
-                  </>
-                )}
-                <div className="row small" style={{ marginTop: 8 }}>
-                  <label className="f">Nco<input type="number" min={1} max={12} value={course.Nco} style={{ width: 70 }}
-                    onChange={(e) => edit((c) => ({ ...c, Nco: Math.max(1, Math.min(12, Number(e.target.value) || 6)) }))} /></label>
-                  <span className="muted">forces: {course.forces ? "custom (edit in Configs)" : "none"}</span>
-                </div>
+          {course && (
+            <div className="cw-bottom">
+              <div className="row" style={{ flexWrap: "nowrap", gap: 6 }}>
+                <b style={{ color: "var(--navy)", whiteSpace: "nowrap" }}>Preview</b>
+                <span className="muted small" style={{ whiteSpace: "nowrap" }}>{pvBusy === "expert" ? "re-timing like the expert (1–2 min)…" : pvBusy ? "solving…" : pv ? `${pv.mode === "expert" ? `re-timed like ${pv.pilot} (kT ${pv.kT})` : "minimum snap at the file's times"} · ${pv.hz} Hz · ${pv.solve_s} s${stale ? " · edited since" : ""}` : "none yet (F6)"}</span>
+                {pv && <Kpis pv={pv} />}
               </div>
-            ) : scene && <div className="panel muted">Load a course or start a new loop.</div>}
-
-            {course && (
-              <div className="panel">
-                <h2>Semantic goal <span className="muted small">(thesis hook)</span></h2>
-                {course.goal ? (
-                  <>
-                    <div className="fields">
-                      <label className="f">Label<input value={course.goal.label} placeholder="e.g. the red chair"
-                        onChange={(e) => edit((c) => ({ ...c, goal: c.goal && { ...c.goal, label: e.target.value } }))} /></label>
-                      {[0, 1, 2].map((a) => (
-                        <label key={a} className="f">{"xyz"[a]}<NumIn value={course.goal!.position[a]} onCommit={(v) => v !== null &&
-                          edit((c) => ({ ...c, goal: c.goal && { ...c.goal, position: c.goal.position.map((x, j) => (j === a ? v : x)) as Vec3 } }))} /></label>
-                      ))}
-                    </div>
-                    <div className="row" style={{ marginTop: 8 }}>
-                      <button onClick={() => setGoalSel(true)}>Select to drag</button>
-                      <button onClick={() => { edit((c) => ({ ...c, goal: null })); setGoalSel(false); }}>Remove</button>
-                    </div>
-                  </>
-                ) : (
-                  <button onClick={() => {
-                    const b = geo?.waypoint_box;
-                    const p: Vec3 = sel !== null ? displayPos(course, sel) : b ? [0, 1, 2].map((a) => round((b.lo[a] + b.hi[a]) / 2)) as Vec3 : [0, 0, -1];
-                    edit((c) => ({ ...c, goal: { label: "", position: p } })); setGoalSel(true);
-                  }}>Place goal marker</button>
-                )}
-                <p className="muted small">Saved as <span className="mono">semantic_goal</span> in the course file. FiGS and SousVide read only
-                  <span className="mono"> waypoints</span> and <span className="mono">forces</span>, so it does not change the flight; it marks where the
-                  natural-language goal extension plugs in.</p>
-              </div>
-            )}
-
-            {course && (
-              <div className="panel">
-                <h2>Fly the expert</h2>
-                <p className="muted small">Saves, then runs <span className="mono">figs_pipeline.py --from course --stop-after record</span>: the volume check,
-                  the MPC flight through the splat, video checks and a run record. One GPU job at a time.</p>
-                <div className="fields">
-                  <label className="f">Expert<select value={pilot} onChange={(e) => setPilot(e.target.value)}>
-                    {(experts.length ? experts : ["Viper"]).map((x) => <option key={x}>{x}</option>)}</select></label>
-                  <label className="f">Frame<select value={frame} onChange={(e) => setFrame(e.target.value)}>
-                    {(frames.data?.map((f) => f.name) ?? ["carl"]).map((x) => <option key={x}>{x}</option>)}</select></label>
-                  <label className="f">Method<input value={method} onChange={(e) => setMethod(e.target.value)} /></label>
-                </div>
-                <label className="check small" style={{ marginTop: 8 }}>
-                  <input type="checkbox" checked={allowOutside} onChange={(e) => setAllowOutside(e.target.checked)} />
-                  Fly even if keyframes leave the captured volume
-                </label>
-                {flyErr && <p className="err">{flyErr}</p>}
-                <div className="row" style={{ marginTop: 8 }}>
-                  <button className="primary" disabled={!!probs.length || (!!job && active(job.status))} onClick={fly}>
-                    {dirty || saveName !== name ? "Save and fly" : "Fly"}</button>
-                  {job && <><Badge s={job.status} /><a href={`#/jobs/${job.id}`}>job #{job.id} log</a></>}
-                </div>
-                {job && !active(job.status) && res?.sim && res?.course?.name === name && (
-                  <>
-                    <table style={{ marginTop: 10 }}><tbody>
-                      <tr><td>Tracking error</td><td className={res.sim.track_err_max_m > 0.5 ? "bad" : ""}>mean {res.sim.track_err_mean_m} m · max {res.sim.track_err_max_m} m</td></tr>
-                      <tr><td>Render check</td><td className={res.sim.dark_frames > 0 || res.sim.pixel_std < 5 ? "bad" : ""}>pixel std {res.sim.pixel_std} · dark frames {res.sim.dark_frames} / {res.sim.frames}</td></tr>
-                      <tr><td>Sim VRAM</td><td>{res.sim.peak_vram_mib} MiB · {res.sim.wallclock}</td></tr>
-                    </tbody></table>
-                    <video key={job.id} controls src={flightUrl(scene!)} style={{ marginTop: 8 }} />
-                  </>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
+              {pv && <Charts pv={pv} cursor={cursor} setCursor={setCursor} />}
+            </div>
+          )}
+        </>
       )}
-    </>
+
+      <ToProperties>
+        {selKf && sel !== null && course ? (
+          <>
+            <div className="props-title"><Icon name="route" size={16} />Keyframe {selKf.name}<span className="spacer" /><span className="muted small">{sel + 1} of {course.kfs.length}</span></div>
+            <PropSection title="Keyframe">
+              <Prop k="Name" mono>{selKf.name}</Prop>
+              <Prop k="t (file)" mono>{selKf.t.toFixed(3)} s</Prop>
+              {solvedSel && <Prop k="t (solved)" mono tone={Math.abs(solvedSel.t_solved - selKf.t) > 0.005 ? "warn" : undefined}>{solvedSel.t_solved.toFixed(3)} s{pv?.mode === "expert" ? ` (${(solvedSel.t_solved - selKf.t >= 0 ? "+" : "")}${(solvedSel.t_solved - selKf.t).toFixed(3)})` : ""}</Prop>}
+              <Prop k="Position" mono>{displayPos(course, sel, solvedSel?.pos as Vec3 | undefined).map((v, a) => `${selKf.fo[a][0] === null ? "≈" : ""}${v.toFixed(2)}`).join(", ")}</Prop>
+              <Prop k="Yaw" mono>{selKf.fo[3][0] ?? "free"}</Prop>
+              <Prop k="Captured volume" tone={box && !inside(pos0(selKf), box) ? "bad" : "ok"}>{box ? (inside(pos0(selKf), box) ? "inside" : "outside") : "—"}</Prop>
+            </PropSection>
+            {showMatrix && (
+              <PropSection title="Derivative constraints (empty = free)">
+                <div className="matrix">
+                  <span />{ORDERS.map((o) => <span key={o} className="muted">{o}</span>)}
+                  {AXES.map((ax, r) => <FragmentRow key={ax} label={ax} row={selKf.fo[r]} onCommit={(c, v) => setCell(sel, r, c, v)} />)}
+                </div>
+                <p className="muted small" style={{ padding: "0 8px" }}>m, m/s, m/s², … and rad for yaw. Endpoints normally pin velocity to 0. Keep consecutive yaw within π.</p>
+              </PropSection>
+            )}
+            <CursorProps pv={pv && !stale ? pv : null} ci={cursorAt} />
+          </>
+        ) : goalSel && course?.goal ? (
+          <>
+            <div className="props-title"><Icon name="goal" size={16} />Semantic goal</div>
+            <PropSection title="Goal">
+              <div style={{ padding: "2px 8px" }}><label className="f">Label<input value={course.goal.label} placeholder="e.g. the red chair"
+                onChange={(e) => edit((c) => ({ ...c, goal: c.goal && { ...c.goal, label: e.target.value } }))} /></label>
+                <div className="fields" style={{ gridTemplateColumns: "repeat(3, 1fr)", marginTop: 4 }}>{[0, 1, 2].map((a) => (
+                  <label key={a} className="f">{"xyz"[a]}<NumIn value={course.goal!.position[a]} onCommit={(v) => v !== null &&
+                    edit((c) => ({ ...c, goal: c.goal && { ...c.goal, position: c.goal.position.map((x, j) => (j === a ? v : x)) as Vec3 } }))} /></label>))}</div></div>
+              <p className="muted small" style={{ padding: "4px 8px" }}>Saved as semantic_goal in the course file. FiGS and SousVide read only waypoints and forces, so it does not change the flight:
+                it marks where the natural-language goal extension plugs in. Drag it in the 3D view.</p>
+            </PropSection>
+          </>
+        ) : (
+          <>
+            <div className="props-title"><Icon name="route" size={16} />{name ?? (course ? saveName : "Course")}</div>
+            {course && <PropSection title="Course file">
+              <Prop k="File" mono>configs/courses/{name ?? saveName}.json</Prop><Prop k="State" tone={dirty ? "warn" : "ok"}>{dirty ? "unsaved changes" : "saved"}</Prop>
+              <Prop k="Keyframes">{course.kfs.length}</Prop>
+              <Prop k="Nco"><input type="number" min={1} max={12} value={course.Nco} style={{ width: 60 }} onChange={(e) => edit((c) => ({ ...c, Nco: Math.max(1, Math.min(12, Number(e.target.value) || 6)) }))} /></Prop>
+              <Prop k="Forces">{course.forces ? "custom (edit in Configs)" : "none"}</Prop>
+              <Prop k="Integer cells" tone={intCells.length ? "warn" : "ok"}>{intCells.length || "none"}</Prop>
+              <Prop k="Semantic goal">{course.goal ? course.goal.label || "(no label)" : "none"}</Prop>
+            </PropSection>}
+            {geo && <PropSection title="Scene">
+              <Prop k="Scene">{scene}</Prop><Prop k="Sparse points">{geo.n_points.toLocaleString()}</Prop>
+              <Prop k="Camera box" mono>{geo.camera_box.lo.map((v) => v.toFixed(1)).join(", ")} … {geo.camera_box.hi.map((v) => v.toFixed(1)).join(", ")}</Prop>
+              <Prop k="Waypoint box" mono>inset {geo.waypoint_box.margin} m</Prop>
+            </PropSection>}
+            {drone && <PropSection title="Drone">
+              <Prop k="Model">{drone.meta.name}</Prop><Prop k="Size">{cm(drone.meta.size[0])} × {cm(drone.meta.size[1])} × {cm(drone.meta.size[2])} cm</Prop>
+              <Prop k="Sphere">{drone.meta.radius} m{drone.meta.guards ? " (guards included)" : ""}</Prop>
+            </PropSection>}
+            <CursorProps pv={pv && !stale ? pv : null} ci={cursorAt} />
+            <PropSection title="Fly">
+              <Prop k="Expert">{pilot}</Prop><Prop k="Frame">{frame}</Prop><Prop k="Method">{method}</Prop><Prop k="Allow outside">{allowOutside ? "yes" : "no"}</Prop>
+            </PropSection>
+          </>
+        )}
+      </ToProperties>
+      <ToProblems items={paneProbs} />
+    </DocActive>
   );
 }
 
-function PreviewPanel(p: {
-  pv: Preview | null; stale: boolean; busy: null | "fixed" | "expert"; err: string | null;
-  cursor: number | null; setCursor: (t: number | null) => void; auto: boolean; setAuto: (b: boolean) => void;
-  run: (m: "fixed" | "expert") => void; applyTimes: () => void; canRun: boolean;
-  clearance: number; setClearance: (v: number) => void; clearanceK: number; setClearanceK: (v: number) => void;
-  drone: DroneMeta | null; useBody: boolean; setUseBody: (b: boolean) => void;
-  playing: boolean; setPlaying: (b: boolean) => void; speed: number; setSpeed: (v: number) => void;
-}) {
-  const { pv } = p;
-  const u = pv?.inputs;
-  const thrust = u ? u.u[0].map((v) => (u.lower[0] < 0 ? v / u.lower[0] : v)) : [];
-  const rateLim = u ? Math.max(...[1, 2, 3].map((i) => Math.max(Math.abs(u.lower[i]), Math.abs(u.upper[i])))) : 5;
-  const rate = u ? u.u[1].map((_, k) => Math.max(Math.abs(u.u[1][k]), Math.abs(u.u[2][k]), Math.abs(u.u[3][k]))) : [];
-  const alt = pv ? pv.pos.map((q) => -q[2]) : [];
-  const moved = pv ? pv.keyframes.filter((k) => Math.abs(k.t_solved - k.t_file) > 0.005).length : 0;
-  const viol = u ? Object.entries(u.violations) : [];
+/** Tracks whether this document is the active one (for its local keyboard shortcuts). */
+function DocActive({ refObj, children }: { refObj: React.MutableRefObject<boolean>; children: React.ReactNode }) {
+  const { active: on } = useDoc();
+  refObj.current = on;
+  return <>{children}</>;
+}
+
+const nearest = (t: number[], x: number) => { let lo = 0, hi = t.length - 1; while (hi - lo > 1) { const m = (lo + hi) >> 1; if (t[m] < x) lo = m; else hi = m; } return x - t[lo] < t[hi] - x ? lo : hi; };
+
+function CursorProps({ pv, ci }: { pv: Preview | null; ci: number | null }) {
+  if (!pv || ci === null) return null;
+  const u = pv.inputs;
+  const thrust = u.lower[0] < 0 ? u.u[0][ci] / u.lower[0] : u.u[0][ci];
+  const q = pv.quat?.[ci];
+  let att = "";
+  if (q) { const [x, y, z, w] = q; const roll = Math.atan2(2 * (w * x + y * z), 1 - 2 * (x * x + y * y)), pitch = Math.asin(Math.max(-1, Math.min(1, 2 * (w * y - z * x))));
+    att = `roll ${Math.round(roll * 57.3)}° · pitch ${Math.round(pitch * 57.3)}°`; }
   return (
-    <div className="panel" style={{ marginTop: 14 }}>
-      <div className="row">
-        <h2 style={{ margin: 0 }}>Trajectory preview</h2>
-        {pv && <span className="muted small">{pv.mode === "expert" ? `re-timed like ${pv.pilot} (kT ${pv.kT})` : "minimum snap at the file's times"} · {pv.hz} Hz · solved in {pv.solve_s} s</span>}
-        <span className="spacer" />
-        {pv && !p.stale && (
-          <>
-            <button onClick={() => p.setPlaying(!p.playing)} title="Fly the preview in real time: moves the cursor and the drone">
-              {p.playing ? "❚❚ Pause" : "▶ Play"}</button>
-            <select value={p.speed} onChange={(e) => p.setSpeed(Number(e.target.value))} title="Playback speed">
-              {[0.25, 0.5, 1, 2].map((v) => <option key={v} value={v}>{v}×</option>)}
-            </select>
-          </>
-        )}
-        <label className="check small"><input type="checkbox" checked={p.auto} onChange={(e) => p.setAuto(e.target.checked)} /> live</label>
-        <button disabled={!p.canRun || !!p.busy} onClick={() => p.run("fixed")}>{p.busy === "fixed" ? "Solving…" : "Preview"}</button>
-        <button disabled={!p.canRun || !!p.busy} onClick={() => p.run("expert")}
-          title="MinTimeSnap with the expert's kT re-optimises segment times, as the flight does. Slow: about a minute or two.">
-          {p.busy === "expert" ? "Re-timing… (1–2 min)" : "Re-time like expert"}</button>
-      </div>
-      {p.err && <p className="err small">{p.err}</p>}
-      {p.stale && <p className="muted small">Edited since this preview{p.auto ? "; updating…" : "."}</p>}
-      {!pv && !p.busy && <p className="muted small">No preview yet.</p>}
-      {pv && (
-        <>
-          <div className="kpis">
-            <Kpi v={`${pv.duration_solved} s`} l={pv.mode === "expert" ? `duration (file ${pv.duration_file} s)` : "duration"} />
-            <Kpi v={`${pv.stats.length_m} m`} l="path length" />
-            <Kpi v={`${pv.stats.v_max} m/s`} l={`max speed (mean ${pv.stats.v_mean})`} />
-            <Kpi v={`${pv.stats.a_max} m/s²`} l="max acceleration" />
-            <Kpi v={pct(u?.max_use[0])} l="thrust vs limit" bad={(u?.max_use[0] ?? 0) > 1} />
-            <Kpi v={pct(u ? Math.max(...u.max_use.slice(1).map((x) => x ?? 0)) : null)} l="body rate vs limit" bad={viol.length > 0} />
-            {pv.clearance && <Kpi v={`${pv.clearance.min} m`} l={`${(pv.clearance.body_radius ?? 0) > 0 ? "min gap" : "min clearance"} at ${pv.clearance.at_t} s`} bad={pv.clearance.min < pv.clearance.threshold} />}
-            {pv.inside && <Kpi v={pct(pv.inside.outside_frac)} l="of path outside capture" bad={pv.inside.outside_frac > 0} />}
-          </div>
-          {viol.length > 0 && <p className="err small">Inputs beyond {pv.pilot}'s bounds: {viol.map(([k, iv]) => `${k} at ${iv.map(([a, b]) => `${a}–${b} s`).join(", ")}`).join("; ")}.
-            The MPC will saturate there: move the keyframes around it apart, or fly with an expert copy that has a smaller kT.</p>}
-          {pv.stats.nonfinite_inputs > 0 && <p className="err small">{pv.stats.nonfinite_inputs} samples have undefined inputs (free fall or a singular yaw).</p>}
-          {pv.mode === "expert" && moved > 0 && (
-            <p className="note small">The expert re-timed {moved} keyframe(s): the file's t values are only the solver's starting guess.
-              <button style={{ marginLeft: 8 }} onClick={p.applyTimes}>Write solved times into the keyframes</button></p>
-          )}
-          <div className="grid2">
-            <TimeChart t={pv.t} y={pv.speed} label="Speed" unit="m/s" cursor={p.cursor} onCursor={p.setCursor} />
-            <TimeChart t={pv.t} y={pv.acc_norm} label="Acceleration" unit="m/s²" cursor={p.cursor} onCursor={p.setCursor} />
-            <TimeChart t={pv.t} y={thrust} label="Thrust (fraction of limit)" unit="" refs={[{ y: 1, label: "limit" }]}
-              bad={u?.violations.thrust ?? []} cursor={p.cursor} onCursor={p.setCursor} />
-            <TimeChart t={pv.t} y={rate} label="Largest body rate |ω|" unit="rad/s" refs={[{ y: rateLim, label: "limit" }]}
-              bad={[...(u?.violations.wx ?? []), ...(u?.violations.wy ?? []), ...(u?.violations.wz ?? [])]} cursor={p.cursor} onCursor={p.setCursor} />
-            {pv.clearance && (
-              <TimeChart t={pv.t} y={pv.clearance.d} label={(pv.clearance.body_radius ?? 0) > 0
-                ? `Gap: drone (${pv.clearance.body_radius} m sphere) to ${pv.clearance.k > 1 ? `${pv.clearance.k}th-nearest` : "nearest"} sparse point`
-                : pv.clearance.k > 1 ? `Clearance (${pv.clearance.k}th-nearest sparse point)` : "Clearance to nearest sparse point"} unit="m"
-                refs={[{ y: pv.clearance.threshold, label: `${pv.clearance.threshold} m` }]} bad={pv.clearance.below}
-                cursor={p.cursor} onCursor={p.setCursor} />
-            )}
-            <TimeChart t={pv.t} y={alt} label="Altitude (−z)" unit="m" zeroBased={false}
-              bad={pv.inside?.outside_intervals ?? []} cursor={p.cursor} onCursor={p.setCursor} />
-          </div>
-          <div className="row small">
-            {p.drone && (
-              <label className="check" title={`Subtract the drone's bounding sphere (${p.drone.radius} m from its centre to the farthest point${p.drone.guards ? ", prop guards included" : ""}). Conservative near floors and ceilings: the airframe is only ${cm(p.drone.size[2])} cm tall.`}>
-                <input type="checkbox" checked={p.useBody} onChange={(e) => p.setUseBody(e.target.checked)} /> Subtract drone size ({p.drone.radius} m)</label>
-            )}
-            <label className="f">{p.useBody && p.drone ? "Minimum gap (m)" : "Clearance threshold (m)"}<input type="number" step={0.05} min={0} max={2} value={p.clearance}
-              onChange={(e) => p.setClearance(Math.max(0, Number(e.target.value) || 0))} /></label>
-            <label className="f">Ignore outliers: k-th point<input type="number" step={1} min={1} max={50} value={p.clearanceK}
-              onChange={(e) => p.setClearanceK(Math.min(50, Math.max(1, Math.round(Number(e.target.value) || 1))))} /></label>
-            {pv.clearance && <span className="muted" style={{ maxWidth: 420 }}>{pv.clearance.note}.
-              {pv.clearance.k > 1 && ` Nearest single point: ${pv.clearance.nearest_min} m at ${pv.clearance.nearest_at_t} s.`}</span>}
-          </div>
-        </>
-      )}
+    <PropSection title={`At the cursor (t = ${pv.t[ci].toFixed(2)} s)`}>
+      <Prop k="Position" mono>{pv.pos[ci].map((v) => v.toFixed(2)).join(", ")}</Prop>
+      <Prop k="Speed" mono>{pv.speed[ci].toFixed(2)} m/s</Prop><Prop k="Acceleration" mono>{pv.acc_norm[ci].toFixed(2)} m/s²</Prop>
+      <Prop k="Thrust" mono tone={thrust > 1 ? "bad" : undefined}>{Math.round(thrust * 100)} % of limit</Prop>
+      {att && <Prop k="Attitude" mono>{att}</Prop>}
+      {pv.clearance && <Prop k="Gap" mono tone={pv.clearance.d[ci] < pv.clearance.threshold ? "bad" : undefined}>{pv.clearance.d[ci].toFixed(2)} m</Prop>}
+    </PropSection>
+  );
+}
+
+function Kpis({ pv }: { pv: Preview }) {
+  const u = pv.inputs;
+  const viol = Object.keys(u.violations).length > 0;
+  return (
+    <div className="kpis" style={{ flexWrap: "nowrap", overflowX: "auto" }}>
+      <Kpi v={`${pv.duration_solved} s`} l={pv.mode === "expert" ? `duration (file ${pv.duration_file})` : "duration"} />
+      <Kpi v={`${pv.stats.length_m} m`} l="path length" />
+      <Kpi v={`${pv.stats.v_max} m/s`} l={`max speed (mean ${pv.stats.v_mean})`} />
+      <Kpi v={`${pv.stats.a_max} m/s²`} l="max accel" />
+      <Kpi v={pct(u.max_use[0])} l="thrust vs limit" bad={(u.max_use[0] ?? 0) > 1} />
+      <Kpi v={pct(Math.max(...u.max_use.slice(1).map((x) => x ?? 0)))} l="body rate vs limit" bad={viol} />
+      {pv.clearance && <Kpi v={`${pv.clearance.min} m`} l={`${(pv.clearance.body_radius ?? 0) > 0 ? "min gap" : "min clearance"} at ${pv.clearance.at_t} s`} bad={pv.clearance.min < pv.clearance.threshold} />}
+      {pv.inside && <Kpi v={pct(pv.inside.outside_frac)} l="outside capture" bad={pv.inside.outside_frac > 0} />}
+    </div>
+  );
+}
+
+function Charts({ pv, cursor, setCursor }: { pv: Preview; cursor: number | null; setCursor: (t: number | null) => void }) {
+  const u = pv.inputs;
+  const thrust = u.u[0].map((v) => (u.lower[0] < 0 ? v / u.lower[0] : v));
+  const rateLim = Math.max(...[1, 2, 3].map((i) => Math.max(Math.abs(u.lower[i]), Math.abs(u.upper[i]))));
+  const rate = u.u[1].map((_, k) => Math.max(Math.abs(u.u[1][k]), Math.abs(u.u[2][k]), Math.abs(u.u[3][k])));
+  const alt = pv.pos.map((q) => -q[2]);
+  const C = (props: React.ComponentProps<typeof TimeChart>) => <div className="tile"><div className="tile-body"><TimeChart {...props} cursor={cursor} onCursor={setCursor} /></div></div>;
+  return (
+    <div className="chartgrid">
+      {C({ t: pv.t, y: pv.speed, label: "Speed", unit: "m/s", cursor, onCursor: setCursor })}
+      {C({ t: pv.t, y: pv.acc_norm, label: "Acceleration", unit: "m/s²", cursor, onCursor: setCursor })}
+      {C({ t: pv.t, y: thrust, label: "Thrust (fraction of limit)", unit: "", refs: [{ y: 1, label: "limit" }], bad: u.violations.thrust ?? [], cursor, onCursor: setCursor })}
+      {C({ t: pv.t, y: rate, label: "Largest body rate |ω|", unit: "rad/s", refs: [{ y: rateLim, label: "limit" }], bad: [...(u.violations.wx ?? []), ...(u.violations.wy ?? []), ...(u.violations.wz ?? [])], cursor, onCursor: setCursor })}
+      {pv.clearance && C({ t: pv.t, y: pv.clearance.d, label: (pv.clearance.body_radius ?? 0) > 0 ? `Gap: drone sphere to ${pv.clearance.k > 1 ? `${pv.clearance.k}th` : "nearest"} point` : "Clearance", unit: "m",
+        refs: [{ y: pv.clearance.threshold, label: `${pv.clearance.threshold} m` }], bad: pv.clearance.below, cursor, onCursor: setCursor })}
+      {C({ t: pv.t, y: alt, label: "Altitude (−z)", unit: "m", zeroBased: false, bad: pv.inside?.outside_intervals ?? [], cursor, onCursor: setCursor })}
     </div>
   );
 }

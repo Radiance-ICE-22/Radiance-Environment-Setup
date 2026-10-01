@@ -1,36 +1,35 @@
-import { useState } from "react";
-import { active, api, ago, duration } from "../api";
-import { Badge, usePoll } from "../components";
+// Monitor document: the queue (filtered from the Jobs tab), the selected job's log, GPU.
+import { ago, duration } from "../api";
+import { Problem, ToProblems, ToProperties, useUi } from "../shell/core";
+import { useAppData } from "../shell/data";
+import { filterJobs, GpuChart, JobProps, LogView, Pill, QueueTable, Tile, useJobLog } from "../shell/Panes";
 
-export default function Jobs() {
-  const jobs = usePoll(() => api.jobs(), 3000);
-  const [busy, setBusy] = useState(false);
+export default function Monitor() {
+  const d = useAppData();
+  const { ui, setUi } = useUi();
+  const jobs = filterJobs(d.jobs, ui);
+  const fid = ui.focus ?? d.jobs.find((j) => j.status === "running")?.id ?? d.jobs[0]?.id ?? null;
+  const log = useJobLog(fid);
+  const j = d.jobs.find((x) => x.id === fid) ?? log.job;
+  const probs: Problem[] = d.jobs.filter((x) => x.status === "failed" || x.status === "interrupted").slice(0, 30)
+    .map((x) => ({ severity: x.status === "failed" ? "error" as const : "warning" as const, where: `job #${x.id}`, message: `${x.label}: ${x.status}${x.returncode !== null ? ` (exit ${x.returncode})` : ""} · ${ago(x.finished)}` }));
+  const filtered = ui.jobKind !== "all" || ui.jobScene !== "all" || ui.jobStatus !== "all" || ui.hideFinished;
+
   return (
-    <>
-      <div className="row">
-        <h1>Jobs</h1><span className="spacer" />
-        <button disabled={busy} title="Harmless 20 s job for checking the queue, streaming and cancel"
-          onClick={async () => { setBusy(true); const { id } = await api.submitSelftest(20); location.hash = `#/jobs/${id}`; }}>
-          Run self-test
-        </button>
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: 6 }}>
+      <div className="tiles cols-1-2" style={{ flex: 1, minHeight: 0, alignItems: "stretch" }}>
+        <Tile title="Queue" icon="queue" className="fill flush" meta={`${jobs.length} job${jobs.length === 1 ? "" : "s"}${filtered ? " (filtered: Jobs ▸ Filter)" : ""} · click to select, double-click to open`}>
+          <QueueTable jobs={jobs} focus={fid} setFocus={(id) => setUi({ focus: id })} />
+        </Tile>
+        <Tile title={j ? `#${j.id} ${j.label}` : "Log"} icon="log" className="fill flush"
+          meta={j ? <><Pill s={j.status} /> {duration(j)}{j.returncode !== null ? ` · exit ${j.returncode}` : ""} · {log.lines.length} lines</> : undefined}
+          actions={j && <a href={`#/jobs/${j.id}`} className="small" style={{ marginLeft: 6 }}>open</a>}>
+          <div style={{ display: "flex", flex: 1, minHeight: 200 }}><LogView lines={log.lines} progress={log.progress} /></div>
+        </Tile>
       </div>
-      <p className="muted small">One job runs at a time; the GPU is treated as exclusive. Queued jobs start in order.</p>
-      {jobs.err && <p className="err">{jobs.err}</p>}
-      <div className="panel">
-        <table>
-          <thead><tr><th>#</th><th>Job</th><th>Scene</th><th>Status</th><th>Created</th><th>Duration</th><th /></tr></thead>
-          <tbody>
-            {jobs.data?.map((j) => (
-              <tr key={j.id} className="click" onClick={() => (location.hash = `#/jobs/${j.id}`)}>
-                <td>{j.id}</td><td>{j.label}</td><td>{j.scene ?? "—"}</td><td><Badge s={j.status} /></td>
-                <td className="muted">{ago(j.created)}</td><td>{duration(j)}</td>
-                <td>{active(j.status) && (
-                  <button className="danger" onClick={(e) => { e.stopPropagation(); api.cancel(j.id).then(jobs.reload); }}>Cancel</button>)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </>
+      <Tile title="GPU" icon="gpu" meta={`${d.machine?.gpu.name ?? ""} · one GPU job at a time; queued jobs start in order`}><GpuChart height={110} /></Tile>
+      <ToProperties>{j ? <JobProps job={j} /> : null}</ToProperties>
+      <ToProblems items={probs} />
+    </div>
   );
 }
