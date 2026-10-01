@@ -39,6 +39,7 @@ class PreviewRequest(BaseModel):
     mode: Literal["fixed", "expert"] = "fixed"
     clearance: float = Field(0.3, ge=0, le=5)
     clearance_k: int = Field(5, ge=1, le=50)
+    body_radius: float = Field(0.0, ge=0, le=2)   # drone bounding sphere (models/drone.json radius)
 
     @field_validator("scene", "pilot", "frame")
     @classmethod
@@ -102,7 +103,7 @@ class CourseTools:
         try:
             args = ["preview", "--project-root", str(self.s.project_root), "--pilot", req.pilot,
                     "--frame", req.frame, "--mode", req.mode, "--clearance", str(req.clearance),
-                    "--clearance-k", str(req.clearance_k)]
+                    "--clearance-k", str(req.clearance_k), "--body-radius", str(req.body_radius)]
             if req.scene:
                 args += ["--scene", req.scene]
             return self._run(args, json.dumps(course), self.TIMEOUT[req.mode])

@@ -1,0 +1,60 @@
+{
+  "name": "drone",
+  "file": "drone.glb",
+  "frame": "FiGS body FRD: x forward, y right, z down; metres; origin = reference point",
+  "source": {
+    "obj": "Drone_5_2205.obj",
+    "sha256": "311680595738ce6d697919a225c38c7fc9dcf19b0d7d7794d859140004081a41",
+    "unit": "cm",
+    "forward": "+y",
+    "up": "+z",
+    "origin_cad": [
+      -0.0158,
+      0.2262,
+      1.3518
+    ],
+    "origin_rule": "rotor centre (x/y), mid airframe height (z)"
+  },
+  "triangles": {
+    "source": 1621331,
+    "glb": 159116,
+    "ratio": 0.12
+  },
+  "bytes": 607440,
+  "half_extent": [
+    0.1454,
+    0.1659,
+    0.0505
+  ],
+  "size": [
+    0.2893,
+    0.3314,
+    0.101
+  ],
+  "radius": 0.19,
+  "radius_xy": 0.1857,
+  "guards": true,
+  "rotors": [
+    [
+      0.0707,
+      0.086,
+      -0.0153
+    ],
+    [
+      -0.0707,
+      0.086,
+      -0.0153
+    ],
+    [
+      0.0707,
+      -0.086,
+      -0.0153
+    ],
+    [
+      -0.0707,
+      -0.086,
+      -0.0153
+    ]
+  ],
+  "prop_radius": 0.0647
+}

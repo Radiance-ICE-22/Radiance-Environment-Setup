@@ -68,6 +68,7 @@ def test_preview_passes_float_course_and_flags(client, tools):
     a = d["args"]
     assert a[a.index("--mode") + 1] == "expert" and a[a.index("--scene") + 1] == "backroom"
     assert a[a.index("--clearance") + 1] == "0.4" and a[a.index("--clearance-k") + 1] == "5"
+    assert a[a.index("--body-radius") + 1] == "0.0"          # default: the drone is a point
     cell = d["course"]["waypoints"]["keyframes"]["a"]["fo"][0][1]
     assert cell == 0.0 and isinstance(cell, float)
 
@@ -127,3 +128,12 @@ def test_course_file_layout_and_goal(client, settings):
     text = (settings.configs_dir / "courses" / "withgoal.json").read_text()
     assert "[0.4, 0.0]" in text and "[1.0, null, null, null]" in text      # rows on one line
     assert json.loads(text) == body
+
+
+def test_preview_passes_body_radius(client, tools):
+    r = client.post("/api/courses/preview", json={"course": COURSE, "body_radius": 0.19})
+    assert r.status_code == 200, r.text
+    a = r.json()["args"]
+    assert a[a.index("--body-radius") + 1] == "0.19"
+    for bad in (-0.1, 3):
+        assert client.post("/api/courses/preview", json={"course": COURSE, "body_radius": bad}).status_code == 422

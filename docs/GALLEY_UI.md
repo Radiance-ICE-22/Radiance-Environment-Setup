@@ -1,7 +1,8 @@
 # Galley — web console for the pipeline: status and handoff
 
-*Last updated 2026-09-27: Phase 4 (SV-Net, unchanged upstream) built and tested off-machine;
-its gate on dummy is pending. Written so the next working session (human or
+*Last updated 2026-10-01: the team's airframe (CAD) is drawn in the course editor and the
+clearance check subtracts its size (§6, "Drone model"). Phase 4 (SV-Net, unchanged upstream)
+built and tested off-machine; its gate on dummy is pending. Written so the next working session (human or
 Claude) can pick up without the chat history. The live plan, with diagrams, is the Claude
 Doc "SOUS-VIDE Pipeline Console — Implementation Plan":
 https://claude.ai/code/artifact/7f7d0bbb-6399-4f1b-bead-21ff96f3f12e*
@@ -99,6 +100,8 @@ Browser (React)  ──HTTP + WebSocket :8800──▶  FastAPI (ui/backend/gall
 | `ui/backend/galley/course.py` | course editor: runs `figs/course_tools.py` through `figs_env.sh` (CPU only, outside the GPU queue); geometry cache; one preview at a time |
 | `figs/course_tools.py` | kitchen-env helper: point cloud, camera path and boxes in the course frame; FiGS `MinTimeSnap` + `TsFO_to_tXU` preview with the expert's input bounds; KD-tree clearance |
 | `ui/frontend/src/pages/Course.tsx`, `src/course/` | the editor page (lazy-loaded with three.js / react-three-fiber), the course model and the 3D view |
+| `ui/tools/drone_model.py` | CAD OBJ/MTL → `ui/frontend/public/models/drone.glb` (body frame, simplified, meshopt) + `drone.json` (size, radius, rotors) |
+| `ui/frontend/src/course/Drone.tsx` | loads the drone model once; places it with FiGS's attitude |
 | `figs/svnet_pipeline.py` | SOUS-VIDE's learning half: rollout, observe, train_hist, train_comm, deploy, calling upstream `sousvide` unchanged; resumable per cohort |
 | `ui/backend/galley/svnet.py` | builds `svnet_pipeline.py` command lines; reads `.svnet_pipeline_state/<cohort>/` and `SousVide/cohorts/<cohort>/` |
 | `ui/frontend/src/pages/SvNet.tsx` | SV-Net pages: cohort list, new cohort, run controls, rollouts, loss curves, evaluation table and videos |
@@ -208,6 +211,38 @@ Course editor → backroom → *New loop* → drag a keyframe → *Save and fly*
 pass `course`, `simulate` and `validate`. Not done: rendering the actual splat in the browser
 (needs `ns-export gaussian-splat` plus a splat renderer), clearance against the splat rather
 than sparse points.
+
+**Drone model in the course editor (1 Oct).** The team's CAD export
+(`D:\Projects\FYP\Drone Model\Drone-obj_mtl\Drone\Drone_5_2205.obj`, Fusion, cm, z up, camera
+along +y; 1.62 M triangles, 229 MB, prop guards fitted) is converted once by
+`ui/tools/drone_model.py` into `ui/frontend/public/models/drone.glb` (159k triangles, ~0.6 MB,
+meshopt-compressed) and `drone.json`. Both are committed and copied into `dist/models/` by the
+build; the OBJ stays out of git. Re-run the tool after a CAD change (needs numpy and Node for
+`npx gltfpack`), then `npm run build` and commit `public/models/` and `dist/`.
+
+- Frame: the GLB is in FiGS's body frame, FRD (x forward, y right, z down, metres), the frame of
+  the quaternion in FiGS's state (`fo_to_xu`, scipy `[x, y, z, w]`). Origin: rotor centre in x/y,
+  middle of the airframe's height in z (the CAD has no mass properties; `--origin` overrides).
+- Measured from the CAD: 28.9 cm long × 33.1 cm wide × 10.1 cm tall; rotors at ±7.07 cm forward,
+  ±8.6 cm sideways (motor-to-motor diagonal 22.3 cm); prop radius 6.5 cm (5"); bounding sphere
+  **0.19 m** from the origin, guards included.
+- Editor: the drone sits level on the selected keyframe (else the first); with a preview, it sits
+  at the chart cursor with FiGS's own attitude (`course_tools.py preview` now returns `quat`,
+  tXU columns 7–10). *▶ Play* (0.25–2×) flies the preview in real time, moving the cursor
+  through the charts. *Drone* in the view toolbar hides it.
+- Clearance: `course_tools.py preview --body-radius R` (API `body_radius`, 0–2 m, default 0) makes
+  every distance a **gap**: centre distance minus R. The editor sends the model's radius by
+  default (*Subtract drone size*), so its threshold is now a minimum gap, default 0.15 m
+  (≈ 0.34 m centre distance; the old default was 0.3 m centre distance). The red wireframe
+  sphere at the closest point is the drone's sphere. The sphere is conservative above and
+  below surfaces (the airframe is 10 cm tall, the sphere 38 cm across).
+- Checked off-machine with FiGS `11ad36c` and SousVide `a2400aa` configs: circuit over a
+  synthetic floor at 0.7 m gives min 0.70 m without and 0.51 m with `--body-radius 0.19`; the
+  returned attitude's body z matches the thrust direction (g − a) at every sample and its yaw
+  matches the flat output's. Gate on dummy: open the editor, Preview, ▶ Play; the drone should
+  bank into the turns of circuit and the clearance chart title should say "Gap".
+- Not done: the drone in the SV-Net evaluation view (replaying rollouts), spinning props, and a
+  shape-aware clearance (an ellipsoid or the real hull instead of a sphere).
 
 **Phase 4 — SV-Net (built; gate pending).** Get SOUS-VIDE's learning half working *unchanged*
 first; semantic feature fields (LangSplat / FMGS style) come after, as a separate step.

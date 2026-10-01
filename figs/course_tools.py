@@ -5,7 +5,7 @@ course_tools.py — numeric helpers for Galley's course editor, run in the kitch
     source figs_env.sh
     course_tools.py geometry --project-root R --scene backroom [--margin 0.5]
     course_tools.py preview  --project-root R --scene backroom --pilot Viper --frame carl \
-                             [--mode fixed|expert] < course.json
+                             [--mode fixed|expert] [--body-radius 0.19] < course.json
 
 Both print exactly one line `GALLEY_JSON {...}` on stdout (anything else is log noise).
 
@@ -227,6 +227,9 @@ def cmd_preview(a):
 
     pos, vel, acc = FOd[:, 0:3, 0], FOd[:, 0:3, 1], FOd[:, 0:3, 2]
     yaw = FOd[:, 3, 0]
+    # attitude FiGS derives from the flat outputs (fo_to_xu): body FRD in the course frame,
+    # scipy order [x, y, z, w]. tXU columns: t, p(3), v(3), q(4), u(4).
+    quat = tXUd[:, 7:11]
     speed = np.linalg.norm(vel, axis=1)
     accn = np.linalg.norm(acc, axis=1)
     U = tXUd[:, 11:15]
@@ -258,7 +261,7 @@ def cmd_preview(a):
         "duration_file": round(float(t_file[-1] - t_file[0]), 3),
         "duration_solved": round(float(Tkf[-1] - Tkf[0]), 3),
         "t": r(Tsd, 4), "pos": r(pos, 4), "vel": r(vel, 4), "acc": r(acc, 4), "yaw": r(yaw, 4),
-        "speed": r(speed, 4), "acc_norm": r(accn, 4),
+        "speed": r(speed, 4), "acc_norm": r(accn, 4), "quat": r(quat, 4),
         "stats": {"v_max": round(float(speed.max()), 3), "v_mean": round(float(speed.mean()), 3),
                   "a_max": round(float(accn.max()), 3),
                   "length_m": round(float(np.linalg.norm(np.diff(pos, axis=0), axis=1).sum()), 2),
@@ -285,18 +288,24 @@ def cmd_preview(a):
             # Distance to the k-th nearest sparse point, not the nearest: a lone SfM outlier
             # floating in the room is one point, a real surface is many. On dummy's backroom the
             # plain nearest-point distance put circuit (a known-good flight) 2.7 cm from "something".
+            # With --body-radius R the numbers are gaps: centre distance minus R, R being the
+            # drone's bounding sphere (prop guards included). The sphere is conservative for a
+            # flat airframe: above or below a surface it overstates the drone by R - half height.
             k = max(1, a.clearance_k)
+            body = max(0.0, a.body_radius)
             dk, _ = cKDTree(to_course(xyz)).query(pos, k=k)
-            dk = dk.reshape(len(pos), -1)
+            dk = dk.reshape(len(pos), -1) - body
             d, d1 = dk[:, -1], dk[:, 0]
             i, i1 = int(np.argmin(d)), int(np.argmin(d1))
             out["clearance"] = {
-                "threshold": a.clearance, "k": k, "d": r(d, 3), "min": round(float(d[i]), 3),
+                "threshold": a.clearance, "k": k, "body_radius": body,
+                "d": r(d, 3), "min": round(float(d[i]), 3), "min_centre": round(float(d[i] + body), 3),
                 "at_t": round(float(Tsd[i]), 3), "at_pos": r(pos[i], 3),
                 "below": intervals(d < a.clearance, Tsd), "n_points": int(len(xyz)),
                 "nearest_min": round(float(d1[i1]), 3), "nearest_at_t": round(float(Tsd[i1]), 3),
-                "note": (f"distance to the {k}th-nearest SfM sparse point, so isolated outliers are ignored; "
-                         if k > 1 else "distance to the nearest SfM sparse point; ")
+                "note": (f"gap between the drone's {body:g} m bounding sphere and " if body > 0 else "distance to ")
+                        + (f"the {k}th-nearest SfM sparse point, so isolated outliers are ignored; "
+                           if k > 1 else "the nearest SfM sparse point; ")
                         + "sparse points miss textureless surfaces (plain walls, floors), so a "
                           "clear reading is not proof of free space",
             }
@@ -317,6 +326,8 @@ def main():
     p.add_argument("--pilot", default="Viper")
     p.add_argument("--frame", default="carl")
     p.add_argument("--clearance", type=float, default=0.3)
+    p.add_argument("--body-radius", type=float, default=0.0,
+                   help="drone bounding-sphere radius (m) subtracted from every distance (0 = treat it as a point)")
     p.add_argument("--clearance-k", type=int, default=5,
                    help="clearance = distance to the k-th nearest sparse point (1 = nearest)")
     p.add_argument("--mode", choices=["fixed", "expert"], default="fixed",

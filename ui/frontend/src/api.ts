@@ -136,15 +136,18 @@ export interface Preview {
   keyframes: { name: string; t_file: number; t_solved: number; pos: V3; yaw: number }[];
   duration_file: number; duration_solved: number;
   t: number[]; pos: V3[]; vel: V3[]; acc: V3[]; yaw: number[]; speed: number[]; acc_norm: number[];
+  quat?: [number, number, number, number][];   // FiGS attitude, body FRD, [x, y, z, w] (absent from older tools)
   stats: { v_max: number; v_mean: number; a_max: number; length_m: number; nonfinite_inputs: number };
   inputs: { names: string[]; lower: number[]; upper: number[]; u: number[][]; max_use: (number | null)[];
     violations: Record<string, [number, number][]> };
   clearance: { threshold: number; k: number; d: number[]; min: number; at_t: number; at_pos: V3;
+    body_radius?: number; min_centre?: number;   // d/min are gaps to the drone's sphere when body_radius > 0
     below: [number, number][]; n_points: number; nearest_min: number; nearest_at_t: number; note: string } | null;
   inside: { keyframes: { name: string; inside: boolean }[]; outside_intervals: [number, number][]; outside_frac: number } | null;
 }
 export interface PreviewRequest {
   course: unknown; scene?: string; pilot?: string; frame?: string; mode?: "fixed" | "expert"; clearance?: number; clearance_k?: number;
+  body_radius?: number;
 }
 export const courseApi = {
   geometry: (scene: string, margin = 0.5) =>

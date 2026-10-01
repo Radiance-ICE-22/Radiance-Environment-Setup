@@ -5,6 +5,7 @@ import { active, api, ApiError, courseApi, flightUrl, Geometry, Job, Preview } f
 import { TimeChart } from "../charts";
 import { Badge, usePoll } from "../components";
 import Scene3D, { Tool, ViewOpts } from "../course/Scene3D";
+import { DroneMeta, useDrone } from "../course/Drone";
 import {
   AXES, blankLoop, Cell, emptyAxes, Course, CourseFile, displayPos, fromFile, insertAfter, inside, MAX_ORDERS, ORDERS,
   pos0, problems, round, toFile, Vec3,
@@ -43,7 +44,8 @@ export default function CoursePage({ scene, name }: { scene?: string; name?: str
   const [sel, setSel] = useState<number | null>(null);
   const [goalSel, setGoalSel] = useState(false);
   const [tool, setTool] = useState<Tool>("move");
-  const [opts, setOpts] = useState<ViewOpts>({ points: true, colorBy: "rgb", pointSize: 0.025, cameraPath: true, boxes: true });
+  const [opts, setOpts] = useState<ViewOpts>({ points: true, colorBy: "rgb", pointSize: 0.025, cameraPath: true, boxes: true, drone: true });
+  const drone = useDrone();
 
   useEffect(() => {
     setMsg(null); setSel(null); hist.current = [];
@@ -71,7 +73,10 @@ export default function CoursePage({ scene, name }: { scene?: string; name?: str
   const [pilot, setPilot] = useState("Viper");
   const [frame, setFrame] = useState("carl");
   const [method, setMethod] = useState("eval_single");
-  const [clearance, setClearance] = useState(0.3);
+  // With the drone's size subtracted the threshold is a gap, so it is smaller than the old
+  // centre-distance default (0.3 m) — 0.15 m gap ≈ 0.34 m centre distance for a 0.19 m drone.
+  const [clearance, setClearance] = useState(0.15);
+  const [useBody, setUseBody] = useState(true);
   const [clearanceK, setClearanceK] = useState(5);
   const [auto, setAuto] = useState(true);
   const [pv, setPv] = useState<Preview | null>(null);
@@ -80,28 +85,52 @@ export default function CoursePage({ scene, name }: { scene?: string; name?: str
   const [pvErr, setPvErr] = useState<string | null>(null);
   const [cursor, setCursor] = useState<number | null>(null);
   const seq = useRef(0);
+  const bodyR = useBody && drone ? drone.meta.radius : 0;
 
   const runPreview = useCallback(async (mode: "fixed" | "expert") => {
     if (!file || probs.length) return;
     const my = ++seq.current, snapshot = fileJson;
     setPvBusy(mode); setPvErr(null);
     try {
-      const r = await courseApi.preview({ course: file, scene, pilot, frame, mode, clearance, clearance_k: clearanceK });
+      const r = await courseApi.preview({ course: file, scene, pilot, frame, mode, clearance, clearance_k: clearanceK, body_radius: bodyR });
       if (my === seq.current) { setPv(r); setPvFor(snapshot); }
     } catch (e) {
       if (my !== seq.current) return;
       if (e instanceof ApiError && e.status === 409) { setPvErr("waiting for the running solve to finish…"); setTimeout(() => my === seq.current && runPreview(mode), 2000); return; }
       setPvErr(e instanceof ApiError ? e.message : String(e));
     } finally { if (my === seq.current) setPvBusy(null); }
-  }, [file, fileJson, probs.length, scene, pilot, frame, clearance, clearanceK]);
+  }, [file, fileJson, probs.length, scene, pilot, frame, clearance, clearanceK, bodyR]);
 
   useEffect(() => {
     if (!auto || !file || probs.length || pvBusy === "expert") return;
     const t = setTimeout(() => runPreview("fixed"), 600);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fileJson, auto, scene, pilot, frame, clearance, clearanceK]);
+  }, [fileJson, auto, scene, pilot, frame, clearance, clearanceK, bodyR]);
   const stale = !!pv && pvFor !== fileJson;
+
+  // ── play the preview: moves the cursor (charts and the drone in the 3D view) in real time ──
+  const [playing, setPlaying] = useState(false);
+  const [speed, setSpeed] = useState(1);
+  const cursorRef = useRef(cursor);
+  cursorRef.current = cursor;
+  useEffect(() => {
+    if (!playing) return;
+    if (!pv || stale || pv.t.length < 2) { setPlaying(false); return; }
+    const t0 = pv.t[0], t1 = pv.t[pv.t.length - 1];
+    const c = cursorRef.current;
+    const from = c !== null && c < t1 - 1e-3 ? c : t0;
+    let raf = 0, last = 0;
+    const start = performance.now();
+    const step = (now: number) => {
+      const t = from + ((now - start) / 1000) * speed;
+      if (t >= t1) { setCursor(t1); setPlaying(false); return; }
+      if (now - last > 30) { setCursor(t); last = now; }     // ~30 fps is plenty for the charts
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [playing, pv, stale, speed]);
 
   // ── keyframe editing helpers ───────────────────────────────────────────────
   const setCell = (i: number, row: number, col: number, v: Cell, push = true) => edit((c) => {
@@ -252,7 +281,7 @@ export default function CoursePage({ scene, name }: { scene?: string; name?: str
             <div className="viewport">
               {course || geo ? (
                 <Scene3D geo={geo} course={course ?? { Nco: 6, kfs: [], forces: null, goal: null, extra: {}, wpExtra: {} }}
-                  sel={sel} onSelect={setSel} preview={stale ? null : pv} cursor={cursor} tool={tool} opts={opts}
+                  sel={sel} onSelect={setSel} preview={stale ? null : pv} cursor={cursor} tool={tool} opts={opts} drone={drone}
                   goalSelected={goalSel} onGoalSelect={setGoalSel}
                   onDragStart={() => course && hist.current.push(course)}
                   onMove={moveTo}
@@ -273,6 +302,8 @@ export default function CoursePage({ scene, name }: { scene?: string; name?: str
                     onClick={() => setOpts({ ...opts, colorBy: opts.colorBy === "rgb" ? "altitude" : "rgb" })}>Altitude</button>
                   <button className={opts.cameraPath ? "on" : ""} onClick={() => setOpts({ ...opts, cameraPath: !opts.cameraPath })}>Camera path</button>
                   <button className={opts.boxes ? "on" : ""} onClick={() => setOpts({ ...opts, boxes: !opts.boxes })}>Boxes</button>
+                  {drone && <button className={opts.drone ? "on" : ""} title="Your airframe at true scale: on the preview cursor, else on the selected keyframe"
+                    onClick={() => setOpts({ ...opts, drone: !opts.drone })}>Drone</button>}
                 </div>
                 <input type="range" min={0.005} max={0.08} step={0.005} value={opts.pointSize} title="Point size"
                   onChange={(e) => setOpts({ ...opts, pointSize: Number(e.target.value) })} style={{ width: 90 }} />
@@ -285,11 +316,15 @@ export default function CoursePage({ scene, name }: { scene?: string; name?: str
                 <div><span className="swatch" style={{ background: "linear-gradient(90deg,#3b82f6,#f59e0b)" }} />path, slow → fast
                   {pv && !stale ? ` (0–${pv.stats.v_max} m/s)` : ""} · <span className="swatch" style={{ background: "#e5484d" }} />too close / outside</div>
                 {geo && <div>{geo.n_points_sent.toLocaleString()} of {geo.n_points.toLocaleString()} sparse points</div>}
+                {drone && opts.drone && <div>drone {cm(drone.meta.size[0])} long × {cm(drone.meta.size[1])} wide × {cm(drone.meta.size[2])} cm
+                  {drone.meta.guards ? " with prop guards" : ""}: {pv && !stale && cursor !== null ? "attitude from the preview at the cursor" : "level, on the selected keyframe"}</div>}
               </div>
             </div>
             {course && <PreviewPanel pv={pv} stale={stale} busy={pvBusy} err={pvErr} cursor={cursor} setCursor={setCursor}
               auto={auto} setAuto={setAuto} run={runPreview} applyTimes={applySolvedTimes} canRun={!probs.length}
-              clearance={clearance} setClearance={setClearance} clearanceK={clearanceK} setClearanceK={setClearanceK} />}
+              clearance={clearance} setClearance={setClearance} clearanceK={clearanceK} setClearanceK={setClearanceK}
+              drone={drone?.meta ?? null} useBody={useBody} setUseBody={setUseBody}
+              playing={playing} setPlaying={setPlaying} speed={speed} setSpeed={setSpeed} />}
           </div>
 
           <div>
@@ -423,6 +458,8 @@ function PreviewPanel(p: {
   cursor: number | null; setCursor: (t: number | null) => void; auto: boolean; setAuto: (b: boolean) => void;
   run: (m: "fixed" | "expert") => void; applyTimes: () => void; canRun: boolean;
   clearance: number; setClearance: (v: number) => void; clearanceK: number; setClearanceK: (v: number) => void;
+  drone: DroneMeta | null; useBody: boolean; setUseBody: (b: boolean) => void;
+  playing: boolean; setPlaying: (b: boolean) => void; speed: number; setSpeed: (v: number) => void;
 }) {
   const { pv } = p;
   const u = pv?.inputs;
@@ -438,6 +475,15 @@ function PreviewPanel(p: {
         <h2 style={{ margin: 0 }}>Trajectory preview</h2>
         {pv && <span className="muted small">{pv.mode === "expert" ? `re-timed like ${pv.pilot} (kT ${pv.kT})` : "minimum snap at the file's times"} · {pv.hz} Hz · solved in {pv.solve_s} s</span>}
         <span className="spacer" />
+        {pv && !p.stale && (
+          <>
+            <button onClick={() => p.setPlaying(!p.playing)} title="Fly the preview in real time: moves the cursor and the drone">
+              {p.playing ? "❚❚ Pause" : "▶ Play"}</button>
+            <select value={p.speed} onChange={(e) => p.setSpeed(Number(e.target.value))} title="Playback speed">
+              {[0.25, 0.5, 1, 2].map((v) => <option key={v} value={v}>{v}×</option>)}
+            </select>
+          </>
+        )}
         <label className="check small"><input type="checkbox" checked={p.auto} onChange={(e) => p.setAuto(e.target.checked)} /> live</label>
         <button disabled={!p.canRun || !!p.busy} onClick={() => p.run("fixed")}>{p.busy === "fixed" ? "Solving…" : "Preview"}</button>
         <button disabled={!p.canRun || !!p.busy} onClick={() => p.run("expert")}
@@ -456,7 +502,7 @@ function PreviewPanel(p: {
             <Kpi v={`${pv.stats.a_max} m/s²`} l="max acceleration" />
             <Kpi v={pct(u?.max_use[0])} l="thrust vs limit" bad={(u?.max_use[0] ?? 0) > 1} />
             <Kpi v={pct(u ? Math.max(...u.max_use.slice(1).map((x) => x ?? 0)) : null)} l="body rate vs limit" bad={viol.length > 0} />
-            {pv.clearance && <Kpi v={`${pv.clearance.min} m`} l={`min clearance at ${pv.clearance.at_t} s`} bad={pv.clearance.min < pv.clearance.threshold} />}
+            {pv.clearance && <Kpi v={`${pv.clearance.min} m`} l={`${(pv.clearance.body_radius ?? 0) > 0 ? "min gap" : "min clearance"} at ${pv.clearance.at_t} s`} bad={pv.clearance.min < pv.clearance.threshold} />}
             {pv.inside && <Kpi v={pct(pv.inside.outside_frac)} l="of path outside capture" bad={pv.inside.outside_frac > 0} />}
           </div>
           {viol.length > 0 && <p className="err small">Inputs beyond {pv.pilot}'s bounds: {viol.map(([k, iv]) => `${k} at ${iv.map(([a, b]) => `${a}–${b} s`).join(", ")}`).join("; ")}.
@@ -474,7 +520,9 @@ function PreviewPanel(p: {
             <TimeChart t={pv.t} y={rate} label="Largest body rate |ω|" unit="rad/s" refs={[{ y: rateLim, label: "limit" }]}
               bad={[...(u?.violations.wx ?? []), ...(u?.violations.wy ?? []), ...(u?.violations.wz ?? [])]} cursor={p.cursor} onCursor={p.setCursor} />
             {pv.clearance && (
-              <TimeChart t={pv.t} y={pv.clearance.d} label={pv.clearance.k > 1 ? `Clearance (${pv.clearance.k}th-nearest sparse point)` : "Clearance to nearest sparse point"} unit="m"
+              <TimeChart t={pv.t} y={pv.clearance.d} label={(pv.clearance.body_radius ?? 0) > 0
+                ? `Gap: drone (${pv.clearance.body_radius} m sphere) to ${pv.clearance.k > 1 ? `${pv.clearance.k}th-nearest` : "nearest"} sparse point`
+                : pv.clearance.k > 1 ? `Clearance (${pv.clearance.k}th-nearest sparse point)` : "Clearance to nearest sparse point"} unit="m"
                 refs={[{ y: pv.clearance.threshold, label: `${pv.clearance.threshold} m` }]} bad={pv.clearance.below}
                 cursor={p.cursor} onCursor={p.setCursor} />
             )}
@@ -482,7 +530,11 @@ function PreviewPanel(p: {
               bad={pv.inside?.outside_intervals ?? []} cursor={p.cursor} onCursor={p.setCursor} />
           </div>
           <div className="row small">
-            <label className="f">Clearance threshold (m)<input type="number" step={0.05} min={0} max={2} value={p.clearance}
+            {p.drone && (
+              <label className="check" title={`Subtract the drone's bounding sphere (${p.drone.radius} m from its centre to the farthest point${p.drone.guards ? ", prop guards included" : ""}). Conservative near floors and ceilings: the airframe is only ${cm(p.drone.size[2])} cm tall.`}>
+                <input type="checkbox" checked={p.useBody} onChange={(e) => p.setUseBody(e.target.checked)} /> Subtract drone size ({p.drone.radius} m)</label>
+            )}
+            <label className="f">{p.useBody && p.drone ? "Minimum gap (m)" : "Clearance threshold (m)"}<input type="number" step={0.05} min={0} max={2} value={p.clearance}
               onChange={(e) => p.setClearance(Math.max(0, Number(e.target.value) || 0))} /></label>
             <label className="f">Ignore outliers: k-th point<input type="number" step={1} min={1} max={50} value={p.clearanceK}
               onChange={(e) => p.setClearanceK(Math.min(50, Math.max(1, Math.round(Number(e.target.value) || 1))))} /></label>
@@ -495,6 +547,7 @@ function PreviewPanel(p: {
   );
 }
 
+const cm = (m: number) => Math.round(m * 100);
 const pct = (v: number | null | undefined) => (v === null || v === undefined ? "—" : `${Math.round(v * 100)}%`);
 function Kpi({ v, l, bad }: { v: string; l: string; bad?: boolean }) {
   return <div className={`kpi ${bad ? "bad" : ""}`}><b className={bad ? "bad" : ""}>{v}</b><span>{l}</span></div>;

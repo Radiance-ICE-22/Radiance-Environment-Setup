@@ -8,9 +8,10 @@ import { GizmoHelper, GizmoViewport, Grid, Line, OrbitControls, TransformControl
 import type { OrbitControls as OrbitImpl } from "three-stdlib";
 import type { Geometry, Preview } from "../api";
 import { Box, Course, displayPos, inside, pos0, Vec3 } from "./model";
+import { Drone, DroneModel, yawQuat } from "./Drone";
 
 export type Tool = "move" | "yaw" | "add" | "goal";
-export interface ViewOpts { points: boolean; colorBy: "rgb" | "altitude"; pointSize: number; cameraPath: boolean; boxes: boolean }
+export interface ViewOpts { points: boolean; colorBy: "rgb" | "altitude"; pointSize: number; cameraPath: boolean; boxes: boolean; drone: boolean }
 
 const C = {
   kf: "#2f6fdd", kfSel: "#f59e0b", kfBad: "#e5484d", path: "#8a8f98", box: "#8a8f98", wbox: "#2f9e6e",
@@ -106,6 +107,7 @@ export default function Scene3D(p: {
   goalSelected: boolean; onGoalSelect: (on: boolean) => void;
   onDragStart: () => void; onMove: (i: number, v: Vec3) => void; onYaw: (i: number, yaw: number) => void;
   onAdd: (v: Vec3) => void; onGoalMove: (v: Vec3) => void;
+  drone?: Drone | null;
 }) {
   const { geo, course, sel, preview, opts } = p;
   const [obj, setObj] = useState<THREE.Object3D | null>(null);
@@ -140,10 +142,27 @@ export default function Scene3D(p: {
   const addZ = selKf ? displayPos(course, sel!, solved?.[sel!])[2] : course.kfs[0] ? displayPos(course, 0)[2] : -1;
   const selYaw = selKf?.fo[3][0] ?? 0;
 
+  // Where the drone model goes: on the preview at the cursor (position and FiGS's attitude),
+  // else level on the selected keyframe, else on the first one.
+  let dronePose: { pos: Vec3; q: THREE.Quaternion } | null = null;
+  if (p.drone && opts.drone) {
+    if (preview && ci !== null) {
+      const q = preview.quat?.[ci];
+      dronePose = { pos: preview.pos[ci], q: q ? new THREE.Quaternion(q[0], q[1], q[2], q[3]) : yawQuat(preview.yaw[ci]) };
+    } else {
+      const i = sel ?? (course.kfs.length ? 0 : null);
+      if (i !== null) dronePose = { pos: displayPos(course, i, solved?.[i]), q: yawQuat(course.kfs[i].fo[3][0] ?? 0) };
+    }
+  }
+  const bodyR = preview?.clearance?.body_radius ?? 0;
+
   return (
     <Canvas frameloop="demand" camera={{ up: [0, 0, -1], position: [-6, 6, -5], fov: 50, near: 0.02, far: 400 }}
       onPointerMissed={() => { p.onSelect(null); p.onGoalSelect(false); }}>
       <OrbitControls makeDefault enableDamping={false} />
+      <ambientLight intensity={1.1} />
+      <directionalLight position={[3, -2, -6]} intensity={2.2} />
+      <directionalLight position={[-4, 3, 2]} intensity={0.6} />
       <Frame geo={geo} />
       <Grid position={[0, 0, floorZ]} rotation={[Math.PI / 2, 0, 0]} args={[40, 40]} cellSize={0.5} sectionSize={1}
         cellColor="#8a8f98" sectionColor="#6b7079" cellThickness={0.6} sectionThickness={1} fadeDistance={35}
@@ -163,12 +182,16 @@ export default function Scene3D(p: {
       {preview?.clearance && (
         <group position={preview.clearance.at_pos}>
           <mesh raycast={() => null}><sphereGeometry args={[0.05, 12, 8]} /><meshBasicMaterial color={C.kfBad} /></mesh>
+          {bodyR > 0 && (
+            <mesh raycast={() => null}><sphereGeometry args={[bodyR, 24, 16]} />
+              <meshBasicMaterial color={C.kfBad} wireframe transparent opacity={0.35} /></mesh>
+          )}
           <Label text={`${preview.clearance.min} m`} color="#ff6b6b" bold />
         </group>
       )}
       {preview && ci !== null && (
         <group position={preview.pos[ci]}>
-          <mesh raycast={() => null}><sphereGeometry args={[0.09, 16, 12]} /><meshBasicMaterial color={C.cursor} /></mesh>
+          {!dronePose && <mesh raycast={() => null}><sphereGeometry args={[0.09, 16, 12]} /><meshBasicMaterial color={C.cursor} /></mesh>}
           <Line points={[[0, 0, 0], preview.vel[ci].map((v) => v * 0.3) as Vec3]} color={C.cursor} lineWidth={2.5} />
         </group>
       )}
@@ -190,6 +213,8 @@ export default function Scene3D(p: {
           </group>
         );
       })}
+
+      {p.drone && dronePose && <DroneModel drone={p.drone} position={dronePose.pos} quaternion={dronePose.q} />}
 
       {course.goal && (
         <group position={course.goal.position} ref={p.goalSelected ? setGoalObj : undefined}>
