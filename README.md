@@ -83,9 +83,9 @@ options, archive/promote of trained models, a 3D course editor with minimum-snap
 flying courses, SV-Net cohorts (`figs/svnet_pipeline.py`: rollouts, training, evaluation), config editing, live logs and training curves. It runs in its own venv and launches every job through `figs_env.sh`:
 
 ```bash
-cd ~/Radiance/ui/backend
-uv venv .venv && uv pip install -p .venv -e '.[test]'
-GALLEY_MACHINE=../machines/<host>.toml .venv/bin/python -m galley     # http://<host>:8800
+./run_ui.sh            # installs/updates the backend venv if needed, starts Galley in tmux, prints how to open it
+./run_ui.sh --pull     # git pull first, then (re)start
+./run_ui.sh status | logs | stop | restart | fg
 ```
 
 See `ui/README.md` for the API and `docs/GALLEY_UI.md` for status and next steps.

@@ -1,8 +1,10 @@
 # Galley — web console for the pipeline: status and handoff
 
-*Last updated 2026-10-01: the team's airframe (CAD) is drawn in the course editor and the
-clearance check subtracts its size (§6, "Drone model"). Phase 4 (SV-Net, unchanged upstream)
-built and tested off-machine; its gate on dummy is pending. Written so the next working session (human or
+*Last updated 2026-10-01 (evening): Phase 4's pipeline gate passed on intellisense08 (the
+whole SV-Net chain runs through Galley in 49 min), but the trained student does not fly the
+course yet (§6). intellisense08 is brought up and is now the SV-Net host. `./run_ui.sh`
+starts Galley on any host (§2). The team's airframe is drawn in the course editor and the
+clearance check subtracts its size (§6, "Drone model"). Written so the next working session (human or
 Claude) can pick up without the chat history. The live plan, with diagrams, is the Claude
 Doc "SOUS-VIDE Pipeline Console — Implementation Plan":
 https://claude.ai/code/artifact/7f7d0bbb-6399-4f1b-bead-21ff96f3f12e*
@@ -24,7 +26,7 @@ in the browser can be resumed from the shell and vice versa.
 | 1 | Backend core: job queue, config models, log streaming | done | on dummy: 26 tests, real preflight job via the queue, cancel of a running job, bad requests refused |
 | 2 | Splat page: `sfm`/`train` split, frontend, 4 GB training | done | retrain from the UI, curve shown, previous model promoted back, flight re-run |
 | 3 | Course editor (3D waypoints) | done | a browser-built course passes the `course` step and flies. Browser: `backroom_loop` (New loop, start and end keyframes dragged) saved and flew, re-timed 12 s → 8.55 s, 171 frames, tracking max 0.069 m, no dark frames. Script: a course sent the way a browser sends JSON saved as floats and flew (backroom, 173 frames, tracking max 0.074 m, 614 MiB, no dark frames); expert preview of circuit 12.344 s vs recorded flight 12.35 s |
-| 4 | SV-Net stages (`svnet_pipeline.py`) | **built, gate pending** | `data_alpha` to `eval_single` end to end from the UI. Off-machine: 55 backend tests; the script run end to end against stand-in `sousvide` modules (markers, chaining, archive, progress, metrics); headless-browser run of the SV-Net pages. Run `ui/deploy/phase4_gate.sh` on dummy (§6) |
+| 4 | SV-Net stages (`svnet_pipeline.py`) | **pipeline done; policy not flying yet** | intellisense08, 1 Oct, cohort `p4_smoke` (backroom + circuit, `data_alpha`, Maverick, 200/300 epochs, `eval_single`) through Galley's queue: all six steps succeeded in 49 min, commNet peak 6785 MiB. The expert tracks to 1.7 cm; the student Maverick does not fly circuit (per-point tracking mean 9.4 m, 16 % within 0.3 m). Next: watch its video, then a `data_beta` cohort (§6) |
 | 5 | Hardening: login, systemd, ufw, run diffs, archiving | todo | survives a reboot; reachable on LAN and Tailscale only |
 | 6 | Package + installer (cu118 and cu128 profiles) | todo | one command on a fresh clone brings everything up on the RTX 5060 Ti PC |
 
@@ -33,7 +35,8 @@ build-and-test host now. The **new home PC** (RTX 5060 Ti 16 GB, 16 GB RAM) beco
 host once Ubuntu is installed, which is why Phase 6 matters. The **lab machine**
 (intellisense05, RTX 2080 8 GB) is campus-only: an install target, not a remote worker.
 **intellisense08** (lab workstation, RTX 2080 8 GB, 62 GB RAM, Ubuntu 22.04, user `yutharsan`) is
-reachable over Tailscale. Its install lives at `~/Radiance/figs` (install_figs.sh, every step
+reachable over Tailscale and is now the host for SV-Net work: commNet with in-loop evaluation
+peaks at 6.8 GB, which a 4 GB card cannot hold (dummy stays the UI build-and-test host). Its install lives at `~/Radiance/figs` (install_figs.sh, every step
 done, `sousvide` importable) and this repo is cloned at `~/Radiance/Radiance-Environment-Setup`.
 This repo now lives at github.com/Radiance-ICE-22/Radiance-Environment-Setup (moved from
 Platinum-Saber/FYP-Radiance, which redirects). Profile:
@@ -43,32 +46,34 @@ with `ui/deploy/bringup.sh`; the deploy scripts find each machine's paths throug
 
 ---
 
-## 2. Running it on dummy
+## 2. Running it
+
+On any host, from the repo root (`~/FYP-Radiance` on dummy,
+`~/Radiance/Radiance-Environment-Setup` on intellisense08):
 
 ```bash
-cd ~/FYP-Radiance && git pull                # see §7 on keeping dummy fast-forward only
-cd ui/backend
-GALLEY_MACHINE=../machines/dummy.toml .venv/bin/python -m galley
+./run_ui.sh --pull     # pull (fast-forward only), install/update the backend venv, (re)start Galley
+./run_ui.sh status     # / logs / stop / restart / fg
 ```
 
-Port 8800 is not open in ufw yet (Phase 5), so reach it through an SSH tunnel from the
-laptop and browse to http://localhost:8800 (API docs at `/docs`):
+It picks the profile by hostname (`ui/machines/dummy.toml`, `intellisense08.toml`;
+`GALLEY_MACHINE` overrides), keeps the backend in its own uv venv (**never** the `kitchen`
+env) and reinstalls it only when `pyproject.toml` changes, checks the FiGS install and the
+committed `dist/`, warns if another process holds the GPU, starts the server in tmux session
+`galley` (log: `~/.local/share/galley/galley.log`) and waits until `/api/health` answers.
+`stop`/`restart` refuse while a pipeline job is running, because stopping the server orphans it.
 
-```powershell
-ssh -L 8800:localhost:8800 hanzo@dummy.stargazer-haddock.ts.net
-```
+Both profiles bind to loopback (no login before Phase 5). From the laptop:
 
-First-time setup of the backend venv (it is **not** the `kitchen` env and must never be
-installed into it):
+- VS Code Remote-SSH (how intellisense08 is used): Ports tab → forward 8800, open the address shown.
+- Or a tunnel: `ssh -N -L 18800:localhost:8800 hanzo@dummy.stargazer-haddock.ts.net` (or
+  `yutharsan@intellisense08-EWISPro9900G`), then http://localhost:18800. Windows often reserves
+  8800 itself (`bind … Permission denied`).
 
-```bash
-cd ~/FYP-Radiance/ui/backend
-uv venv .venv && uv pip install -p .venv -e '.[test]'
-GALLEY_TEST_CONFIGS=~/projects/figs_validation/SousVide/configs .venv/bin/python -m pytest -q
-```
+Tests against a host's real configs:
+`cd ui/backend && GALLEY_TEST_CONFIGS=<project_root>/SousVide/configs .venv/bin/python -m pytest -q`.
 
-To update: edit on the laptop, commit, push; `git pull` on dummy; stop the server with
-Ctrl-C and start it again. The frontend build (`ui/frontend/dist/`) is committed, so
+To update: edit on the laptop, commit, push; then `./run_ui.sh --pull` on the host. The frontend build (`ui/frontend/dist/`) is committed, so
 dummy needs no Node.js. Rebuild it only after changing `ui/frontend/src/`
 (`npm ci && npm run build`, then commit `dist/`).
 
@@ -109,6 +114,8 @@ Browser (React)  ──HTTP + WebSocket :8800──▶  FastAPI (ui/backend/gall
 | `ui/frontend/src/` | pages: Overview, New capture, Scene, Jobs, Job, Configs; `charts.tsx` has the line and bar charts |
 | `ui/machines/dummy.toml` | dummy's profile; add one per host |
 | `ui/deploy/phase1_gate.sh` … `phase4_gate.sh`, `phase2_train_probe.sh` | the gate and measurement scripts used so far |
+| `ui/deploy/host.sh`, `bringup.sh` | per-host paths; bring an installed host up to date and check it end to end |
+| `run_ui.sh` (repo root) | start / stop / status / logs for Galley; creates or updates the backend venv |
 
 Security choices already in place: no generic shell endpoint; every job is an argv list
 (never `shell=True`); scene, course and config names are regex-checked; videos must live
@@ -135,7 +142,7 @@ in the staging directory; extra `ns-train` options must match an allow-list
 
 ---
 
-## 5. Measured on dummy
+## 5. Measured on the hosts
 
 **A 4 GB card trains splats.** `ui/deploy/phase2_train_probe.sh` retrained backroom as
 `backroom_t4` (workspace symlinked to backroom's, so SfM was reused):
@@ -172,6 +179,18 @@ saved as floats and flew: re-timed 12.0 s → 8.65 s, 173 frames, tracking max 0
 - A duplicate 17 GB `kitchen` env sits in `~/miniconda3`; the one `.bashrc` activates is
   under `~/projects/figs_validation/miniconda3`.
 - Scenes: backroom, flightroom, mid_gate, src_open (shipped) and backroom_t4 (trained on dummy).
+
+**intellisense08** (`bringup.sh`, 1 Oct 2026):
+
+- Install at `~/Radiance/figs` (install_figs.sh): `verify_figs.sh` 21/21, tiny-cuda-nn built for
+  compute 7.5, COLMAP 3.11.1 with CUDA. 567 GB free.
+- SousVide clone: pinned `a2400aa` plus two local notebook commits (notebooks, scripts,
+  `NOTEBOOK_FIXES.md`). The only package file they touch is `src/sousvide/visualize/rich_utilities.py`
+  (+10 lines, progress/table display only; `svnet_pipeline.py` replaces its progress functions),
+  so results are upstream's. `bringup.sh` flags any `src/` change; this one is accepted.
+- backroom + circuit: tracking mean 0.002 m / max 0.034 m, 247 frames, pixel std 52.6, no dark
+  frames, peak 739 MiB — the same flight as on dummy. Backend tests: 60 passed.
+- `backroom1` is an empty, interrupted training run (as on dummy): not loadable, harmless; archive it.
 
 ---
 
@@ -244,7 +263,7 @@ build; the OBJ stays out of git. Re-run the tool after a CAD change (needs numpy
 - Not done: the drone in the SV-Net evaluation view (replaying rollouts), spinning props, and a
   shape-aware clearance (an ellipsoid or the real hull instead of a sphere).
 
-**Phase 4 — SV-Net (built; gate pending).** Get SOUS-VIDE's learning half working *unchanged*
+**Phase 4 — SV-Net (pipeline done 1 Oct; policy not flying yet).** Get SOUS-VIDE's learning half working *unchanged*
 first; semantic feature fields (LangSplat / FMGS style) come after, as a separate step.
 
 `figs/svnet_pipeline.py` replaces `notebooks/sous_vide_examples.ipynb` step for step:
@@ -286,16 +305,41 @@ so Archive/Promote on the Scene page wait for it. dummy's profile pre-fills in-l
 with `eval_single` (`svnet_comm_eval`); the notebook's `eval_nominal` flies 10 full-course
 rollouts of expert and student at every save.
 
-Gate on dummy: `tmux new -d -s p4 'bash ~/FYP-Radiance/ui/deploy/phase4_gate.sh > ~/phase4_gate.log 2>&1'`
+Gate: `tmux new -d -s p4 'bash <repo>/ui/deploy/phase4_gate.sh > ~/phase4_gate.log 2>&1'`
 (tests, preflight with the size estimate, then cohort `p4_smoke` = backroom + circuit,
-`data_alpha`, Maverick, notebook epochs 200/300, `eval_single`, through Galley's queue; a few
-hours). Watch it on the SV-Net page through the usual tunnel. Estimate for circuit: ~108
-rollouts, ~4,300 samples, ~6 GB. Deferred until it works as is: the depth-dropping overlay patch,
+`data_alpha`, Maverick, notebook epochs 200/300, `eval_single`, through Galley's queue).
+
+**Gate result, intellisense08, 1 Oct (49 min, job succeeded):**
+
+| Step | Time | Peak VRAM | Result |
+|---|---|---|---|
+| rollout | 3 min | 739 MiB | 111 rollouts kept (`tol_select`), 4,440 samples, 5.41 GB (estimate: 108 / 4,320 / 5.97 GB) |
+| observe | 42 s | 3207 MiB | commNet observations 2.68 GB |
+| train_hist | 3 min | 413 MiB | 200 epochs, train 1.055, test 1.029 (4,096 / 448 samples) |
+| train_comm | 41 min | **6785 MiB** | 300 epochs, train 0.00267, test 0.0185; in-loop upstream TTE 228 → 127 → 77 → 75 → 339 → 61 → 30 (epochs 0–300), best = last checkpoint |
+| deploy | 1.5 min | 753 MiB | expert Viper: per-point tracking mean 0.001 m, max 0.017 m, 100 % within 0.3 m (upstream TTE 0.0016, PP 1.0). **Student Maverick: mean 9.43 m, max 79.3 m, 16 % within 0.3 m** (upstream TTE 30.3, PP 0.028) |
+
+So the pipeline is done: every step runs unchanged upstream code through the queue, resumable,
+with metrics and videos. The policy is not: Maverick leaves the course. Signs: commNet's test
+loss is 7× its train loss on 4,096 samples, and the in-loop evaluation is erratic. `data_alpha`
+is the smallest dataset; whether upstream expects a flying policy from it is not known yet.
+The 6.8 GB commNet peak also settles dummy: with in-loop evaluation it cannot train commNet
+on 4 GB at all (`--comm-eval none` might; not tried).
+
+Next, in order:
+
+1. Watch `cohorts/p4_smoke/deployment_data/sim_circuit_Maverick_rgb.mp4` (SV-Net page →
+   `p4_smoke`). Diverging in the first second suggests an observation mismatch between
+   training and deployment; following the start and drifting suggests data/training.
+2. Cohort `p4_beta`: the same settings with `data_beta` (~10× the data, ~90 GB with depth;
+   rollouts ~30 min, commNet ~6–7 h). If it still flies away, audit the observation path
+   (what `observe` feeds commNet versus what `deploy_roster` feeds it in flight).
+3. Then: the depth-dropping overlay patch and `use_compress` (storage), `data_gamma`, pilot editors. Deferred until it works as is: the depth-dropping overlay patch,
 `use_compress` by default, `data_beta`/`data_gamma`, pilot editors.
 
 **Phase 5 — hardening.** ufw rules for 8800 (LAN + `tailscale0`), a login, systemd units
-that run through `figs_env.sh`, run diffs, archive/delete for old runs and cohorts, and
-treating `ns-viewer` as a queued GPU job.
+that run through `figs_env.sh` (`run_ui.sh` covers starting by hand until then), run diffs,
+archive/delete for old runs and cohorts, and treating `ns-viewer` as a queued GPU job.
 
 **Phase 6 — installer.** Move remaining setup into `install_figs.sh` steps (`sousvide`,
 `ui`), pin pycolmap and OpenCV, and add `--cuda-profile cu118|cu128`. The RTX 5060 Ti is
@@ -309,9 +353,9 @@ Prototype it on the new PC as soon as Ubuntu is installed.
 
 ## 7. Traps met in this cycle
 
-- **Don't run git from Claude's Cowork VM against the laptop repo.** Its sandbox cannot
-  delete files, so git leaves `.git/index.lock` / `objects/maintenance.lock` behind and
-  blocks the next commit. Delete them if you see them.
+- **Don't run git from Claude's Cowork VM against the laptop repo, not even `git status`.**
+  Its sandbox cannot delete files, so git leaves `.git/index.lock` / `objects/maintenance.lock`
+  behind and blocks the next commit (happened again on 1 Oct). Delete them if you see them.
 - **Line endings.** The laptop working copy is CRLF, so `git status` shows every file as
   modified. `git config core.autocrlf true` in that repo quiets it; edit scripts should
   preserve CRLF.
@@ -340,6 +384,11 @@ Prototype it on the new PC as soon as Ubuntu is installed.
   Upstream also uses its TTE to keep commNet's "best" checkpoint when in-loop evaluation is on.
 - **sousvide keeps training what is on disk.** `Pilot()` loads `roster/<pilot>/<net>.pt` if it
   exists, so a second `train_hist` continues from the first. Use `--fresh` to start over.
+- **commNet needs ~6.8 GB with in-loop evaluation** (training plus the splat for the evaluation
+  flights). Train SV-Net on intellisense08 (8 GB) or the 16 GB PC, not on dummy.
+- **Don't stop Galley while a job runs.** Jobs run in their own session, so the job keeps going
+  (and keeps the GPU) but its log is lost and it is marked `interrupted`. `run_ui.sh stop`
+  refuses unless `--force`.
 - **Rich progress bars are silent without a terminal.** Upstream's progress goes through rich,
   which draws nothing when stdout is a pipe (Galley, `tee`, tmux logs); `svnet_pipeline.py`
   substitutes plain lines.
@@ -348,17 +397,20 @@ Prototype it on the new PC as soon as Ubuntu is installed.
 
 ## 8. Working with Claude on this
 
-Claude's Cowork session cannot SSH to dummy (no route from its sandbox; terminals can only
-be clicked, not typed into). What worked: Claude writes scripts and code bundles into
-`C:\Users\User\Claude\galley\` and applies code to `D:\Projects\FYP\FYP-Radiance` after
-checking checksums; you run things on dummy over your own SSH key and save outputs into the
-same folder for Claude to read. Running Claude Code directly on dummy (in `tmux`) would
-remove the round trip.
+Claude's Cowork session cannot reach dummy or intellisense08 (no route from its sandbox to
+the LAN or the tailnet). What works: Claude clones this repo from GitHub into its own
+workspace at the same commit, builds and tests there (backend tests, the frontend build, real
+FiGS/SousVide code against synthetic scenes, headless-browser screenshots), then copies the
+changed files into `D:\Projects\FYP\FYP-Radiance` after checking that the laptop's copies
+match what it started from. You commit and push from the laptop, run `./run_ui.sh --pull` or
+the gate scripts on the host (intellisense08 through VS Code Remote-SSH), and paste or upload
+the logs. Running Claude Code directly on a host (in `tmux`) would remove the round trip.
 
 Prompt to start the next session:
 
-> Continue the Galley web console for my FYP pipeline. Phase 4 (SV-Net) is built: check its gate
-> in ~/phase4_gate.log on dummy, then plan semantic feature fields. Read
-> `D:\Projects\FYP\FYP-Radiance\docs\GALLEY_UI.md` first, then the plan doc linked there.
-> Code is in `FYP-Radiance/ui/`; the pipeline script is `figs/figs_pipeline.py`. Work on
-> my laptop copy and give me commands to run on dummy.
+> Continue the Galley web console for my FYP pipeline. Read
+> `D:\Projects\FYP\FYP-Radiance\docs\GALLEY_UI.md` first (§1 status, §6 next steps).
+> Phase 4's pipeline runs on intellisense08 but the student policy does not fly yet: I have
+> the Maverick video / the `p4_beta` (data_beta) result to look at. Code is in `ui/`; the
+> pipeline scripts are `figs/figs_pipeline.py` and `figs/svnet_pipeline.py`. Work on my laptop
+> copy and give me commands to run on intellisense08 (VS Code Remote-SSH, `./run_ui.sh`).

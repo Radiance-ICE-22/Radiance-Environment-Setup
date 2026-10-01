@@ -14,8 +14,11 @@ Plan with diagrams: https://claude.ai/code/artifact/7f7d0bbb-6399-4f1b-bead-21ff
 | `backend/galley/` | FastAPI app, SQLite job queue, config models, pipeline bridge, TensorBoard reader |
 | `backend/galley/course.py` | course editor backend: runs `figs/course_tools.py` (kitchen env, CPU only) for geometry and previews |
 | `backend/galley/svnet.py` | SV-Net bridge: `svnet_pipeline.py` command lines, cohort state readers |
-| `backend/tests/` | pytest suite (55 tests; fake pipeline, course tools and SV-Net script; set `GALLEY_TEST_CONFIGS` to round-trip real configs) |
-| `machines/<host>.toml` | per-host paths, GPU and defaults (`dummy.toml` so far) |
+| `backend/tests/` | pytest suite (60 tests; fake pipeline, course tools and SV-Net script; set `GALLEY_TEST_CONFIGS` to round-trip real configs) |
+| `machines/<host>.toml` | per-host paths, GPU and defaults (`dummy.toml`, `intellisense08.toml`) |
+| `../run_ui.sh` | start / stop / status / logs for Galley on any host (creates the venv when needed) |
+| `tools/drone_model.py` | CAD OBJ/MTL → `frontend/public/models/drone.glb` + `drone.json` for the course editor |
+| `deploy/host.sh`, `deploy/bringup.sh` | per-host paths for the deploy scripts; bring an installed host up to date and check it end to end |
 | `frontend/` | React + Vite UI; `frontend/dist/` is the committed build the backend serves |
 | `deploy/phase1_gate.sh` | installs the backend on a host, runs the tests, drives the API with curl |
 | `deploy/phase2_train_probe.sh` | measures splat training on a small GPU by retraining backroom as `backroom_t4` |
@@ -24,19 +27,28 @@ Plan with diagrams: https://claude.ai/code/artifact/7f7d0bbb-6399-4f1b-bead-21ff
 
 ## Run
 
-The backend has its own venv. **Never install it into `kitchen`**: it only launches
-pipeline processes, each of which sources `figs_env.sh` itself.
+From the repo root:
 
 ```bash
-cd ~/FYP-Radiance/ui/backend
-uv venv .venv && uv pip install -p .venv -e '.[test]'
-.venv/bin/python -m galley     # UI: http://<host>:8800  API docs: /docs
-# The profile is ui/machines/<hostname prefix>.toml (dummy.toml, intellisense08.toml);
-# GALLEY_MACHINE=<file> overrides it.
+./run_ui.sh              # start in tmux session "galley"; waits for /api/health; prints how to open it
+./run_ui.sh --pull       # git pull --ff-only, then (re)start
+./run_ui.sh status       # up? which profile? a job running?
+./run_ui.sh logs         # follow <data_dir>/galley.log
+./run_ui.sh stop         # refuses while a pipeline job runs (--force to override)
+./run_ui.sh restart | fg # fg = run in this terminal
 ```
 
-Port 8800 is not opened in ufw yet; from another machine use
-`ssh -L 8800:localhost:8800 <user>@<host>` and browse to http://localhost:8800.
+`start` finds the machine profile (`$GALLEY_MACHINE`, else `ui/machine.toml`, else
+`ui/machines/<hostname prefix>.toml`), creates `backend/.venv` with uv or reinstalls it when
+`backend/pyproject.toml` changed, checks `figs_env.sh`, `figs_pipeline.py`, `frontend/dist/`
+and whether something else holds the GPU, then starts the server. The backend has its own
+venv. **Never install it into `kitchen`**: it only launches pipeline processes, each of which
+sources `figs_env.sh` itself. Manual equivalent:
+`cd ui/backend && uv venv .venv && uv pip install -p .venv -e '.[test]' && .venv/bin/python -m galley`.
+
+The profiles bind to loopback (no login until Phase 5). From the laptop: in VS Code
+Remote-SSH, Ports tab → forward 8800; or `ssh -N -L 18800:localhost:8800 <user>@<host>` and
+browse to http://localhost:18800 (Windows often reserves 8800 itself).
 Set `GALLEY_TOKEN` (or `[server] token` in the machine file) to require a token.
 
 The built frontend (`frontend/dist/`) is committed, so target machines need no Node.js.
