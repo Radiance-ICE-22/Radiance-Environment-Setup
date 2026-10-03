@@ -386,3 +386,8 @@ table.kf .num { width: 64px; }
 .cfg-editor { display: flex; flex-direction: column; min-height: 0; }
 .cfg-editor textarea { flex: 1; min-height: 300px; border: 0; border-top: 1px solid var(--line); resize: none; padding: 4px 6px; line-height: 1.45; tab-size: 4; }
 .doc.doc-cfg { overflow: hidden; }
+
+/* Office-style message bar (new build on the server, stale chunk) */
+.msgbar { display: flex; align-items: center; gap: 8px; padding: 4px 8px; background: #FFF4D6; border: 1px solid #EBCB7A; color: #5A3E00; }
+.msgbar span { flex: 1; }
+.msgbar.top { flex: none; margin: 4px 4px 0; }

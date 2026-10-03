@@ -26,7 +26,34 @@ import NewCapture from "./pages/NewCapture";
 import SvNetPage from "./pages/SvNet";
 
 // three.js and the editor load only when the course editor is opened.
-const CoursePage = lazy(() => import("./pages/Course"));
+// If the server was updated after this page loaded, the old chunk is gone (404): say so instead
+// of showing "Loading the 3D editor…" forever.
+const CoursePage = lazy(() => import("./pages/Course").catch(() => ({ default: StaleBuild })));
+
+/** The build this page runs (the hashed index-*.js it loaded). */
+const BUILD = (document.querySelector('script[src*="/assets/index-"]') as HTMLScriptElement | null)?.src.split("/assets/")[1] ?? null;
+/** Checks every minute whether the server now serves a different build (after a git pull). */
+function useNewBuild() {
+  const [nb, setNb] = useState(false);
+  useEffect(() => {
+    if (!BUILD) return;                      // dev server: nothing to compare
+    const check = () => fetch("/", { cache: "no-store" }).then((r) => r.text()).then((h) => {
+      const m = h.match(/assets\/(index-[\w-]+\.js)/); if (m && m[1] !== BUILD) setNb(true);
+    }).catch(() => {});
+    const t = setInterval(check, 60000); addEventListener("focus", check);
+    return () => { clearInterval(t); removeEventListener("focus", check); };
+  }, []);
+  return nb;
+}
+function StaleBuild() {
+  return (
+    <div className="pad">
+      <div className="msgbar"><Icon name="warning" size={16} /><span><b>Galley was updated on the server</b> after this page was opened, so the course
+        editor of the old version is no longer there. Reload the page to load the new version (open documents come back).</span>
+        <button className="push primary" onClick={() => location.reload()}>Reload</button></div>
+    </div>
+  );
+}
 
 // ── routes → documents ──────────────────────────────────────────────────────
 function parse(hash: string): string[] {
@@ -110,6 +137,7 @@ function Window() {
   const setProblemCount = useCallback((k: string, n: number) => setProbCounts((c) => (c[k] === n ? c : { ...c, [k]: n })), []);
   const [outTab, setOutTab] = useState<OutTab>("log");
   const [dialog, setDialog] = useState<DialogState>(null);
+  const newBuild = useNewBuild();
 
   // full screen: the active document gets the whole screen (and the browser goes full screen)
   const [fs, setFs] = useState(false);
@@ -234,6 +262,8 @@ function Window() {
           {!fs && <TitleBar title={`Galley — ${cur.title}`} />}
           <Ribbon tab={tab} setTab={setTab} minimized={layout.minRibbon || fs} setMinimized={(b) => { if (!fs) setLayout({ minRibbon: b }); }}
             appMenu={<AppMenu open={setDialog} closeOthers={() => setDocs((ds) => ds.filter((x) => x.key === cur.key))} />} />
+          {newBuild && <div className="msgbar top"><Icon name="info" size={16} /><span><b>Galley has been updated on the server.</b> Reload to use the new version; open documents come back, unsaved edits do not.</span>
+            <button className="push" onClick={() => location.reload()}>Reload</button></div>}
           <div className="workspace">
             {layout.explorer && !fs && <div style={{ width: layout.exW, flex: "none", display: "flex" }}>
               <Explorer activeHref={cur.href} defaultScene={ctxScene ?? null} onClose={() => setLayout({ explorer: false })} /></div>}
