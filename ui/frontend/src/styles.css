@@ -340,11 +340,12 @@ video { width: 100%; max-height: 340px; background: #000; display: block; border
 .videos figcaption { font-size: 11px; color: var(--muted); margin-top: 2px; }
 
 /* ── course workspace ────────────────────────────────────────────────────── */
-.cw-top { flex: 1.25; min-height: 260px; display: flex; gap: 6px; }
+.cw { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.cw-top { flex: 1.25; min-height: 140px; display: flex; }
 .cw-view { flex: 1.45; min-width: 0; }
-.cw-side { flex: 1; min-width: 330px; display: flex; flex-direction: column; gap: 6px; min-height: 0; }
-.cw-bottom { flex: 1; min-height: 180px; overflow: auto; margin-top: 6px; display: flex; flex-direction: column; gap: 6px; }
-.viewport { position: relative; height: 100%; min-height: 240px; border: 1px solid var(--line2); overflow: hidden; background: #F7F9FC; }
+.cw-side { flex: none; min-width: 280px; display: flex; flex-direction: column; gap: 6px; min-height: 0; }
+.cw-bottom { flex: 1 1 0; min-height: 120px; overflow: hidden; display: flex; flex-direction: column; gap: 6px; }
+.viewport { position: relative; height: 100%; min-height: 120px; border: 1px solid var(--line2); overflow: hidden; background: #F7F9FC; }
 .viewport .overlay { position: absolute; right: 8px; top: 8px; display: flex; gap: 4px; flex-wrap: wrap; align-items: center; pointer-events: none; }
 .viewport .overlay > * { pointer-events: auto; }
 .viewport .legend { position: absolute; left: 8px; bottom: 8px; font-size: 10.5px; color: #333; background: rgb(255 255 255 / .88); border: 1px solid var(--line); padding: 4px 7px; line-height: 1.5; max-width: 70%; }
@@ -359,7 +360,19 @@ table.kf .num { width: 64px; }
 .matrix { display: grid; grid-template-columns: 34px repeat(5, minmax(0, 1fr)); gap: 2px 3px; align-items: center; font-size: 11px; margin: 4px 0; }
 .matrix input { font-family: var(--mono); font-size: 11px; padding: 0 3px; width: 100%; min-width: 0; }
 .matrix input.free { border-style: dashed; background: transparent; }
-.chartgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 6px; }
+.chartgrid { display: grid; gap: 6px; flex: 1 1 0; min-height: 0; overflow: auto; }
+.chartcell { position: relative; min-height: 0; }
+.chartcell > .tile-body { position: absolute; inset: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: center; }
+.cw .splitter-h { height: 6px; }
+.cw .splitter-v { width: 6px; }
+.splitter { position: relative; }
+.splitter::after { content: ""; position: absolute; inset: 0; margin: auto; background: #B6CAE6; border-radius: 1px; opacity: 0; }
+.splitter-v::after { width: 2px; height: 28px; }
+.splitter-h::after { height: 2px; width: 28px; }
+.splitter:hover::after { opacity: 1; background: var(--frame-dark); }
+.fs-strip { height: 25px; flex: none; display: flex; align-items: center; gap: 6px; padding: 0 4px 0 8px; color: var(--navy); }
+.fs-strip .rb-small { height: 21px; }
+.window.fullscreen { border: 0; }
 .chartgrid .tile-body { padding: 2px 4px; }
 .seg { display: inline-flex; border: 1px solid var(--line2); background: rgb(255 255 255 / .92); border-radius: 2px; }
 .seg button.seg-b { border: 1px solid transparent; background: transparent; padding: 2px; display: grid; place-items: center; cursor: pointer; border-radius: 2px; }

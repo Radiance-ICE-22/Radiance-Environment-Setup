@@ -97,6 +97,11 @@ export const TABS: Tab[] = [
     { name: "Fly", when: WHEN.course, items: [[F("fly.expert", "Expert", "select", "Expert pilot (MPC) config."), F("fly.frame", "Frame", "select", "Vehicle frame: mass and thrust coefficient."),
       F("fly.method", "Method", "text", "Evaluation method config.")], [C("fly.outside", "Allow outside", "Fly even if keyframes leave the captured volume (renders mush outside it).")],
       L("fly.go", "Fly", "fly", "Save, then fly the expert through the splat and check the video.", "figs_pipeline.py --from course --stop-after record --redo course simulate validate", "F5")] },
+    { name: "Window", items: [L("view.fullscreen", "Full screen", "fullscreen", "Give the whole screen to the active document: hides the title bar, Explorer, document tabs and status bar, collapses the ribbon (click a tab to use it for one command) and enters browser full screen. Properties and Output can be shown from the strip at the top. Esc or Ctrl+Shift+F leaves.", "", "Ctrl+Shift+F"),
+      [S("tile.view", "Maximize 3D view", "maximize", "The 3D view fills the workspace. Click again, or press Esc, to restore the tiles."),
+        S("tile.kf", "Maximize keyframes", "matrix", "The keyframe table fills the workspace."),
+        S("tile.charts", "Maximize charts", "chart", "The preview's charts fill the workspace, each as tall as the space allows.")],
+      [S("tile.reset", "Reset tiles", "restore", "Restore the default sizes of the 3D view, keyframe and chart tiles. Drag the splitters between tiles to resize them; double-click a splitter to reset it.")]] },
   ] },
   { name: "SV-Net", groups: [
     { name: "Cohort", items: [L("sv.new", "New cohort", "cohort", "Scene, courses, rollout method, students, epochs and evaluation, with a disk estimate before anything flies.", "svnet_pipeline.py --cohort <name> …"),
@@ -150,7 +155,7 @@ export const TABS: Tab[] = [
     { name: "Density", items: [[S("density.compact", "Compact", "density", "22 px rows, 12 px text."), S("density.comfortable", "Comfortable", "density", "26 px rows."),
       S("density.large", "Larger text", "search", "13 px text.")]] },
     { name: "Window", items: [[S("win.float", "New window", "copy", "Open the active document in a new browser window."), S("win.closeall", "Close others", "close", "Close every document except the active one."),
-      S("win.split", "Split right", "panes", "Show two documents side by side.")]] },
+      S("win.split", "Split right", "panes", "Show two documents side by side.")], [S("view.fullscreen", "Full screen", "fullscreen", "Give the whole screen to the active document: hides the title bar, Explorer, document tabs and status bar, collapses the ribbon (click a tab to use it for one command) and enters browser full screen. Properties and Output can be shown from the strip at the top. Esc or Ctrl+Shift+F leaves.", "", "Ctrl+Shift+F")]] },
   ] },
   { name: "Keyframe Tools", contextual: "ctx.keyframe", groups: [
     { name: "Keyframe", when: WHEN.kf, items: [L("kf.insert", "Insert after", "insert", "New pass-through keyframe between this one and the next (position fixed, derivatives free).", "", "Ins"),
@@ -172,5 +177,6 @@ export const SHORTCUTS: [string, string][] = [
   ["F5", "Run the active document's job (fly / run steps / continue / queue)"], ["Shift+F5", "Cancel the running job"],
   ["Ctrl+S", "Save (course, config)"], ["Ctrl+Z", "Undo (course editor)"], ["F6", "Preview the course"], ["F7", "Validate the config"],
   ["Ctrl+F1", "Minimize / restore the ribbon"], ["F1", "Help"], ["M / R / A", "Course editor tools: move, yaw, add"],
-  ["Del", "Delete the selected keyframe"], ["Esc", "Deselect"],
+  ["Del", "Delete the selected keyframe"], ["Ctrl+Shift+F", "Full screen (any document)"],
+  ["Esc", "Deselect; restore a maximized tile; leave full screen"],
 ];

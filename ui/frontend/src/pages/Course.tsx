@@ -2,14 +2,14 @@
 // expert's minimum-snap trajectory, check clearance and the capture volume, save, fly.
 // The Course tab (File, Edit, Preview, Checks, Show, Fly) and Keyframe Tools drive it; the
 // selected keyframe's details and derivative matrix are in Properties, problems in Output.
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { active, api, ApiError, courseApi, flightUrl, Geometry, Job, Preview } from "../api";
 import { TimeChart } from "../charts";
 import { usePoll } from "../components";
 import { Problem as PaneProblem, ToProblems, ToProperties, useCommands, useDoc } from "../shell/core";
 import { useAppData } from "../shell/data";
 import { Icon } from "../shell/icons";
-import { Pill, Prop, PropSection, Tile } from "../shell/Panes";
+import { Pill, Prop, PropSection, Splitter, Tile } from "../shell/Panes";
 import Scene3D, { Tool, ViewOpts } from "../course/Scene3D";
 import { useDrone } from "../course/Drone";
 import {
@@ -167,6 +167,13 @@ export default function CoursePage({ scene, name }: { scene?: string; name?: str
     ...c, kfs: c.kfs.map((k) => { const s = pv.keyframes.find((x) => x.name === k.name); return s ? { ...k, t: round(s.t_solved, 3) } : k; }),
   }));
 
+  // ── tiles: sizes (dragged splitters, remembered) and one tile maximized ───
+  const [lay, setLayRaw] = useState<CourseLayout>(() => { try { return { ...LAY0, ...JSON.parse(localStorage.getItem(LAY_KEY) ?? "{}") }; } catch { return LAY0; } });
+  const setLay = (p: Partial<CourseLayout>) => setLayRaw((l) => { const n = { ...l, ...p }; try { localStorage.setItem(LAY_KEY, JSON.stringify(n)); } catch { /* */ } return n; });
+  const [max, setMax] = useState<null | "view" | "kf" | "charts">(null);
+  const toggleMax = (t: "view" | "kf" | "charts") => setMax((m) => (m === t ? null : t));
+  const wrap = useRef<HTMLDivElement>(null);
+
   // keyboard (document-local): Delete removes, Esc deselects, Ins inserts, M/R/A tools.
   // Ctrl+Z, Ctrl+S, F5 and F6 are global and reach this document through its bindings.
   const docActive = useRef(false);
@@ -176,6 +183,7 @@ export default function CoursePage({ scene, name }: { scene?: string; name?: str
       const el = e.target as HTMLElement;
       if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT")) return;
       if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.key === "Escape" && max) { e.preventDefault(); setMax(null); return; }   // before the window's Esc (full screen)
       if (e.key === "Delete" && sel !== null) remove(sel);
       else if (e.key === "Insert" && sel !== null) insertSel();
       else if (e.key === "Escape") { setSel(null); setGoalSel(false); }
@@ -183,8 +191,8 @@ export default function CoursePage({ scene, name }: { scene?: string; name?: str
       else if (e.key === "r") setTool("yaw");
       else if (e.key === "a") setTool("add");
     };
-    addEventListener("keydown", h);
-    return () => removeEventListener("keydown", h);
+    addEventListener("keydown", h, true);
+    return () => removeEventListener("keydown", h, true);
   });
 
   // ── save ───────────────────────────────────────────────────────────────────
@@ -287,6 +295,10 @@ export default function CoursePage({ scene, name }: { scene?: string; name?: str
     "fly.outside": { checked: allowOutside, set: (v) => setAllowOutside(yes(v)) },
     "fly.go": { run: fly, disabled: !scene ? "Pick a scene." : noPv || (!!job && active(job.status) && `Job #${job.id} is ${job.status}.`), label: dirty || saveName !== name ? "Save + fly" : undefined },
     "run": { run: fly, disabled: !scene ? "Pick a scene." : noPv || (!!job && active(job.status) && `Job #${job.id} is ${job.status}.`) },
+    "tile.view": { checked: max === "view", run: () => toggleMax("view"), disabled: !scene && "Pick a scene first." },
+    "tile.kf": { checked: max === "kf", run: () => toggleMax("kf"), disabled: noCourse },
+    "tile.charts": { checked: max === "charts", run: () => toggleMax("charts"), disabled: (!pv && "Preview first (F6).") || noCourse },
+    "tile.reset": { run: () => { setMax(null); setLay(LAY0); } },
     "ctx.keyframe": { checked: sel !== null && !!course },
     "kf.insert": { run: insertSel },
     "kf.delete": { run: () => sel !== null && remove(sel), disabled: (course?.kfs.length ?? 0) <= 2 && "A course keeps at least 2 keyframes." },
@@ -328,9 +340,9 @@ export default function CoursePage({ scene, name }: { scene?: string; name?: str
         <Tile title="Course workspace" icon="route"><p>Pick a scene in the ribbon (Course ▸ File ▸ Scene): the editor draws the course over its SfM point cloud and camera path.</p>
           <div className="row">{loadable.map((s) => <button key={s.scene} onClick={() => go(s.scene)}>{s.scene}</button>)}</div></Tile>
       ) : (
-        <>
-          <div className="cw-top">
-            <div className="cw-view">
+        <div className="cw" ref={wrap}>
+          <div className="cw-top" style={max === "charts" ? { display: "none" } : max || !course || !pv ? { flex: "1 1 0" } : { flex: `0 0 ${lay.topPct}%` }}>
+            <div className="cw-view" style={max === "kf" ? { display: "none" } : undefined}>
               <div className="viewport">
                 {course || geo ? (
                   <Scene3D geo={geo} course={course ?? { Nco: 6, kfs: [], forces: null, goal: null, extra: {}, wpExtra: {} }}
@@ -345,6 +357,10 @@ export default function CoursePage({ scene, name }: { scene?: string; name?: str
                 ) : <p className="muted" style={{ padding: 16 }}>{geoErr ?? "Loading scene…"}</p>}
                 <div className="vtag">{scene}{name ? ` / ${name}` : course ? ` / ${saveName} (unsaved)` : ""}{dirty ? " ●" : ""} · course frame (x, −y, −z): z down</div>
                 <div className="overlay">
+                  <div className="seg">
+                    <button className={`seg-b ${max === "view" ? "on" : ""}`} title={max === "view" ? "Restore the tiles (Esc)" : "Maximize the 3D view"} onClick={() => toggleMax("view")}>
+                      <Icon name={max === "view" ? "restore" : "maximize"} size={18} /></button>
+                  </div>
                   <div className="seg">
                     {([["move", "move", "Move (M)"], ["yaw", "yaw", "Yaw (R)"], ["add", "addpt", "Add (A)"]] as const).map(([k, ic, t]) => (
                       <button key={k} className={`seg-b ${tool === k ? "on" : ""}`} title={t} onClick={() => setTool(k)}><Icon name={ic} size={18} /></button>))}
@@ -361,8 +377,10 @@ export default function CoursePage({ scene, name }: { scene?: string; name?: str
                 </div>
               </div>
             </div>
-            <div className="cw-side">
-              <Tile title={course ? `Keyframes · ${name ?? saveName}` : "Keyframes"} icon="matrix" className="fill flush" meta={course ? `${course.kfs.length} keyframes · Nco ${course.Nco} · ${dirty ? "unsaved" : "saved"}` : undefined}>
+            {!max && <Splitter dir="v" onDrag={(dx) => setLay({ sideW: clampN(lay.sideW - dx, 280, (wrap.current?.clientWidth ?? 1600) - 320) })} onReset={() => setLay({ sideW: LAY0.sideW })} />}
+            <div className="cw-side" style={max === "view" ? { display: "none" } : max === "kf" ? { flex: "1 1 0" } : { width: lay.sideW }}>
+              <Tile title={course ? `Keyframes · ${name ?? saveName}` : "Keyframes"} icon="matrix" className="fill flush" meta={course ? `${course.kfs.length} keyframes · Nco ${course.Nco} · ${dirty ? "unsaved" : "saved"}` : undefined}
+                actions={<MaxBtn on={max === "kf"} what="the keyframe table" onClick={() => toggleMax("kf")} />}>
                 {course ? (
                   <>
                     <table className="kf">
@@ -419,17 +437,20 @@ export default function CoursePage({ scene, name }: { scene?: string; name?: str
               )}
             </div>
           </div>
+          {course && pv && !max && <Splitter dir="h" onDrag={(dy) => setLay({ topPct: clampN(lay.topPct + (dy / (wrap.current?.clientHeight ?? 800)) * 100, 18, 88) })} onReset={() => setLay({ topPct: LAY0.topPct })} />}
           {course && (
-            <div className="cw-bottom">
-              <div className="row" style={{ flexWrap: "nowrap", gap: 6 }}>
+            <div className="cw-bottom" style={max === "view" || max === "kf" ? { display: "none" } : !pv ? { flex: "none", minHeight: 0, marginTop: 6 } : undefined}>
+              <div className="row" style={{ flexWrap: "nowrap", gap: 6, flex: "none" }}>
                 <b style={{ color: "var(--navy)", whiteSpace: "nowrap" }}>Preview</b>
                 <span className="muted small" style={{ whiteSpace: "nowrap" }}>{pvBusy === "expert" ? "re-timing like the expert (1–2 min)…" : pvBusy ? "solving…" : pv ? `${pv.mode === "expert" ? `re-timed like ${pv.pilot} (kT ${pv.kT})` : "minimum snap at the file's times"} · ${pv.hz} Hz · ${pv.solve_s} s${stale ? " · edited since" : ""}` : "none yet (F6)"}</span>
                 {pv && <Kpis pv={pv} />}
+                <span className="spacer" />
+                {pv && <MaxBtn on={max === "charts"} what="the charts" onClick={() => toggleMax("charts")} />}
               </div>
               {pv && <Charts pv={pv} cursor={cursor} setCursor={setCursor} />}
             </div>
           )}
-        </>
+        </div>
       )}
 
       <ToProperties>
@@ -551,19 +572,61 @@ function Charts({ pv, cursor, setCursor }: { pv: Preview; cursor: number | null;
   const rateLim = Math.max(...[1, 2, 3].map((i) => Math.max(Math.abs(u.lower[i]), Math.abs(u.upper[i]))));
   const rate = u.u[1].map((_, k) => Math.max(Math.abs(u.u[1][k]), Math.abs(u.u[2][k]), Math.abs(u.u[3][k])));
   const alt = pv.pos.map((q) => -q[2]);
-  const C = (props: React.ComponentProps<typeof TimeChart>) => <div className="tile"><div className="tile-body"><TimeChart {...props} cursor={cursor} onCursor={setCursor} /></div></div>;
+  const charts: Omit<ChartProps, "cursor" | "onCursor">[] = [
+    { t: pv.t, y: pv.speed, label: "Speed", unit: "m/s" },
+    { t: pv.t, y: pv.acc_norm, label: "Acceleration", unit: "m/s²" },
+    { t: pv.t, y: thrust, label: "Thrust (fraction of limit)", unit: "", refs: [{ y: 1, label: "limit" }], bad: u.violations.thrust ?? [] },
+    { t: pv.t, y: rate, label: "Largest body rate |ω|", unit: "rad/s", refs: [{ y: rateLim, label: "limit" }], bad: [...(u.violations.wx ?? []), ...(u.violations.wy ?? []), ...(u.violations.wz ?? [])] },
+    ...(pv.clearance ? [{ t: pv.t, y: pv.clearance.d, label: (pv.clearance.body_radius ?? 0) > 0 ? `Gap: drone sphere to ${pv.clearance.k > 1 ? `${pv.clearance.k}th` : "nearest"} point` : "Clearance", unit: "m",
+      refs: [{ y: pv.clearance.threshold, label: `${pv.clearance.threshold} m` }], bad: pv.clearance.below }] : []),
+    { t: pv.t, y: alt, label: "Altitude (−z)", unit: "m", zeroBased: false, bad: pv.inside?.outside_intervals ?? [] },
+  ];
+  // columns chosen from the tile's size; rows share its height (≥ 120 px each)
+  const grid = useRef<HTMLDivElement>(null);
+  const [cols, setCols] = useState(3);
+  useLayoutEffect(() => {
+    const el = grid.current; if (!el) return;
+    const ro = new ResizeObserver(() => {     // the column count whose cells come closest to 2:1 at the largest size
+      const n = charts.length, W = el.clientWidth, H = el.clientHeight;
+      let best = 1, score = -1;
+      for (let c = 1; c <= n; c++) {
+        const r = Math.ceil(n / c), cw = (W - 6 * (c - 1)) / c, ch = (H - 6 * (r - 1)) / r;
+        const sc = Math.min(cw / 2, Math.max(ch, 120)) * (cw < 200 ? 0.4 : 1);
+        if (sc > score) { score = sc; best = c; }
+      }
+      setCols(best);
+    });
+    ro.observe(el); return () => ro.disconnect();
+  }, [charts.length]);
+  const rows = Math.ceil(charts.length / cols);
   return (
-    <div className="chartgrid">
-      {C({ t: pv.t, y: pv.speed, label: "Speed", unit: "m/s", cursor, onCursor: setCursor })}
-      {C({ t: pv.t, y: pv.acc_norm, label: "Acceleration", unit: "m/s²", cursor, onCursor: setCursor })}
-      {C({ t: pv.t, y: thrust, label: "Thrust (fraction of limit)", unit: "", refs: [{ y: 1, label: "limit" }], bad: u.violations.thrust ?? [], cursor, onCursor: setCursor })}
-      {C({ t: pv.t, y: rate, label: "Largest body rate |ω|", unit: "rad/s", refs: [{ y: rateLim, label: "limit" }], bad: [...(u.violations.wx ?? []), ...(u.violations.wy ?? []), ...(u.violations.wz ?? [])], cursor, onCursor: setCursor })}
-      {pv.clearance && C({ t: pv.t, y: pv.clearance.d, label: (pv.clearance.body_radius ?? 0) > 0 ? `Gap: drone sphere to ${pv.clearance.k > 1 ? `${pv.clearance.k}th` : "nearest"} point` : "Clearance", unit: "m",
-        refs: [{ y: pv.clearance.threshold, label: `${pv.clearance.threshold} m` }], bad: pv.clearance.below, cursor, onCursor: setCursor })}
-      {C({ t: pv.t, y: alt, label: "Altitude (−z)", unit: "m", zeroBased: false, bad: pv.inside?.outside_intervals ?? [], cursor, onCursor: setCursor })}
+    <div className="chartgrid" ref={grid} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, gridTemplateRows: `repeat(${rows}, minmax(120px, 1fr))` }}>
+      {charts.map((c) => <ChartCell key={c.label} {...c} cursor={cursor} onCursor={setCursor} />)}
     </div>
   );
 }
+type ChartProps = React.ComponentProps<typeof TimeChart>;
+/** A chart that takes the height its grid cell has (the SVG's aspect follows the cell). */
+function ChartCell(props: ChartProps) {
+  const body = useRef<HTMLDivElement>(null);
+  const [h, setH] = useState(130);
+  useLayoutEffect(() => {
+    const el = body.current; if (!el) return;
+    const ro = new ResizeObserver(() => {
+      const w = el.clientWidth - 8, hh = el.clientHeight - 26;   // padding; title line under the plot
+      if (w > 40 && hh > 20) setH(Math.max(60, Math.min(320, Math.round((400 * hh) / w))));   // never taller than 0.8 × wide
+    });
+    ro.observe(el); return () => ro.disconnect();
+  }, []);
+  return <div className="tile chartcell"><div className="tile-body" ref={body}><TimeChart {...props} height={h} /></div></div>;
+}
+function MaxBtn({ on, what, onClick }: { on: boolean; what: string; onClick: () => void }) {
+  return <button className="ph-btn" title={on ? "Restore the tiles (Esc)" : `Maximize ${what}`} onClick={onClick}><Icon name={on ? "restore" : "maximize"} size={14} /></button>;
+}
+interface CourseLayout { topPct: number; sideW: number }
+const LAY_KEY = "galley.courseLayout";
+const LAY0: CourseLayout = { topPct: 58, sideW: 460 };
+const clampN = (v: number, a: number, b: number) => Math.max(a, Math.min(Math.max(a, b), v));
 
 const cm = (m: number) => Math.round(m * 100);
 const pct = (v: number | null | undefined) => (v === null || v === undefined ? "—" : `${Math.round(v * 100)}%`);

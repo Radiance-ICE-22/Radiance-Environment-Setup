@@ -83,6 +83,10 @@ const IC: Record<string, string> = {
  "pin": '<path d="M9 3h6l-1 6 3 3H7l3-3z" fill="#9CC3F5" stroke="#1D4E9E" stroke-linejoin="round"/><path d="M12 12v9" stroke="#1D4E9E" stroke-width="1.8"/>',
  "search": '<circle cx="10" cy="10" r="6" stroke="#5B6475" stroke-width="2"/><path d="M14.5 14.5L20 20" stroke="#5B6475" stroke-width="2.5" stroke-linecap="round"/>',
  "gauge": '<path d="M3 17a9 9 0 0 1 18 0" stroke="#C9D1DC" stroke-width="3.5"/><path d="M3 17a9 9 0 0 1 12-8.5" stroke="#3FA34D" stroke-width="3.5"/><path d="M12 17l4-6" stroke="#3A4150" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17" r="2" fill="#3A4150"/>',
+ "fullscreen": '<rect x="7.5" y="7.5" width="9" height="9" rx="1" fill="#DCEEFF" stroke="#5B6475"/><path d="M3 9V3h6M15 3h6v6M21 15v6h-6M9 21H3v-6" stroke="#2F6FDD" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>',
+ "exitfs": '<rect x="9" y="9" width="6" height="6" rx="1" fill="#DCEEFF" stroke="#5B6475"/><path d="M9 3v6H3M21 9h-6V3M15 21v-6h6M3 15h6v6" stroke="#2F6FDD" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>',
+ "maximize": '<rect x="3.5" y="4.5" width="17" height="15" rx="1.5" fill="#fff" stroke="#5B6475"/><rect x="3.5" y="4.5" width="17" height="4" fill="#2F6FDD"/>',
+ "restore": '<rect x="8.5" y="3.5" width="12" height="10" rx="1" fill="#fff" stroke="#5B6475"/><rect x="8.5" y="3.5" width="12" height="3" fill="#8DB2E3"/><rect x="3.5" y="9.5" width="12" height="11" rx="1" fill="#fff" stroke="#5B6475"/><rect x="3.5" y="9.5" width="12" height="3" fill="#2F6FDD"/>',
  "close": '<path d="M7 7l10 10M17 7L7 17" stroke="#5B6475" stroke-width="2" stroke-linecap="round"/>',
  "home": '<path d="M3 11.5L12 4l9 7.5" stroke="#1D4E9E" stroke-width="2" stroke-linejoin="round"/><path d="M5.5 10v10.5h13V10" fill="#DCEEFF" stroke="#1D4E9E"/><rect x="10" y="14" width="4" height="6.5" fill="#F0A030"/>',
 };

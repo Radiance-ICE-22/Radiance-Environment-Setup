@@ -13,7 +13,8 @@ import { active, api, ApiError, FAMILIES, Family, getToken, Job, rerun, setToken
 import { commands, DocCtx, PaneCtx, run, UiCtx, UiState, useAppCommands } from "./shell/core";
 import { AppDataProvider, useAppData } from "./shell/data";
 import { Icon } from "./shell/icons";
-import { Dialog, DocDesc, DocTabs, Explorer, filterJobs, OutputPanel, OutTab, PropertiesPane, StatusBar, TitleBar } from "./shell/Panes";
+import { Dialog, DocDesc, DocTabs, Explorer, filterJobs, OutputPanel, OutTab, PropertiesPane, Splitter, StatusBar, TitleBar } from "./shell/Panes";
+import { Tip } from "./shell/Tip";
 import { Ribbon } from "./shell/Ribbon";
 import { SHORTCUTS } from "./shell/ribbonSpec";
 import Home from "./pages/Dashboard";
@@ -110,6 +111,19 @@ function Window() {
   const [outTab, setOutTab] = useState<OutTab>("log");
   const [dialog, setDialog] = useState<DialogState>(null);
 
+  // full screen: the active document gets the whole screen (and the browser goes full screen)
+  const [fs, setFs] = useState(false);
+  const [fsPanes, setFsPanes] = useState({ properties: false, output: false });
+  const enterFs = () => { setFs(true); document.documentElement.requestFullscreen?.().catch(() => {}); };
+  const exitFs = () => { setFs(false); if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); };
+  useEffect(() => {
+    const f = () => { if (!document.fullscreenElement) setFs(false); };   // Esc in browser full screen
+    document.addEventListener("fullscreenchange", f);
+    return () => document.removeEventListener("fullscreenchange", f);
+  }, []);
+  const showProps = fs ? fsPanes.properties : layout.properties;
+  const showOut = fs ? fsPanes.output : layout.output;
+
   // the scene the Home and Course pickers default to
   const scene = cur.route[0] === "scene" || cur.route[0] === "course" ? cur.route[1] : undefined;
   const lastScene = useRef<string | undefined>(undefined);
@@ -177,6 +191,7 @@ function Window() {
     "density.compact": { checked: layout.density === "compact", run: () => setLayout({ density: "compact" }) },
     "density.comfortable": { checked: layout.density === "comfortable", run: () => setLayout({ density: "comfortable" }) },
     "density.large": { checked: layout.density === "large", run: () => setLayout({ density: "large" }) },
+    "view.fullscreen": { checked: fs, run: () => (fs ? exitFs() : enterFs()) },
     "win.float": { run: () => window.open(location.href, "_blank", "noopener") },
     "win.closeall": docs.length > 1 ? { run: () => setDocs((ds) => ds.filter((x) => x.key === cur.key)) } : { disabled: "Only one document is open." },
     "win.split": { disabled: "Side-by-side documents are planned. Use View ▸ New window meanwhile." },
@@ -189,7 +204,9 @@ function Window() {
       const typing = el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable);
       const ctrl = e.ctrlKey || e.metaKey;
       let id: string | null = null;
-      if (e.key === "F5") id = e.shiftKey ? "job.cancel" : "run";
+      if (e.key === "Escape" && fs && !e.defaultPrevented && !typing && !document.fullscreenElement) { exitFs(); return; }
+      if (ctrl && e.shiftKey && e.key.toLowerCase() === "f") id = "view.fullscreen";
+      else if (e.key === "F5") id = e.shiftKey ? "job.cancel" : "run";
       else if (e.key === "F6") id = "prev.run";
       else if (e.key === "F7") id = "cfg.validate";
       else if (e.key === "F1" && ctrl) { e.preventDefault(); setLayout({ minRibbon: !layout.minRibbon }); return; }
@@ -213,16 +230,26 @@ function Window() {
   return (
     <UiCtx.Provider value={uiCtx}>
       <PaneCtx.Provider value={panes}>
-        <div className={`window density-${layout.density}`}>
-          <TitleBar title={`Galley — ${cur.title}`} />
-          <Ribbon tab={tab} setTab={setTab} minimized={layout.minRibbon} setMinimized={(b) => setLayout({ minRibbon: b })}
+        <div className={`window density-${layout.density} ${fs ? "fullscreen" : ""}`}>
+          {!fs && <TitleBar title={`Galley — ${cur.title}`} />}
+          <Ribbon tab={tab} setTab={setTab} minimized={layout.minRibbon || fs} setMinimized={(b) => { if (!fs) setLayout({ minRibbon: b }); }}
             appMenu={<AppMenu open={setDialog} closeOthers={() => setDocs((ds) => ds.filter((x) => x.key === cur.key))} />} />
           <div className="workspace">
-            {layout.explorer && <div style={{ width: layout.exW, flex: "none", display: "flex" }}>
+            {layout.explorer && !fs && <div style={{ width: layout.exW, flex: "none", display: "flex" }}>
               <Explorer activeHref={cur.href} defaultScene={ctxScene ?? null} onClose={() => setLayout({ explorer: false })} /></div>}
-            {layout.explorer && <Splitter dir="v" onDrag={(dx) => setLayout({ exW: clamp(layout.exW + dx, 170, 480) })} />}
+            {layout.explorer && !fs && <Splitter dir="v" onDrag={(dx) => setLayout({ exW: clamp(layout.exW + dx, 170, 480) })} onReset={() => setLayout({ exW: LAYOUT0.exW })} />}
             <div className="center">
-              <DocTabs docs={docs} active={cur.key} onClose={close} />
+              {fs ? (
+                <div className="fs-strip">
+                  <Icon name={cur.icon} size={16} /><b>{cur.title}</b><span className="muted">full screen</span><span className="spacer" />
+                  <Tip tip={{ title: "Properties", body: "Show the Properties pane beside the document while in full screen." }}>
+                    <button className={`rb-small ${fsPanes.properties ? "on" : ""}`} onClick={() => setFsPanes((p) => ({ ...p, properties: !p.properties }))}><Icon name="panes" size={16} /><span>Properties</span></button></Tip>
+                  <Tip tip={{ title: "Output", body: "Show the Output panel (live log, queue, problems, GPU) while in full screen." }}>
+                    <button className={`rb-small ${fsPanes.output ? "on" : ""}`} onClick={() => setFsPanes((p) => ({ ...p, output: !p.output }))}><Icon name="log" size={16} /><span>Output</span></button></Tip>
+                  <Tip tip={{ title: "Exit full screen", body: "Bring back the title bar, Explorer, document tabs, panes and status bar.", keyText: "Esc" }}>
+                    <button className="rb-small" onClick={exitFs}><Icon name="exitfs" size={16} /><span>Exit full screen</span></button></Tip>
+                </div>
+              ) : <DocTabs docs={docs} active={cur.key} onClose={close} />}
               <div className="docs">
                 {docs.map((doc) => (
                   <DocCtx.Provider key={doc.key} value={{ key: doc.key, active: doc.key === cur.key }}>
@@ -232,16 +259,16 @@ function Window() {
                   </DocCtx.Provider>
                 ))}
               </div>
-              {layout.output && <Splitter dir="h" onDrag={(dy) => setLayout({ outH: clamp(layout.outH - dy, 90, 600) })} />}
-              {layout.output && <OutputPanel height={layout.outH} tab={outTab} setTab={setOutTab} problemsRef={setProbEl} problemCount={probCounts[cur.key] ?? 0}
-                onClose={() => setLayout({ output: false })} />}
-              {!layout.output && <div ref={setProbEl} style={{ display: "none" }} />}
+              {showOut && <Splitter dir="h" onDrag={(dy) => setLayout({ outH: clamp(layout.outH - dy, 90, 600) })} onReset={() => setLayout({ outH: LAYOUT0.outH })} />}
+              {showOut && <OutputPanel height={layout.outH} tab={outTab} setTab={setOutTab} problemsRef={setProbEl} problemCount={probCounts[cur.key] ?? 0}
+                onClose={() => (fs ? setFsPanes((p) => ({ ...p, output: false })) : setLayout({ output: false }))} />}
+              {!showOut && <div ref={setProbEl} style={{ display: "none" }} />}
             </div>
-            {layout.properties && <Splitter dir="v" onDrag={(dx) => setLayout({ prW: clamp(layout.prW - dx, 220, 520) })} />}
-            {layout.properties && <div style={{ width: layout.prW, flex: "none", display: "flex" }}>
-              <PropertiesPane setTarget={setPropsEl} onClose={() => setLayout({ properties: false })} /></div>}
+            {showProps && <Splitter dir="v" onDrag={(dx) => setLayout({ prW: clamp(layout.prW - dx, 220, 520) })} onReset={() => setLayout({ prW: LAYOUT0.prW })} />}
+            {showProps && <div style={{ width: layout.prW, flex: "none", display: "flex" }}>
+              <PropertiesPane setTarget={setPropsEl} onClose={() => (fs ? setFsPanes((p) => ({ ...p, properties: false })) : setLayout({ properties: false }))} /></div>}
           </div>
-          {layout.status && <StatusBar />}
+          {layout.status && !fs && <StatusBar />}
           {dialog && <Dialogs dialog={dialog} close={() => setDialog(null)} jobs={filtered} />}
         </div>
       </PaneCtx.Provider>
@@ -255,18 +282,6 @@ async function saveLog(j: Job) {
   const blob = new Blob([rows.map((r) => r.line).join("\n") + "\n"], { type: "text/plain" });
   const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `galley_job${j.id}_${j.label.replace(/[^\w.-]+/g, "_")}.log`; a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-}
-
-function Splitter({ dir, onDrag }: { dir: "h" | "v"; onDrag: (d: number) => void }) {
-  const ref = useRef(onDrag); ref.current = onDrag;
-  const down = (e: React.PointerEvent) => {
-    e.preventDefault();
-    let last = dir === "v" ? e.clientX : e.clientY;
-    const move = (m: PointerEvent) => { const p = dir === "v" ? m.clientX : m.clientY; if (p !== last) { ref.current(p - last); last = p; } };
-    const up = () => { removeEventListener("pointermove", move); removeEventListener("pointerup", up); document.body.classList.remove("dragging"); };
-    addEventListener("pointermove", move); addEventListener("pointerup", up); document.body.classList.add("dragging");
-  };
-  return <div className={`splitter splitter-${dir}`} onPointerDown={down} />;
 }
 
 function DocView({ doc }: { doc: DocDesc }) {

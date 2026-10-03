@@ -335,3 +335,17 @@ export function StepStrip({ steps, onPick }: { steps: StepCell[]; onPick?: (name
     </div>
   );
 }
+
+/** Drag handle between two panes or tiles: "v" resizes widths, "h" heights. */
+export function Splitter({ dir, onDrag, onReset }: { dir: "h" | "v"; onDrag: (d: number) => void; onReset?: () => void }) {
+  const ref = useRef(onDrag); ref.current = onDrag;
+  const down = (e: React.PointerEvent) => {
+    e.preventDefault();
+    let last = dir === "v" ? e.clientX : e.clientY;
+    const move = (m: PointerEvent) => { const p = dir === "v" ? m.clientX : m.clientY; if (p !== last) { ref.current(p - last); last = p; } };
+    const up = () => { removeEventListener("pointermove", move); removeEventListener("pointerup", up); document.body.classList.remove("dragging"); };
+    addEventListener("pointermove", move); addEventListener("pointerup", up); document.body.classList.add("dragging");
+  };
+  return <div className={`splitter splitter-${dir}`} onPointerDown={down} onDoubleClick={onReset} title={onReset ? "Drag to resize; double-click to reset" : undefined} />;
+}
+

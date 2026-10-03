@@ -418,6 +418,13 @@ use. Similar tasks shouldn't mean switching whole pages, and every control expla
     of the running or selected job next to the queue, Problems from the active document,
     GPU chart), status bar. Splitters resize the panes; View hides them, sets density, and
     has three layouts (Edit, Train, Monitor).
+  - *Full screen and tiles (3 Oct):* Course ▸ Window ▸ *Full screen* (or View ▸ Window, Ctrl+Shift+F,
+    any document) hides the title bar, Explorer, document tabs and status bar, collapses the ribbon
+    and enters browser full screen; a strip at the top brings back Properties or Output, and Esc
+    leaves. In the course workspace the splitters between the 3D view, the keyframe table and the
+    charts can be dragged (remembered in localStorage `galley.courseLayout`; double-click resets),
+    and each of the three can be maximized from its corner button or Course ▸ Window (Esc
+    restores). The charts take the height they are given and re-flow their columns.
   - *Submitting* a job no longer jumps to the job page: the job is selected in Output, whose
     log follows it. Double-click a queue row to open it as a document.
   - *Shortcuts:* F5 Run (the document's job: queue the capture, run the scene's step range,
