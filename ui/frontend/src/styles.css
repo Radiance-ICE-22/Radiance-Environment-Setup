@@ -366,10 +366,11 @@ table.kf .num { width: 64px; }
 .cw .splitter-h { height: 6px; }
 .cw .splitter-v { width: 6px; }
 .splitter { position: relative; }
-.splitter::after { content: ""; position: absolute; inset: 0; margin: auto; background: #B6CAE6; border-radius: 1px; opacity: 0; }
-.splitter-v::after { width: 2px; height: 28px; }
-.splitter-h::after { height: 2px; width: 28px; }
-.splitter:hover::after { opacity: 1; background: var(--frame-dark); }
+.splitter::after { content: ""; position: absolute; inset: 0; margin: auto; background: #9DB5D6; border-radius: 1px; opacity: .8; }
+.splitter-v::after { width: 2px; height: 36px; }
+.splitter-h::after { height: 2px; width: 36px; }
+.splitter:hover::after, body.dragging .splitter::after { opacity: 1; background: var(--frame-dark); }
+.splitter:hover { background: #D3E0F2; }
 .fs-strip { height: 25px; flex: none; display: flex; align-items: center; gap: 6px; padding: 0 4px 0 8px; color: var(--navy); }
 .fs-strip .rb-small { height: 21px; }
 .window.fullscreen { border: 0; }

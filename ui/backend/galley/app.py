@@ -283,7 +283,20 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     dist = Path(__file__).resolve().parents[2] / "frontend" / "dist"
     if dist.is_dir():
         from fastapi.staticfiles import StaticFiles
-        app.mount("/", StaticFiles(directory=dist, html=True), name="frontend")
+
+        class Frontend(StaticFiles):
+            """index.html must be revalidated on every load, or a browser keeps running the old
+            build after a `git pull` (no Cache-Control lets it guess a freshness lifetime);
+            the hashed files under assets/ never change, so those can be cached for good."""
+            async def get_response(self, path, scope):
+                r = await super().get_response(path, scope)
+                if path.startswith("assets/") and r.status_code == 200:
+                    r.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+                else:
+                    r.headers["Cache-Control"] = "no-cache"
+                return r
+
+        app.mount("/", Frontend(directory=dist, html=True), name="frontend")
 
     return app
 

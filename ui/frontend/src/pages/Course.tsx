@@ -591,8 +591,9 @@ function Charts({ pv, cursor, setCursor }: { pv: Preview; cursor: number | null;
       let best = 1, score = -1;
       for (let c = 1; c <= n; c++) {
         const r = Math.ceil(n / c), cw = (W - 6 * (c - 1)) / c, ch = (H - 6 * (r - 1)) / r;
-        const sc = Math.min(cw / 2, Math.max(ch, 120)) * (cw < 200 ? 0.4 : 1);
-        if (sc > score) { score = sc; best = c; }
+        // a chart reads best near 2.2:1; cells under 110 px tall or 200 px wide are penalised
+        const sc = Math.min(cw, 2.2 * ch) * Math.min(1, ch / 110) * (cw < 200 ? 0.6 : 1);
+        if (sc >= score) { score = sc; best = c; }
       }
       setCols(best);
     });
@@ -600,7 +601,7 @@ function Charts({ pv, cursor, setCursor }: { pv: Preview; cursor: number | null;
   }, [charts.length]);
   const rows = Math.ceil(charts.length / cols);
   return (
-    <div className="chartgrid" ref={grid} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, gridTemplateRows: `repeat(${rows}, minmax(120px, 1fr))` }}>
+    <div className="chartgrid" ref={grid} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, gridTemplateRows: `repeat(${rows}, minmax(90px, 1fr))` }}>
       {charts.map((c) => <ChartCell key={c.label} {...c} cursor={cursor} onCursor={setCursor} />)}
     </div>
   );
@@ -609,16 +610,17 @@ type ChartProps = React.ComponentProps<typeof TimeChart>;
 /** A chart that takes the height its grid cell has (the SVG's aspect follows the cell). */
 function ChartCell(props: ChartProps) {
   const body = useRef<HTMLDivElement>(null);
-  const [h, setH] = useState(130);
+  const [size, setSize] = useState<{ w: number; h: number } | null>(null);
   useLayoutEffect(() => {
     const el = body.current; if (!el) return;
     const ro = new ResizeObserver(() => {
-      const w = el.clientWidth - 8, hh = el.clientHeight - 26;   // padding; title line under the plot
-      if (w > 40 && hh > 20) setH(Math.max(60, Math.min(320, Math.round((400 * hh) / w))));   // never taller than 0.8 × wide
+      const w = Math.floor(el.clientWidth - 8), h = Math.floor(el.clientHeight - 24);   // padding; title line under the plot
+      if (w > 40 && h > 20) setSize((s) => (s && s.w === w && s.h === Math.max(50, h) ? s : { w, h: Math.max(50, h) }));
     });
     ro.observe(el); return () => ro.disconnect();
   }, []);
-  return <div className="tile chartcell"><div className="tile-body" ref={body}><TimeChart {...props} height={h} /></div></div>;
+  // drawn at the cell's pixel size, so text stays the same size however big the tile is
+  return <div className="tile chartcell"><div className="tile-body" ref={body}>{size && <TimeChart {...props} width={size.w} height={size.h} />}</div></div>;
 }
 function MaxBtn({ on, what, onClick }: { on: boolean; what: string; onClick: () => void }) {
   return <button className="ph-btn" title={on ? "Restore the tiles (Esc)" : `Maximize ${what}`} onClick={onClick}><Icon name={on ? "restore" : "maximize"} size={14} /></button>;

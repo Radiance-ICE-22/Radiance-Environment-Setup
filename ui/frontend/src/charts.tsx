@@ -135,12 +135,12 @@ export function BarChart({ bars, xLabel, yLabel, detail }:
  * lines (limits, thresholds) and shaded intervals where something is wrong. The hover
  * cursor is shared across charts and the 3D view through `cursor` / `onCursor`.
  */
-export function TimeChart({ t, y, label, unit, refs = [], bad = [], cursor, onCursor, zeroBased = true, height = 130 }:
+export function TimeChart({ t, y, label, unit, refs = [], bad = [], cursor, onCursor, zeroBased = true, height = 130, width = 400 }:
   { t: number[]; y: (number | null)[]; label: string; unit: string;
     refs?: { y: number; label: string }[]; bad?: [number, number][];
-    cursor: number | null; onCursor: (t: number | null) => void; zeroBased?: boolean; height?: number }) {
+    cursor: number | null; onCursor: (t: number | null) => void; zeroBased?: boolean; height?: number; width?: number }) {
   const ref = useRef<SVGSVGElement>(null);
-  const W = 400, Hh = height, P = { l: 40, r: 10, t: 10, b: 22 };
+  const W = width, Hh = height, P = { l: 40, r: 10, t: 10, b: 22 };   // width/height in CSS px when the caller measures the cell
   const vals = y.filter((v): v is number => v !== null && Number.isFinite(v));
   if (t.length < 2 || vals.length < 2) return <p className="muted small">No data.</p>;
   const x0 = t[0], x1 = t[t.length - 1];
