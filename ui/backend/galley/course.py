@@ -50,12 +50,13 @@ class PreviewRequest(BaseModel):
 
 
 class CourseTools:
-    TIMEOUT = {"geometry": 120, "fixed": 90, "expert": 600}
+    TIMEOUT = {"geometry": 120, "fixed": 90, "expert": 600, "splat": 900}
 
     def __init__(self, s: Settings):
         self.s = s
         self._preview_lock = threading.Lock()
         self._geo: dict[tuple, dict] = {}
+        self._splat_lock = threading.Lock()
 
     @property
     def script(self) -> Path:
@@ -109,6 +110,39 @@ class CourseTools:
             return self._run(args, json.dumps(course), self.TIMEOUT[req.mode])
         finally:
             self._preview_lock.release()
+
+
+    # ── splat for the browser: exported once per trained checkpoint, cached on disk ──
+    def splat_cache(self, scene: str) -> Path:
+        return self.s.data_dir / "splats" / scene
+
+    def splat(self, scene: str, models: list[dict], build: bool = True) -> dict:
+        """Meta of the scene's browser splat (`file`, counts), exporting it from the active
+        checkpoint if this checkpoint has not been exported yet. Old exports are removed."""
+        if len(models) != 1 or not models[0].get("checkpoint"):
+            raise ValueError(f"{scene} has {len(models)} active models: the splat view needs exactly one with a checkpoint")
+        ckpt = self.s.repo / models[0]["checkpoint"]
+        st = ckpt.stat()
+        key = f"{models[0]['run']}-{ckpt.stem}-{int(st.st_mtime)}"
+        d = self.splat_cache(scene)
+        out, meta_p = d / f"{key}.splat", d / f"{key}.json"
+        if out.exists() and meta_p.exists():
+            return {**json.loads(meta_p.read_text()), "file": out.name, "cached": True}
+        if not build:
+            return {"file": None, "run": models[0]["run"], "cached": False}
+        if not self._splat_lock.acquire(blocking=False):
+            raise Busy("a splat export is already running; try again in a moment")
+        try:
+            d.mkdir(parents=True, exist_ok=True)
+            meta = self._run(["splat", "--ckpt", str(ckpt), "--out", str(out)], None, self.TIMEOUT["splat"])
+            meta.update(run=models[0]["run"], checkpoint=models[0]["checkpoint"], checkpoint_mb=models[0].get("checkpoint_mb"))
+            meta_p.write_text(json.dumps(meta))
+            for old in d.iterdir():                       # one export per scene
+                if old.stem != key:
+                    old.unlink(missing_ok=True)
+            return {**meta, "file": out.name, "cached": False}
+        finally:
+            self._splat_lock.release()
 
 
 def int_cells(course: dict) -> list[str]:

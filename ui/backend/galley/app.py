@@ -5,6 +5,7 @@ import asyncio
 import gzip
 import hmac
 import json
+import re
 import shutil
 import subprocess
 from contextlib import asynccontextmanager
@@ -151,6 +152,23 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             return Response(gzip.compress(body, 5), media_type="application/json",
                             headers={"Content-Encoding": "gzip", "Vary": "Accept-Encoding"})
         return Response(body, media_type="application/json")
+
+    @app.post("/api/scenes/{scene}/splat", dependencies=[api])
+    def splat_export(scene: str, build: bool = True):
+        """Gaussian splat for the browser (exported from the active checkpoint on first use)."""
+        sc = pl.check_scene(scene)
+        return _tool(lambda: tools.splat(sc, pl.trained_models(s, sc), build))
+
+    @app.get("/api/scenes/{scene}/splat/{name}", dependencies=[api])
+    def splat_file(scene: str, name: str):
+        sc = pl.check_scene(scene)
+        if not re.match(r"^[A-Za-z0-9_.-]+\.splat$", name):
+            raise HTTPException(400, "invalid splat name")
+        p = tools.splat_cache(sc) / name
+        if not p.is_file():
+            raise HTTPException(404, "not exported (POST /api/scenes/{scene}/splat first)")
+        return FileResponse(p, media_type="application/octet-stream",
+                            headers={"Cache-Control": "private, max-age=31536000, immutable"})
 
     @app.post("/api/courses/preview", dependencies=[api])
     def course_preview(req: PreviewRequest):

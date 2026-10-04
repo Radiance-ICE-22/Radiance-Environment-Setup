@@ -1,9 +1,10 @@
 // 3D view of a course over the capture, drawn directly in the COURSE frame (z down).
 // three.js world coordinates = course coordinates; the camera's up vector is -z, so
 // "up" on screen is altitude and nothing is converted twice.
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Component, ReactNode, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { Canvas, useThree } from "@react-three/fiber";
+import { Splat } from "@react-three/drei";
 import { GizmoHelper, GizmoViewport, Grid, Line, OrbitControls, TransformControls } from "@react-three/drei";
 import type { OrbitControls as OrbitImpl } from "three-stdlib";
 import type { Geometry, Preview } from "../api";
@@ -108,6 +109,8 @@ export default function Scene3D(p: {
   onDragStart: () => void; onMove: (i: number, v: Vec3) => void; onYaw: (i: number, yaw: number) => void;
   onAdd: (v: Vec3) => void; onGoalMove: (v: Vec3) => void;
   drone?: Drone | null;
+  splatUrl?: string | null;                       // Gaussian splat (.splat, splat frame) to draw
+  onSplatState?: (s: "loading" | "ready" | "error", msg?: string) => void;
 }) {
   const { geo, course, sel, preview, opts } = p;
   const [obj, setObj] = useState<THREE.Object3D | null>(null);
@@ -168,6 +171,16 @@ export default function Scene3D(p: {
         cellColor="#8a8f98" sectionColor="#6b7079" cellThickness={0.6} sectionThickness={1} fadeDistance={35}
         infiniteGrid side={THREE.DoubleSide} />
       {geo?.points && opts.points && <Cloud geo={geo} opts={opts} />}
+      {p.splatUrl && (
+        <SplatBoundary key={p.splatUrl} onError={(m) => p.onSplatState?.("error", m)}>
+          <Suspense fallback={<SplatState on={p.onSplatState} state="loading" />}>
+            {/* drei's loader turns (x, y, z) into (x, −y, −z) itself — exactly splat → course */}
+            <Splat src={p.splatUrl} alphaTest={0.02} />
+            <SplatState on={p.onSplatState} state="ready" />
+            <SortTicker />
+          </Suspense>
+        </SplatBoundary>
+      )}
       {geo && opts.cameraPath && geo.camera_path.length > 1 &&
         <Line points={geo.camera_path} color={C.path} lineWidth={1} transparent opacity={0.7} />}
       {geo && opts.boxes && (
@@ -255,4 +268,24 @@ export default function Scene3D(p: {
       </GizmoHelper>
     </Canvas>
   );
+}
+
+// ── Gaussian splat helpers ─────────────────────────────────────────────────────
+/** Reports the splat's load state to the page (rendered as Suspense fallback / after load). */
+function SplatState({ on, state }: { on?: (s: "loading" | "ready" | "error") => void; state: "loading" | "ready" }) {
+  useEffect(() => { on?.(state); }, [on, state]);
+  return null;
+}
+/** The splat is depth-sorted in a worker; with frameloop="demand" nothing would draw the
+ *  sorted result, so keep asking for frames while the splat is shown. */
+function SortTicker() {
+  const invalidate = useThree((s) => s.invalidate);
+  useEffect(() => { const t = setInterval(() => invalidate(), 120); return () => clearInterval(t); }, [invalidate]);
+  return null;
+}
+class SplatBoundary extends Component<{ children: ReactNode; onError: (m: string) => void }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() { return { failed: true }; }
+  componentDidCatch(e: unknown) { this.props.onError(e instanceof Error ? e.message : String(e)); }
+  render() { return this.state.failed ? null : this.props.children; }
 }

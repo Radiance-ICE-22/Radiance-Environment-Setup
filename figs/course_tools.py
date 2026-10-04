@@ -6,12 +6,22 @@ course_tools.py — numeric helpers for Galley's course editor, run in the kitch
     course_tools.py geometry --project-root R --scene backroom [--margin 0.5]
     course_tools.py preview  --project-root R --scene backroom --pilot Viper --frame carl \
                              [--mode fixed|expert] [--body-radius 0.19] < course.json
+    course_tools.py splat    --ckpt <run>/nerfstudio_models/step-*.ckpt --out scene.splat \
+                             [--max-splats 1000000] [--min-opacity 0.05]
 
 Both print exactly one line `GALLEY_JSON {...}` on stdout (anything else is log noise).
 
 Everything returned is in the COURSE frame, course = (x, -y, -z): z points down, so
 altitude is negative z. The conversion and the inside-the-capture test are imported from
 figs_pipeline.py, so the editor and the `course` step cannot disagree.
+
+`splat` converts the trained splatfacto checkpoint into the 32-byte-per-Gaussian ".splat"
+format the browser renderer reads (position, scale, RGBA, rotation), in the SPLAT frame — the
+frame of the checkpoint, which is transforms.json's frame because figs_pipeline.py trains with
+orientation/center "none" and no auto-scale (and the frame FiGS renders in: GSplat.Tw2g).
+The editor turns it into the course frame with the same 180° rotation about x. Gaussians are
+written most-visible first (volume × opacity) so a capped file keeps the ones that matter.
+It needs only torch on the CPU.
 
 `preview` runs FiGS's own MinTimeSnap and TsFO_to_tXU — the two calls VehicleRateMPC makes
 before it builds the MPC — with the expert's plan settings (kT, use_l2_time) and hz, and the
@@ -160,6 +170,60 @@ def cmd_geometry(a):
     else:
         out["warning"] = f"{ply_path.name} not found: no point cloud to show"
     emit(out)
+
+
+# ── splat export ─────────────────────────────────────────────────────────────────
+
+SH_C0 = 0.28209479177387814
+
+
+def _param(state, name):
+    """splatfacto parameter from a checkpoint's pipeline state dict, across nerfstudio versions
+    (`_model.gauss_params.means` in ≥1.0, `_model.means` before)."""
+    for k, v in state.items():
+        if k.endswith(f"gauss_params.{name}") or k.endswith(f"_model.{name}"):
+            return v
+    raise KeyError(f"checkpoint has no '{name}' parameter (not a splatfacto model?)")
+
+
+def cmd_splat(a):
+    import torch
+    t0 = time.time()
+    ck = torch.load(a.ckpt, map_location="cpu", weights_only=False)   # our own training output
+    st = ck.get("pipeline", ck)
+    means = _param(st, "means").float().numpy()
+    scales = _param(st, "scales").float().numpy()             # log scale
+    quats = _param(st, "quats").float().numpy()               # w, x, y, z (unnormalised)
+    opac = _param(st, "opacities").float().numpy().reshape(-1)   # logits
+    dc = _param(st, "features_dc").float().numpy().reshape(len(means), -1)[:, :3]   # SH degree 0
+    n_total = len(means)
+
+    alpha = 1.0 / (1.0 + np.exp(-opac))
+    keep = (alpha >= a.min_opacity) & np.isfinite(means).all(1) & np.isfinite(scales).all(1)
+    idx = np.nonzero(keep)[0]
+    importance = np.exp(scales[idx].sum(1)) * alpha[idx]      # same order as antimatter15's converter
+    idx = idx[np.argsort(-importance)][: a.max_splats]
+
+    q = quats[idx]
+    q = q / np.maximum(np.linalg.norm(q, axis=1, keepdims=True), 1e-12)
+    rgb = np.clip(0.5 + SH_C0 * dc[idx], 0, 1)
+    rec = np.zeros(len(idx), dtype=[("p", "<f4", 3), ("s", "<f4", 3), ("c", "u1", 4), ("r", "u1", 4)])
+    rec["p"] = means[idx]
+    rec["s"] = np.exp(scales[idx])
+    rec["c"][:, :3] = np.round(rgb * 255)
+    rec["c"][:, 3] = np.round(alpha[idx] * 255)
+    rec["r"] = np.clip(np.round(q * 128 + 128), 0, 255)
+    out = Path(a.out)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    tmp = out.with_suffix(".part")
+    tmp.write_bytes(rec.tobytes())
+    tmp.replace(out)
+    lo, hi = np.percentile(means[idx], [1, 99], axis=0) if len(idx) else (np.zeros(3), np.zeros(3))
+    emit({"ok": True, "n_total": int(n_total), "n_written": int(len(idx)), "min_opacity": a.min_opacity,
+          "bytes": out.stat().st_size, "step": int(ck.get("step", -1)), "seconds": round(time.time() - t0, 1),
+          "frame": "splat (transforms.json); course = (x, -y, -z)",
+          "box_course": {"lo": r(np.minimum(splat_to_course(lo), splat_to_course(hi)), 3),
+                         "hi": r(np.maximum(splat_to_course(lo), splat_to_course(hi)), 3)}})
 
 
 # ── preview ──────────────────────────────────────────────────────────────────────
@@ -332,9 +396,14 @@ def main():
                    help="clearance = distance to the k-th nearest sparse point (1 = nearest)")
     p.add_argument("--mode", choices=["fixed", "expert"], default="fixed",
                    help="fixed: the file's keyframe times (fast); expert: re-timed with the pilot's kT")
+    sp = sub.add_parser("splat")
+    sp.add_argument("--ckpt", required=True, help="splatfacto checkpoint (nerfstudio_models/step-*.ckpt)")
+    sp.add_argument("--out", required=True)
+    sp.add_argument("--max-splats", type=int, default=1_000_000)
+    sp.add_argument("--min-opacity", type=float, default=0.05)
     a = ap.parse_args()
     try:
-        {"geometry": cmd_geometry, "preview": cmd_preview}[a.cmd](a)
+        {"geometry": cmd_geometry, "preview": cmd_preview, "splat": cmd_splat}[a.cmd](a)
     except SystemExit:
         raise
     except Exception as e:  # report, don't crash: the UI shows the message

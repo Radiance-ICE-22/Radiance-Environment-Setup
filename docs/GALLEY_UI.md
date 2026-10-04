@@ -343,6 +343,31 @@ Next, in order:
 3. Then: the depth-dropping overlay patch and `use_compress` (storage), `data_gamma`, pilot editors. Deferred until it works as is: the depth-dropping overlay patch,
 `use_compress` by default, `data_beta`/`data_gamma`, pilot editors.
 
+**Gaussian splat in the course editor (4 Oct).** Course ▸ Show ▸ *Splat* draws the trained splat —
+what the drone's camera sees in FiGS — in the 3D view instead of the SfM points (Points can be
+turned back on over it).
+
+- **Export:** the first time, `course_tools.py splat` (kitchen env, CPU, through `figs_env.sh` like
+  the other editor tools; not in the GPU queue) loads the active run's `step-*.ckpt` with torch
+  and writes the 32-byte-per-Gaussian `.splat` format (position, scale, RGBA from SH degree 0,
+  rotation). It keeps Gaussians with opacity ≥ 0.05, most visible first (volume × opacity), at
+  most 1 M (about 32 MB).
+- **Cache:** the file is kept in `<data_dir>/splats/<scene>/` and keyed by run, checkpoint name and
+  mtime, so a retrain or a promote exports again. Endpoints: `POST /api/scenes/{scene}/splat` (export
+  if needed, returns counts) and `GET /api/scenes/{scene}/splat/{file}`.
+- **Frame:** the checkpoint is in transforms.json's frame because `figs_pipeline.py` trains with
+  orientation/center `none` and no auto-scale. This is also the frame FiGS renders in (`GSplat.Tw2g`).
+  drei's `<Splat>` loader flips (x, y, z) → (x, −y, −z) itself, which is exactly splat → course.
+- **Checked** in the cloud copy with a synthetic checkpoint: blobs placed at two keyframes' splat
+  positions land on those keyframes; axis-aligned and 45°-rotated needles point the right way.
+  The checkpoint parameter names are read for nerfstudio ≥ 1.0 (`gauss_params.*`) and older (`_model.*`).
+- **Next, a splat editor for semantic goals:** a separate document, `#/splat/<scene>`, with the
+  splat as the main view. Click picking: ray-cast against the Gaussians, nearest centre along the
+  ray weighted by opacity. Then, once the splat carries semantic features (a LangSplat / feature-splat
+  style per-Gaussian embedding, exported next to the `.splat`): a text query that highlights the
+  matching Gaussians, and a place-the-goal action that writes `semantic_goal` (label + position)
+  into a course. That document would reuse the endpoint and the frame conventions above.
+
 **UI redesign: Windows 7 ribbon (designed and built 1 Oct).** Goal: denser and faster to
 use. Similar tasks shouldn't mean switching whole pages, and every control explains itself on hover.
 

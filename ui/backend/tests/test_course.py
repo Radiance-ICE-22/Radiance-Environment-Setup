@@ -16,6 +16,10 @@ FAKE_TOOLS = textwrap.dedent('''
         open(os.environ["FAKE_COUNT"], "w").write(str(n))
         print("GALLEY_JSON " + json.dumps({"ok": True, "scene": scene, "calls": n,
               "points": [0.0] * 3000, "cuda": os.environ.get("CUDA_VISIBLE_DEVICES")}))
+    elif args[0] == "splat":
+        out = args[args.index("--out") + 1]
+        open(out, "wb").write(bytes(64))
+        print("GALLEY_JSON " + json.dumps({"ok": True, "n_total": 3, "n_written": 2, "bytes": 64, "ckpt": args[args.index("--ckpt") + 1]}))
     else:
         course = json.loads(sys.stdin.read())
         if "--scene" in args and args[args.index("--scene") + 1] == "broken":
@@ -137,3 +141,19 @@ def test_preview_passes_body_radius(client, tools):
     assert a[a.index("--body-radius") + 1] == "0.19"
     for bad in (-0.1, 3):
         assert client.post("/api/courses/preview", json={"course": COURSE, "body_radius": bad}).status_code == 422
+
+
+def test_splat_export_cached_and_served(client, tools):
+    assert client.post("/api/scenes/backroom/splat").status_code == 400          # model has no checkpoint yet
+    run = tools / "SousVide" / "gsplats" / "workspace" / "outputs" / "backroom" / "splatfacto" / "2025-01-16_122349"
+    (run / "nerfstudio_models" / "step-000029999.ckpt").write_bytes(b"ck")
+    r0 = client.post("/api/scenes/backroom/splat?build=false"); assert r0.status_code == 200, r0.text
+    assert r0.json()["file"] is None
+    r1 = client.post("/api/scenes/backroom/splat"); assert r1.status_code == 200, r1.text; d = r1.json()
+    assert d["n_written"] == 2 and d["run"] == "2025-01-16_122349" and not d["cached"] and d["ckpt"].endswith(".ckpt")
+    d2 = client.post("/api/scenes/backroom/splat").json()
+    assert d2["cached"] and d2["file"] == d["file"]
+    r = client.get(f"/api/scenes/backroom/splat/{d['file']}")
+    assert r.status_code == 200 and len(r.content) == 64 and r.headers["content-length"] == "64"
+    assert client.get("/api/scenes/backroom/splat/..%2Fgalley.db").status_code in (400, 404)
+    assert client.get("/api/scenes/backroom/splat/nope.splat").status_code == 404

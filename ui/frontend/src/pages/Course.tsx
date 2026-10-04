@@ -3,7 +3,7 @@
 // The Course tab (File, Edit, Preview, Checks, Show, Fly) and Keyframe Tools drive it; the
 // selected keyframe's details and derivative matrix are in Properties, problems in Output.
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { active, api, ApiError, courseApi, flightUrl, Geometry, Job, Preview } from "../api";
+import { active, api, ApiError, courseApi, flightUrl, Geometry, Job, Preview, SplatMeta, splatUrl } from "../api";
 import { TimeChart } from "../charts";
 import { usePoll } from "../components";
 import { Problem as PaneProblem, ToProblems, ToProperties, useCommands, useDoc } from "../shell/core";
@@ -52,6 +52,25 @@ export default function CoursePage({ scene, name }: { scene?: string; name?: str
   const [tool, setTool] = useState<Tool>("move");
   const [opts, setOpts] = useState<ViewOpts>({ points: true, colorBy: "rgb", pointSize: 0.025, cameraPath: true, boxes: true, drone: true });
   const drone = useDrone();
+
+  // ── Gaussian splat (toggle): exported from the active checkpoint on first use, then cached ──
+  type SplatUi = { on: boolean; meta: SplatMeta | null; busy: boolean; state: "loading" | "ready" | "error" | null; err: string | null };
+  const SPLAT0: SplatUi = { on: false, meta: null, busy: false, state: null, err: null };
+  const [splat, setSplat] = useState<SplatUi>(SPLAT0);
+  useEffect(() => { setSplat(SPLAT0); }, [scene]);   // eslint-disable-line react-hooks/exhaustive-deps
+  const onSplatState = useCallback((st: "loading" | "ready" | "error", m?: string) =>
+    setSplat((x) => ({ ...x, state: st, err: st === "error" ? `Splat did not load: ${m ?? "unknown error"}` : x.err })), []);
+  const toggleSplat = async () => {
+    if (splat.on) { setSplat((x) => ({ ...x, on: false })); return; }
+    if (!scene) return;
+    if (splat.meta?.file) { setSplat((x) => ({ ...x, on: true, err: null })); setOpts((o) => ({ ...o, points: false })); return; }
+    setSplat((x) => ({ ...x, busy: true, err: null }));
+    try {
+      const m = await courseApi.splat(scene);
+      setSplat({ on: true, meta: m, busy: false, state: "loading", err: null });
+      setOpts((o) => ({ ...o, points: false }));
+    } catch (e) { setSplat((x) => ({ ...x, busy: false, err: e instanceof ApiError ? e.message : String(e) })); }
+  };
 
   useEffect(() => {
     setMsg(null); setSel(null); hist.current = [];
@@ -283,6 +302,9 @@ export default function CoursePage({ scene, name }: { scene?: string; name?: str
     "chk.gap": { value: clearance, set: (v) => setClearance(Math.max(0, Number(v) || 0)) },
     "chk.k": { value: clearanceK, set: (v) => setClearanceK(Math.min(50, Math.max(1, Math.round(Number(v) || 1)))) },
     "chk.body": drone ? { checked: useBody, set: (v) => setUseBody(yes(v)) } : { disabled: "No drone model (public/models/drone.json)." },
+    "view.splat": { checked: splat.on, run: toggleSplat,
+      disabled: !scene ? "Pick a scene first." : d.scenes.find((x) => x.scene === scene)?.loadable === false ? "This scene needs exactly one trained model (Capture & Splat ▸ Models)." : splat.busy ? "Exporting the splat from the checkpoint…" : false,
+      label: splat.busy ? "Exporting…" : splat.on && splat.state === "loading" ? "Loading…" : undefined },
     "view.points": { checked: opts.points, run: () => setOpts({ ...opts, points: !opts.points }) },
     "view.alt": { checked: opts.colorBy === "altitude", run: () => setOpts({ ...opts, colorBy: opts.colorBy === "rgb" ? "altitude" : "rgb" }) },
     "view.cam": { checked: opts.cameraPath, run: () => setOpts({ ...opts, cameraPath: !opts.cameraPath }) },
@@ -327,6 +349,7 @@ export default function CoursePage({ scene, name }: { scene?: string; name?: str
     ...(pv && !stale && pv.stats.nonfinite_inputs > 0 ? [{ severity: "error" as const, where: "path", message: `${pv.stats.nonfinite_inputs} samples have undefined inputs (free fall or a singular yaw).` }] : []),
     ...(pvErr ? [{ severity: "error" as const, where: "preview", message: pvErr }] : []),
     ...(flyErr ? [{ severity: "error" as const, where: "fly", message: flyErr }] : []),
+    ...(splat.err ? [{ severity: "error" as const, where: "splat", message: splat.err }] : []),
   ];
 
   // ── render ─────────────────────────────────────────────────────────────────
@@ -353,9 +376,12 @@ export default function CoursePage({ scene, name }: { scene?: string; name?: str
                     onYaw={(i, y) => setCell(i, 3, 0, round(y), false)}
                     onAdd={(v) => { if (!course) return; const i = sel ?? course.kfs.length - 2;
                       edit((c) => insertAfter(c, i, v)); setSel(Math.min(i, course.kfs.length - 2) + 1); setTool("move"); }}
-                    onGoalMove={(v) => edit((c) => ({ ...c, goal: c.goal && { ...c.goal, position: v.map((x) => round(x)) as Vec3 } }), false)} />
+                    onGoalMove={(v) => edit((c) => ({ ...c, goal: c.goal && { ...c.goal, position: v.map((x) => round(x)) as Vec3 } }), false)}
+                    splatUrl={splat.on && splat.meta?.file && scene ? splatUrl(scene, splat.meta.file) : null} onSplatState={onSplatState} />
                 ) : <p className="muted" style={{ padding: 16 }}>{geoErr ?? "Loading scene…"}</p>}
-                <div className="vtag">{scene}{name ? ` / ${name}` : course ? ` / ${saveName} (unsaved)` : ""}{dirty ? " ●" : ""} · course frame (x, −y, −z): z down</div>
+                <div className="vtag">{scene}{name ? ` / ${name}` : course ? ` / ${saveName} (unsaved)` : ""}{dirty ? " ●" : ""} · course frame (x, −y, −z): z down
+                  {splat.busy && " · exporting the splat…"}{splat.on && splat.state === "loading" && ` · loading the splat (${mb(splat.meta?.bytes)})…`}
+                  {splat.on && splat.state === "ready" && ` · splat: ${(splat.meta?.n_written ?? 0).toLocaleString()} Gaussians`}</div>
                 <div className="overlay">
                   <div className="seg">
                     <button className={`seg-b ${max === "view" ? "on" : ""}`} title={max === "view" ? "Restore the tiles (Esc)" : "Maximize the 3D view"} onClick={() => toggleMax("view")}>
@@ -505,6 +531,13 @@ export default function CoursePage({ scene, name }: { scene?: string; name?: str
               <Prop k="Camera box" mono>{geo.camera_box.lo.map((v) => v.toFixed(1)).join(", ")} … {geo.camera_box.hi.map((v) => v.toFixed(1)).join(", ")}</Prop>
               <Prop k="Waypoint box" mono>inset {geo.waypoint_box.margin} m</Prop>
             </PropSection>}
+            {splat.meta && <PropSection title="Gaussian splat">
+              <Prop k="Shown" tone={splat.on ? "ok" : "muted"}>{splat.on ? (splat.state === "ready" ? "yes" : "loading…") : "no (Course ▸ Show ▸ Splat)"}</Prop>
+              <Prop k="Run" mono>{splat.meta.run}</Prop><Prop k="Training step">{splat.meta.step ?? "—"}</Prop>
+              <Prop k="Gaussians">{(splat.meta.n_written ?? 0).toLocaleString()} of {(splat.meta.n_total ?? 0).toLocaleString()}</Prop>
+              <Prop k="Kept">opacity ≥ {splat.meta.min_opacity}, most visible first</Prop>
+              <Prop k="Download">{mb(splat.meta.bytes)}{splat.meta.cached ? " (cached)" : splat.meta.seconds !== undefined ? `, exported in ${splat.meta.seconds} s` : ""}</Prop>
+            </PropSection>}
             {drone && <PropSection title="Drone">
               <Prop k="Model">{drone.meta.name}</Prop><Prop k="Size">{cm(drone.meta.size[0])} × {cm(drone.meta.size[1])} × {cm(drone.meta.size[2])} cm</Prop>
               <Prop k="Sphere">{drone.meta.radius} m{drone.meta.guards ? " (guards included)" : ""}</Prop>
@@ -631,6 +664,7 @@ const LAY0: CourseLayout = { topPct: 58, sideW: 460 };
 const clampN = (v: number, a: number, b: number) => Math.max(a, Math.min(Math.max(a, b), v));
 
 const cm = (m: number) => Math.round(m * 100);
+const mb = (b?: number) => (b ? `${(b / 2 ** 20).toFixed(1)} MB` : "—");
 const pct = (v: number | null | undefined) => (v === null || v === undefined ? "—" : `${Math.round(v * 100)}%`);
 function Kpi({ v, l, bad }: { v: string; l: string; bad?: boolean }) {
   return <div className={`kpi ${bad ? "bad" : ""}`}><b className={bad ? "bad" : ""}>{v}</b><span>{l}</span></div>;

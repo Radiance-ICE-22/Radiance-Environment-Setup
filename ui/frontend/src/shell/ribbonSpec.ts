@@ -90,7 +90,7 @@ export const TABS: Tab[] = [
     { name: "Checks", when: WHEN.course, items: [[F("chk.gap", "Min gap (m)", "spin", "Smallest allowed gap between the drone and the scenery (between its bounding sphere and the k-th nearest SfM point).", 60, 0.05),
       F("chk.k", "k-th point", "spin", "Clearance uses the k-th nearest SfM point so a lone outlier does not count.", 60),
       C("chk.body", "Drone size", "Subtract the drone's bounding sphere (guards included) from every distance.")]] },
-    { name: "Show", when: WHEN.course, items: [[S("view.points", "Points", "points", "SfM sparse point cloud."), S("view.alt", "Altitude", "altitude", "Colour points by altitude instead of RGB."),
+    { name: "Show", when: WHEN.course, items: [L("view.splat", "Splat", "splat", "Show the trained Gaussian splat — what the drone's camera sees in FiGS — instead of the SfM points. The first time, the active checkpoint is exported for the browser (up to 1 M most visible Gaussians, about 30 MB; tens of seconds), then it is cached until the model changes.", "course_tools.py splat --ckpt <active run> (CPU)"), [S("view.points", "Points", "points", "SfM sparse point cloud."), S("view.alt", "Altitude", "altitude", "Colour points by altitude instead of RGB."),
       S("view.cam", "Camera path", "campath", "Where the phone went during capture.")],
       [S("view.boxes", "Boxes", "boxes", "Camera box (where the camera went, not free space) and the waypoint box."), S("view.drone", "Drone", "drone", "Your airframe at true scale, on the cursor with FiGS's attitude."),
         F("view.psize", "Point size", "spin", "Point sprite size in metres.", 60, 0.005)]] },

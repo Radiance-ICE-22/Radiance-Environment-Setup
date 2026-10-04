@@ -155,7 +155,18 @@ export const courseApi = {
     req<Geometry>("GET", `/scenes/${encodeURIComponent(scene)}/geometry?margin=${margin}`),
   preview: (r: PreviewRequest) => req<Preview>("POST", "/courses/preview", r),
   lint: (name: string) => req<{ int_cells: string[] }>("GET", `/courses/${encodeURIComponent(name)}/lint`),
+  /** Export (first time) and describe the scene's browser splat. */
+  splat: (scene: string, build = true) => req<SplatMeta>("POST", `/scenes/${encodeURIComponent(scene)}/splat?build=${build}`),
 };
+export interface SplatMeta {
+  file: string | null; cached: boolean; run: string; n_total?: number; n_written?: number; bytes?: number;
+  min_opacity?: number; step?: number; seconds?: number; checkpoint?: string; checkpoint_mb?: number;
+  box_course?: { lo: V3; hi: V3 };
+}
+export function splatUrl(scene: string, file: string) {
+  const tok = getToken();
+  return `/api/scenes/${encodeURIComponent(scene)}/splat/${encodeURIComponent(file)}${tok ? `?token=${encodeURIComponent(tok)}` : ""}`;
+}
 
 // ── SV-Net cohorts (Phase 4) ─────────────────────────────────────────────────
 export const SV_STEPS = ["preflight", "rollout", "observe", "train_hist", "train_comm", "deploy"] as const;
