@@ -83,6 +83,9 @@ export function addFiles(files: FileList | File[]): string[] {
   return names;
 }
 
+/** Make `name` the video New capture selects (used by Google Drive imports too). */
+export function announce(name: string) { lastAdded = { name, at: Date.now() }; emit(); }
+
 /** Open the browser's file chooser (must run inside a click). */
 export function pickFiles(onPicked?: (names: string[]) => void) {
   const inp = document.createElement("input");

@@ -6,6 +6,7 @@ import { useAppData } from "./data";
 import { Icon } from "./icons";
 import { Tip } from "./Tip";
 import { eta, fmtBytes, fmtDur, pending, useUploads } from "../uploads";
+import { driveActive, useDrive } from "../drive";
 
 // ── small shared widgets ────────────────────────────────────────────────────
 const PILL: Record<string, [string, string]> = {
@@ -291,11 +292,20 @@ export function StatusBar() {
       <span className={`upbar ${up.state === "error" ? "bad" : up.state === "paused" ? "paused" : ""}`}><span style={{ width: `${p}%` }} /></span></span>,
       "Video upload to the host's video_captures/. Click to open New capture, where it can be paused, resumed or cancelled.", () => (location.hash = "#/new")]);
   }
+  const dr = useDrive();
+  const di = dr.list.find(driveActive) ?? dr.list.find((i) => i.state === "error" || i.state === "interrupted");
+  if (di) {
+    const p = di.size ? Math.floor((100 * di.received) / di.size) : 0;
+    const bad = !driveActive(di);
+    fields.push(["cloud", <span className="sb-up">{bad ? `Drive import stopped: ${di.name}` : `Host ← Drive ${di.name} · ${p} %${di.rate ? ` · ${fmtBytes(di.rate)}/s · ${fmtDur((di.size - di.received) / di.rate)} left` : ""}`}
+      <span className={`upbar ${bad ? "paused" : ""}`}><span style={{ width: `${p}%` }} /></span></span>,
+      "The host is downloading a video you picked in Google Drive (it continues if this tab closes). Click to open New capture.", () => (location.hash = "#/new")]);
+  }
   const ok = d.health?.ok && d.health.env_script && d.health.pipeline;
   return (
     <div className="statusbar">
       {fields.map(([ic, label, h, onClick], i) => (
-        <Tip key={i} tip={{ title: typeof label === "string" ? label : ic === "upload" ? "Upload" : "Queue", body: h }}>
+        <Tip key={i} tip={{ title: typeof label === "string" ? label : ic === "upload" ? "Upload" : ic === "cloud" ? "Google Drive" : "Queue", body: h }}>
           <div className={`sb-f ${onClick ? "click" : ""}`} onClick={onClick}><Icon name={ic} size={14} />{label}</div>
         </Tip>
       ))}

@@ -25,6 +25,7 @@ Validated 2026-08-06/07 on intellisense05, RTX 2080 8 GB.
 """
 
 import argparse
+import codecs
 import ctypes
 import hashlib
 import json
@@ -126,17 +127,47 @@ def diagnose(text):
     return None
 
 
+_NL = re.compile(r"(\r\n|\n|\r)")
+
+
 def sh(cmd, cwd=None, stream=True, check=True, env=None):
-    """Run a command, streaming output. Returns (rc, combined_output)."""
+    """Run a command, streaming its output unchanged. Returns (rc, combined_output).
+
+    Bytes are passed through as they arrive, so a child's progress bar (tqdm, ffmpeg, rich)
+    keeps its bare "\r" redraws: a terminal or Galley updates one line in place. (Reading the
+    pipe in text mode turned every redraw into a new line: ~90k lines for hloc's matcher.)
+    The returned output keeps only the last state of each redrawn line."""
     p = subprocess.Popen(cmd, cwd=cwd, shell=isinstance(cmd, str), env=env,
-                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                         text=True, bufsize=1)
-    buf = []
+                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    dec = codecs.getincrementaldecoder("utf-8")("replace")
+    lines, cur, cr = [], "", False
+
+    def feed(s):
+        nonlocal cur, cr
+        for part in _NL.split(s):
+            if not part:
+                continue
+            if part in ("\n", "\r\n"):
+                lines.append(cur)
+                cur, cr = "", False
+            elif part == "\r":
+                cr = True                    # the next text overwrites this line
+            else:
+                cur = part if cr else cur + part
+                cr = False
+
+    fd = p.stdout.fileno()
     try:
-        for line in p.stdout:
-            buf.append(line)
-            if stream:
-                print(line, end="")
+        while True:
+            chunk = os.read(fd, 65536)
+            if not chunk:
+                break
+            s = dec.decode(chunk)
+            if stream and s:
+                sys.stdout.write(s)
+                sys.stdout.flush()
+            feed(s)
+        feed(dec.decode(b"", final=True))
         rc = p.wait()
     except KeyboardInterrupt:
         p.terminate()
@@ -145,6 +176,11 @@ def sh(cmd, cwd=None, stream=True, check=True, env=None):
         except subprocess.TimeoutExpired:
             p.kill()
         raise
+    finally:
+        p.stdout.close()
+    if cur:
+        lines.append(cur)
+    buf = [ln + "\n" for ln in lines]
     out = "".join(buf)
     if check and rc != 0:
         d = diagnose(out)

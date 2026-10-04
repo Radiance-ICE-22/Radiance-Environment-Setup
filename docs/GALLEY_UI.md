@@ -114,6 +114,8 @@ Browser (React)  ──HTTP + WebSocket :8800──▶  FastAPI (ui/backend/gall
 | `ui/backend/galley/svnet.py` | builds `svnet_pipeline.py` command lines; reads `.svnet_pipeline_state/<cohort>/` and `SousVide/cohorts/<cohort>/` |
 | `ui/frontend/src/pages/SvNet.tsx` | SV-Net pages: cohort list, new cohort, run controls, rollouts, loss curves, evaluation table and videos |
 | `ui/backend/galley/videos.py` | video staging: resumable chunked uploads into `video_captures/` (via `.uploads/`), list, ffprobe summary, delete |
+| `ui/backend/galley/drive.py` | Google Drive imports: the host downloads files picked in Google's picker (token in memory only), Range resume, MD5 check; credentials in `<data_dir>/google.toml` |
+| `ui/frontend/src/drive.ts` | Google sign-in (GIS, scope `drive.file`), the Picker, import list polling, set-up dialog state |
 | `ui/frontend/src/uploads.ts` | app-wide upload manager: one file at a time, 8 MiB chunks, SHA-256 per chunk where WebCrypto exists, retry with back-off, resume |
 | `ui/backend/galley/app.py` | REST + WebSocket routes; optional token (header, or `?token=` for video and WebSocket) |
 | `ui/frontend/src/main.tsx` | the window: routes → documents (kept mounted while open), app-wide ribbon bindings, shortcuts, layout (saved in localStorage) |
@@ -141,6 +143,7 @@ match `[A-Za-z0-9][A-Za-z0-9_.-]*.(mov|mp4|m4v|mkv|avi|webm|mts)`; uploads keep 
 | `simulate` writes `<scene>_flight.partial.mp4`, then renames | imageio's FFMPEG writer refuses a `.partial` extension |
 | `transcode` passes `-f mp4` (your fix) | same extension problem for ffmpeg |
 | `gsplat` split into `sfm` + `train` (14 steps) | `sfm` runs upstream `generate_gsplat()` with its `ns-train` call intercepted; `train` runs `ns-train` itself so a retrain never repeats SfM |
+| `sh()` passes a child's output through as bytes (4 Oct) | it read the pipe in text mode, which turns every tqdm `\r` redraw into a new line: hloc's 179,700-pair matching stored ~90k near-identical lines in Galley's log and looked stuck. Now redraws stay redraws (Galley updates one line in place, stores the bar once in its final state); the returned output keeps each redrawn line's last state. Test: `ui/backend/tests/test_progress_lines.py` |
 | new flags `--train-iters`, `--downscale`, `--cache-images`, `--train-vis`, `--train-arg=…`, `--archive-old` | training options; `train` refuses to create a second model unless told to archive the first |
 | `gsplat.done` migrates to `sfm.done` + `train.done`; `--redo gsplat` still works | no retrain of scenes finished before the split |
 | preflight's "under 6 GB — training will likely OOM" replaced | it was wrong; see §5 |
@@ -204,6 +207,29 @@ saved as floats and flew: re-timed 12.0 s → 8.65 s, 173 frames, tracking max 0
 ---
 
 ## 6. What comes next
+
+**Google Drive import (4 Oct).** From home the browser upload crawls (~0.5 MB/s: Tailscale
+relays laptop↔intellisense08 through DERP Bangalore). *Videos on the host ▸ Google Drive…*
+(also the ribbon's Capture ▸ Google Drive and Drive… beside the Video picker) signs in with
+Google, opens Google's file picker (videos in My Drive and shared drives, multi-select), and
+the HOST downloads each picked file from `www.googleapis.com` over the lab's own link. It keeps
+going if the tab closes; the status bar and the tile show it; Queue after upload works for it
+too. Scope is `drive.file` (Galley can read only picked files; non-sensitive, so a Testing-mode
+consent screen is enough). The access token goes to the host with the request, lives in
+memory only and expires in an hour: an expired token, a revoked one or a Galley restart leaves
+the import *stopped* with the bytes kept, and Resume signs in again and continues with a Range
+request; Drive's md5Checksum is checked before the file is renamed into `video_captures/`.
+API: `GET/PUT /api/drive/config`, `GET/POST /api/drive/imports`, `POST
+/api/drive/imports/{id}/resume|cancel`, `DELETE /api/drive/imports/{id}`. One-time set-up (the
+dialog lists it): a Google Cloud project with the Drive API and Picker API, an OAuth consent
+screen (External, Testing, yourself as test user), a Web OAuth client whose Authorized
+JavaScript origins hold every `http://localhost:<port>` Galley is opened on (Google allows
+plain http only for localhost), an API key restricted to the Picker API, and the project
+number. Saved on the host in `~/.local/share/galley/google.toml` (0600, not in git), or set
+`GALLEY_GOOGLE_CLIENT_ID/API_KEY/APP_ID`. Tested in the cloud against a fake Drive API with
+Google's scripts stubbed (sign-in → picker → host download of 150 MB, token revoked at
+~98 MB, Resume finished it with an identical MD5 and the armed capture queued itself);
+7 backend tests in `tests/test_drive.py`. **Not yet run against real Google.**
 
 **Video upload (4 Oct).** New capture takes the phone video from the browser's computer, so
 nothing has to be copied to the host by hand. Drop the video anywhere on the window (or use

@@ -22,6 +22,7 @@ from .course import Busy, CourseTools, PreviewRequest, ToolError, int_cells
 from .db import DB
 from .jobs import JobRunner
 from .settings import Settings, load
+from .drive import Drive, DriveConfig, ImportReq, TokenReq
 from .videos import MAX_CHUNK, Conflict, NoSpace, TooLarge, UploadStart, VideoError, Videos
 
 SELFTEST = ("import sys, time\n"
@@ -44,6 +45,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     store = ConfigStore(s.configs_dir, s.overlay)
     tools = CourseTools(s)
     vids = Videos(s)
+    drive = Drive(s, vids)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -256,6 +258,36 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def upload_abort(uid: str):
         _vid(lambda: vids.abort(uid))
         return {"aborted": uid}
+
+    # ── Google Drive imports (drive.py): the host downloads what the browser picked ──
+    @app.get("/api/drive/config", dependencies=[api])
+    def drive_config():
+        return drive.config()
+
+    @app.put("/api/drive/config", dependencies=[api])
+    def drive_config_set(c: DriveConfig):
+        return drive.set_config(c)
+
+    @app.get("/api/drive/imports", dependencies=[api])
+    def drive_imports():
+        return drive.list()
+
+    @app.post("/api/drive/imports", dependencies=[api])
+    def drive_import(req: ImportReq):
+        return _vid(lambda: drive.start(req))
+
+    @app.post("/api/drive/imports/{iid}/resume", dependencies=[api])
+    def drive_resume(iid: str, req: TokenReq):
+        return _vid(lambda: drive.resume(iid, req.token))
+
+    @app.post("/api/drive/imports/{iid}/cancel", dependencies=[api])
+    def drive_cancel(iid: str):
+        return _vid(lambda: drive.cancel(iid))
+
+    @app.delete("/api/drive/imports/{iid}", dependencies=[api])
+    def drive_dismiss(iid: str):
+        _vid(lambda: drive.dismiss(iid))
+        return {"dismissed": iid}
 
     # ── jobs ──────────────────────────────────────────────────────────────────
     @app.post("/api/jobs/figs", dependencies=[api], status_code=201)

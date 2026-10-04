@@ -157,6 +157,8 @@ class Videos:
         if not m.is_file():
             raise FileNotFoundError(f"upload {uid}")
         meta = json.loads(m.read_text())
+        if meta.get("kind") == "drive":
+            raise VideoError("a Google Drive import, not a browser upload")
         part = self._part(uid)
         meta["offset"] = part.stat().st_size if part.exists() else 0
         meta["id"] = uid

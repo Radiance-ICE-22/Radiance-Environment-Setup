@@ -24,6 +24,7 @@ import JobPage from "./pages/Job";
 import Configs from "./pages/Configs";
 import NewCapture from "./pages/NewCapture";
 import { addFiles, isVideoFile, pickFiles } from "./uploads";
+import { startDriveFlow } from "./drive";
 import SvNetPage from "./pages/SvNet";
 
 // three.js and the editor load only when the course editor is opened.
@@ -206,6 +207,7 @@ function Window() {
     "help.about": { run: () => setDialog("about") },
     "cap.new": { run: () => go("#/new") },
     "cap.upload": { run: () => { go("#/new"); pickFiles(); } },
+    "cap.drive": { run: () => { go("#/new"); startDriveFlow(); } },
     "splat.viewer": { disabled: NO_BACKEND("Launching ns-viewer as a job") },
     "splat.export": { disabled: NO_BACKEND("ns-export") },
     "sv.new": { run: () => go("#/svnet") },
