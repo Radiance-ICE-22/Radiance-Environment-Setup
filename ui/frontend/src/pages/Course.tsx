@@ -52,6 +52,8 @@ export default function CoursePage({ scene, name }: { scene?: string; name?: str
   const [tool, setTool] = useState<Tool>("move");
   const [opts, setOpts] = useState<ViewOpts>({ points: true, colorBy: "rgb", pointSize: 0.025, cameraPath: true, boxes: true, drone: true });
   const drone = useDrone();
+  const { active: docIsActive } = useDoc();
+  const [navSpeed, setNavSpeed] = useState(() => { try { return Number(localStorage.getItem("galley.navSpeed")) || 1; } catch { return 1; } });
 
   // ── Gaussian splat (toggle): exported from the active checkpoint on first use, then cached ──
   type SplatUi = { on: boolean; meta: SplatMeta | null; busy: boolean; state: "loading" | "ready" | "error" | null; err: string | null };
@@ -305,6 +307,8 @@ export default function CoursePage({ scene, name }: { scene?: string; name?: str
     "view.splat": { checked: splat.on, run: toggleSplat,
       disabled: !scene ? "Pick a scene first." : d.scenes.find((x) => x.scene === scene)?.loadable === false ? "This scene needs exactly one trained model (Capture & Splat ▸ Models)." : splat.busy ? "Exporting the splat from the checkpoint…" : false,
       label: splat.busy ? "Exporting…" : splat.on && splat.state === "loading" ? "Loading…" : undefined },
+    "view.navspeed": { value: String(navSpeed), options: [["0.25", "0.25×"], ["0.5", "0.5×"], ["1", "1×"], ["2", "2×"], ["4", "4×"]],
+      set: (v) => { setNavSpeed(Number(v)); try { localStorage.setItem("galley.navSpeed", v); } catch { /* */ } } },
     "view.points": { checked: opts.points, run: () => setOpts({ ...opts, points: !opts.points }) },
     "view.alt": { checked: opts.colorBy === "altitude", run: () => setOpts({ ...opts, colorBy: opts.colorBy === "rgb" ? "altitude" : "rgb" }) },
     "view.cam": { checked: opts.cameraPath, run: () => setOpts({ ...opts, cameraPath: !opts.cameraPath }) },
@@ -377,6 +381,7 @@ export default function CoursePage({ scene, name }: { scene?: string; name?: str
                     onAdd={(v) => { if (!course) return; const i = sel ?? course.kfs.length - 2;
                       edit((c) => insertAfter(c, i, v)); setSel(Math.min(i, course.kfs.length - 2) + 1); setTool("move"); }}
                     onGoalMove={(v) => edit((c) => ({ ...c, goal: c.goal && { ...c.goal, position: v.map((x) => round(x)) as Vec3 } }), false)}
+                    keyNav={docIsActive} navSpeed={navSpeed}
                     splatUrl={splat.on && splat.meta?.file && scene ? splatUrl(scene, splat.meta.file) : null} onSplatState={onSplatState} />
                 ) : <p className="muted" style={{ padding: 16 }}>{geoErr ?? "Loading scene…"}</p>}
                 <div className="vtag">{scene}{name ? ` / ${name}` : course ? ` / ${saveName} (unsaved)` : ""}{dirty ? " ●" : ""} · course frame (x, −y, −z): z down
@@ -393,6 +398,7 @@ export default function CoursePage({ scene, name }: { scene?: string; name?: str
                   </div>
                 </div>
                 <div className="legend">
+                  <div><b>Keys:</b> arrows fly · PgUp/PgDn or E/Q up/down · Ctrl+arrows look · Shift faster · +/− closer/farther · F centre on selection · Home reset view</div>
                   {tool === "add" && <div><b>Add:</b> click the tinted plane to insert a keyframe after the selected one, at its altitude.</div>}
                   <div><span className="swatch" style={{ background: "#8a8f98" }} />camera box (where the camera went, not free space)
                     {" · "}<span className="swatch" style={{ background: "#2f9e6e" }} />waypoint box (inset {geo?.waypoint_box.margin ?? 0.5} m)

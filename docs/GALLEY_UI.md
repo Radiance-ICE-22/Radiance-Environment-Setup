@@ -361,6 +361,12 @@ turned back on over it).
 - **Checked** in the cloud copy with a synthetic checkpoint: blobs placed at two keyframes' splat
   positions land on those keyframes; axis-aligned and 45°-rotated needles point the right way.
   The checkpoint parameter names are read for nerfstudio ≥ 1.0 (`gauss_params.*`) and older (`_model.*`).
+- **Keyboard flying (5 Oct):** in the course 3D view, the arrows fly level (forward/back,
+  sideways) and PgUp/PgDn or E/Q go up/down. Ctrl+arrows look around in place, +/− move toward or
+  away from the orbit centre, Shift is 3× faster, F centres on the selected keyframe or goal, and
+  Home restores the default view. Motion eases in and out, and its speed scales with the distance to
+  the orbit centre; Course ▸ Show ▸ *Key speed* multiplies it (remembered). Keys act only while the
+  course document is active and no text field has focus.
 - **Next, a splat editor for semantic goals:** a separate document, `#/splat/<scene>`, with the
   splat as the main view. Click picking: ray-cast against the Gaussians, nearest centre along the
   ray weighted by opacity. Then, once the splat carries semantic features (a LangSplat / feature-splat

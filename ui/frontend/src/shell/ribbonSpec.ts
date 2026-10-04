@@ -93,7 +93,8 @@ export const TABS: Tab[] = [
     { name: "Show", when: WHEN.course, items: [L("view.splat", "Splat", "splat", "Show the trained Gaussian splat — what the drone's camera sees in FiGS — instead of the SfM points. The first time, the active checkpoint is exported for the browser (up to 1 M most visible Gaussians, about 30 MB; tens of seconds), then it is cached until the model changes.", "course_tools.py splat --ckpt <active run> (CPU)"), [S("view.points", "Points", "points", "SfM sparse point cloud."), S("view.alt", "Altitude", "altitude", "Colour points by altitude instead of RGB."),
       S("view.cam", "Camera path", "campath", "Where the phone went during capture.")],
       [S("view.boxes", "Boxes", "boxes", "Camera box (where the camera went, not free space) and the waypoint box."), S("view.drone", "Drone", "drone", "Your airframe at true scale, on the cursor with FiGS's attitude."),
-        F("view.psize", "Point size", "spin", "Point sprite size in metres.", 60, 0.005)]] },
+        F("view.psize", "Point size", "spin", "Point sprite size in metres.", 60, 0.005)],
+      [F("view.navspeed", "Key speed", "select", "Speed of arrow-key flying in the 3D view (it also scales with how far you are from the orbit centre; Shift = 3×). Arrows fly level, PgUp/PgDn or E/Q go up/down, Ctrl+arrows look around, +/− move closer/farther, F centres on the selection, Home resets the view.", 64)]] },
     { name: "Fly", when: WHEN.course, items: [[F("fly.expert", "Expert", "select", "Expert pilot (MPC) config."), F("fly.frame", "Frame", "select", "Vehicle frame: mass and thrust coefficient."),
       F("fly.method", "Method", "text", "Evaluation method config.")], [C("fly.outside", "Allow outside", "Fly even if keyframes leave the captured volume (renders mush outside it).")],
       L("fly.go", "Fly", "fly", "Save, then fly the expert through the splat and check the video.", "figs_pipeline.py --from course --stop-after record --redo course simulate validate", "F5")] },
@@ -179,4 +180,7 @@ export const SHORTCUTS: [string, string][] = [
   ["Ctrl+F1", "Minimize / restore the ribbon"], ["F1", "Help"], ["M / R / A", "Course editor tools: move, yaw, add"],
   ["Del", "Delete the selected keyframe"], ["Ctrl+Shift+F", "Full screen (any document)"],
   ["Esc", "Deselect; restore a maximized tile; leave full screen"],
+  ["Arrows", "Course 3D view: fly forward/back, sideways (level)"], ["PgUp / PgDn, E / Q", "Course 3D view: up / down"],
+  ["Ctrl+arrows", "Course 3D view: look around"], ["+ / −", "Course 3D view: closer to / farther from the orbit centre"],
+  ["Shift (held)", "Course 3D view: 3× faster"], ["F / Home", "Course 3D view: centre on the selection / default view"],
 ];
