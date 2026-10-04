@@ -113,7 +113,8 @@ def build_argv(s: Settings, r: FigsRun) -> list[str]:
 def resolve_video(s: Settings, video: str) -> Path:
     """Videos must live in the staging directory; no arbitrary filesystem paths."""
     p = (s.video_dir / video).resolve()
-    if s.video_dir.resolve() not in p.parents:
+    if p.parent != s.video_dir.resolve() or video.startswith("."):
+        # directly inside it: never a partial upload in .uploads/ or anything outside
         raise ValueError("video must be a file inside the video staging directory")
     if not p.is_file():
         raise ValueError(f"video not found: {video}")

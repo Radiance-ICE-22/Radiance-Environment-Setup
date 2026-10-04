@@ -60,6 +60,19 @@ export interface FigsRun {
   archive_old?: boolean;
 }
 
+// ── video staging (ui/backend/galley/videos.py) ─────────────────────────────
+export interface VideoFile { name: string; mb: number; bytes: number; modified: number }
+export interface VideoProbe {
+  codec: string | null; profile: string | null; pix_fmt: string; width: number | null; height: number | null; rotation: number;
+  fps: number | null; avg_fps: number | null; vfr: boolean; duration: number | null; frames: number | null;
+  bit_depth: number; hdr: boolean; color_transfer: string | null; audio: boolean; device: string | null; created: string | null; bytes: number | null;
+}
+export interface PartialUpload { id: string; name: string; size: number; offset: number; modified: number; created: number; updated: number; overwrite: boolean }
+export interface UploadsInfo { dir: string; free_bytes: number | null; max_chunk: number; uploads: PartialUpload[] }
+/** Allowed by the backend: letters, digits, _ - . ; a video extension. */
+export const VIDEO_RE = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}\.(mov|mp4|m4v|mkv|avi|webm|mts)$/i;
+export const VIDEO_EXT = [".mov", ".mp4", ".m4v", ".mkv", ".avi", ".webm", ".mts"];
+
 const TOKEN_KEY = "galley.token";
 export function getToken(): string | null {
   try { return localStorage.getItem(TOKEN_KEY); } catch { return null; }
@@ -83,6 +96,7 @@ async function req<T>(method: string, path: string, body?: unknown): Promise<T> 
     try {
       const j = await r.json();
       msg = typeof j.detail === "string" ? j.detail
+        : j.detail && typeof j.detail.message === "string" ? j.detail.message
         : Array.isArray(j.detail) ? j.detail.map((d: any) => `${(d.loc ?? []).slice(1).join(".")}: ${d.msg}`).join("; ")
         : JSON.stringify(j);
     } catch { /* not json */ }
@@ -97,7 +111,11 @@ export const api = {
   scenes: () => req<SceneSummary[]>("GET", "/scenes"),
   scene: (s: string) => req<SceneStatus>("GET", `/scenes/${encodeURIComponent(s)}`),
   runs: (scene?: string) => req<any[]>("GET", `/runs${scene ? `?scene=${encodeURIComponent(scene)}` : ""}`),
-  videos: () => req<{ name: string; mb: number }[]>("GET", "/videos"),
+  videos: () => req<VideoFile[]>("GET", "/videos"),
+  probeVideo: (name: string) => req<VideoProbe>("GET", `/videos/${encodeURIComponent(name)}/probe`),
+  deleteVideo: (name: string) => req<{ deleted: string }>("DELETE", `/videos/${encodeURIComponent(name)}`),
+  uploads: () => req<UploadsInfo>("GET", "/uploads"),
+  abortUpload: (id: string) => req<{ aborted: string }>("DELETE", `/uploads/${id}`),
   configs: (f: Family) => req<ConfigItem[]>("GET", `/configs/${f}`),
   config: (f: Family, n: string) => req<any>("GET", `/configs/${f}/${encodeURIComponent(n)}`),
   saveConfig: (f: Family, n: string, data: unknown, overwrite = true) =>

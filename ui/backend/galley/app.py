@@ -22,6 +22,7 @@ from .course import Busy, CourseTools, PreviewRequest, ToolError, int_cells
 from .db import DB
 from .jobs import JobRunner
 from .settings import Settings, load
+from .videos import MAX_CHUNK, Conflict, NoSpace, TooLarge, UploadStart, VideoError, Videos
 
 SELFTEST = ("import sys, time\n"
             "n = int(sys.argv[1])\n"
@@ -42,6 +43,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     runner = JobRunner(s, db)
     store = ConfigStore(s.configs_dir, s.overlay)
     tools = CourseTools(s)
+    vids = Videos(s)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -203,11 +205,57 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def runs(scene: str | None = None):
         return pl.list_runs(s, scene)
 
+    # ── videos: staging directory and resumable uploads (videos.py) ──────────
+    def videos_in_use() -> set[str]:
+        return {str(j["params"].get("video")) for j in db.jobs(500)
+                if j["status"] in ("queued", "running") and j["params"].get("video")}
+
     @app.get("/api/videos", dependencies=[api])
     def videos():
-        d = s.video_dir
-        return [{"name": p.name, "mb": round(p.stat().st_size / 2**20)}
-                for p in sorted(d.iterdir()) if p.is_file()] if d.is_dir() else []
+        return vids.list()
+
+    @app.get("/api/videos/{name}/probe", dependencies=[api])
+    def video_probe(name: str):
+        return _vid(lambda: vids.probe(name))
+
+    @app.delete("/api/videos/{name}", dependencies=[api])
+    def video_delete(name: str):
+        _vid(lambda: vids.delete(name, videos_in_use()))
+        return {"deleted": name}
+
+    @app.get("/api/uploads", dependencies=[api])
+    def uploads():
+        return {"dir": str(s.video_dir), "free_bytes": vids.free_bytes(), "max_chunk": MAX_CHUNK,
+                "uploads": vids.uploads()}
+
+    @app.post("/api/uploads", dependencies=[api])
+    def upload_start(req: UploadStart):
+        return _vid(lambda: vids.start(req))
+
+    @app.put("/api/uploads/{uid}", dependencies=[api])
+    async def upload_chunk(uid: str, request: Request, offset: int = Query(..., ge=0)):
+        """Raw bytes (application/octet-stream) for [offset, offset + len). Optional header
+        X-Chunk-SHA256 (hex) is checked before the chunk is kept."""
+        declared = request.headers.get("content-length")
+        if declared and declared.isdigit() and int(declared) > MAX_CHUNK:
+            raise HTTPException(413, f"chunk larger than {MAX_CHUNK // 2**20} MiB")
+        pieces, n = [], 0
+        async for piece in request.stream():      # the whole chunk arrives before anything is written
+            n += len(piece)
+            if n > MAX_CHUNK:
+                raise HTTPException(413, f"chunk larger than {MAX_CHUNK // 2**20} MiB")
+            pieces.append(piece)
+        sha = request.headers.get("x-chunk-sha256") or None
+        return await asyncio.to_thread(lambda: _vid(lambda: vids.write(uid, offset, pieces, sha)))
+
+    @app.post("/api/uploads/{uid}/complete", dependencies=[api])
+    def upload_complete(uid: str):
+        return _vid(lambda: vids.complete(uid))
+
+    @app.delete("/api/uploads/{uid}", dependencies=[api])
+    def upload_abort(uid: str):
+        _vid(lambda: vids.abort(uid))
+        return {"aborted": uid}
 
     # ── jobs ──────────────────────────────────────────────────────────────────
     @app.post("/api/jobs/figs", dependencies=[api], status_code=201)
@@ -338,6 +386,21 @@ def _tool(fn):
     except ToolError as e:
         raise HTTPException(502, str(e))
     except ValueError as e:
+        raise HTTPException(400, str(e))
+
+
+def _vid(fn):
+    try:
+        return fn()
+    except FileNotFoundError as e:
+        raise HTTPException(404, f"not found: {e}")
+    except Conflict as e:
+        raise HTTPException(409, {"message": str(e), **e.extra} if e.extra else str(e))
+    except NoSpace as e:
+        raise HTTPException(507, str(e))
+    except TooLarge as e:
+        raise HTTPException(413, str(e))
+    except VideoError as e:
         raise HTTPException(400, str(e))
 
 

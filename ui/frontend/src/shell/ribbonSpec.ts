@@ -47,7 +47,7 @@ export const TABS: Tab[] = [
   ] },
   { name: "Capture & Splat", groups: [
     { name: "Capture", items: [L("cap.new", "New capture", "camera", "Start a scene from a phone video: name check, probe, transcode, ArUco check, SfM and training, up to the step you choose.", "figs_pipeline.py --scene <name> --video <file>"),
-      [S("cap.upload", "Upload video", "upload", "Stage a phone video in video_captures/ (FiGS never reads that folder; transcode copies it)."),
+      [S("cap.upload", "Upload video", "upload", "Send a phone video from this computer to the host's video_captures/: 8 MB chunks, checksummed where the browser allows, resumable if the connection drops (choose the same file again). Dropping a video anywhere on the window does the same. FiGS never reads that folder; transcode copies it.", "POST/PUT /api/uploads"),
         S("cap.probe", "Probe", "probe", "Codec, resolution, fps and a variable-frame-rate warning, before anything else runs.", "figs_pipeline.py --only probe"),
         S("cap.name", "Name check", "search", "FiGS matches scenes by substring: 'intellisense' collides with 'intellisense_02'. Shows the result of the check.")]] },
     { name: "Markers", when: WHEN.capture, items: [[F("cap.marker_id", "Marker ID", "spin", "ArUco marker id taped in the room (DICT_4X4_50)."),
@@ -55,7 +55,7 @@ export const TABS: Tab[] = [
       F("cap.marked", "Marked frames", "spin", "How many frames must show the marker (--num-marked).")],
       L("cap.aruco", "ArUco check", "marker", "Queue the capture up to the ArUco step: detections per 10 s window against 3× marked frames.", "figs_pipeline.py --stop-after aruco")] },
     { name: "Sampling", when: WHEN.capture, items: [[F("cap.images", "Images", "spin", "Frames sampled for SfM (--num-images). 600 → ~180k match pairs, about 4× the 300-image time."),
-      F("cap.video", "Video", "select", "Phone video in video_captures/."),
+      F("cap.video", "Video", "select", "Phone video in video_captures/ on the host, or one still uploading (the capture can be queued to start when it arrives)."),
       F("cap.stop", "Stop after", "select", "Last step of the first run. New rooms normally stop after bounds: a course needs the splat's frame.")]] },
     { name: "Reconstruct", when: WHEN.splat, items: [L("splat.sfm", "SfM", "sfm", "hloc + COLMAP structure-from-motion, aligned to the marker. Cached: retraining never repeats it.", "figs_pipeline.py --only sfm"),
       L("splat.train", "Train", "splat", "Train the Gaussian splat (nerfstudio splatfacto) from the SfM result, then verify.", "figs_pipeline.py --from train --stop-after verify --archive-old"),

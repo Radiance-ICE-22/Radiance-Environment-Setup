@@ -1,6 +1,6 @@
 # Galley — web console for the pipeline: status and handoff
 
-*Last updated 2026-10-01 (night): Phase 4's pipeline gate passed on intellisense08 (the
+*Last updated 2026-10-04: videos upload from the browser (§6, "Video upload"). 2026-10-01 (night): Phase 4's pipeline gate passed on intellisense08 (the
 whole SV-Net chain runs through Galley in 49 min), but the trained student does not fly the
 course yet (§6). intellisense08 is brought up and is now the SV-Net host. `./run_ui.sh`
 starts Galley on any host (§2). The team's airframe is drawn in the course editor and the
@@ -113,6 +113,8 @@ Browser (React)  ──HTTP + WebSocket :8800──▶  FastAPI (ui/backend/gall
 | `figs/svnet_pipeline.py` | SOUS-VIDE's learning half: rollout, observe, train_hist, train_comm, deploy, calling upstream `sousvide` unchanged; resumable per cohort |
 | `ui/backend/galley/svnet.py` | builds `svnet_pipeline.py` command lines; reads `.svnet_pipeline_state/<cohort>/` and `SousVide/cohorts/<cohort>/` |
 | `ui/frontend/src/pages/SvNet.tsx` | SV-Net pages: cohort list, new cohort, run controls, rollouts, loss curves, evaluation table and videos |
+| `ui/backend/galley/videos.py` | video staging: resumable chunked uploads into `video_captures/` (via `.uploads/`), list, ffprobe summary, delete |
+| `ui/frontend/src/uploads.ts` | app-wide upload manager: one file at a time, 8 MiB chunks, SHA-256 per chunk where WebCrypto exists, retry with back-off, resume |
 | `ui/backend/galley/app.py` | REST + WebSocket routes; optional token (header, or `?token=` for video and WebSocket) |
 | `ui/frontend/src/main.tsx` | the window: routes → documents (kept mounted while open), app-wide ribbon bindings, shortcuts, layout (saved in localStorage) |
 | `ui/frontend/src/shell/` | `ribbonSpec.ts` (every tab, group, command and its hover help), `core.tsx` (command registry, Properties/Problems portals), `Ribbon.tsx`, `Tip.tsx` (super tooltips), `Panes.tsx` (title bar, Explorer, document tabs, Properties, Output, status bar, tiles), `data.tsx` (polled data shared by the window), `icons.tsx` |
@@ -125,7 +127,8 @@ Browser (React)  ──HTTP + WebSocket :8800──▶  FastAPI (ui/backend/gall
 
 Security choices already in place: no generic shell endpoint; every job is an argv list
 (never `shell=True`); scene, course and config names are regex-checked; videos must live
-in the staging directory; extra `ns-train` options must match an allow-list
+directly in the staging directory (never `.uploads/` or a subfolder), and uploaded names must
+match `[A-Za-z0-9][A-Za-z0-9_.-]*.(mov|mp4|m4v|mkv|avi|webm|mts)`; uploads keep 2 GB free; extra `ns-train` options must match an allow-list
 (`--pipeline.*`, `--optimizers.*`, one value). Login and firewall rules are Phase 5.
 
 ---
@@ -201,6 +204,30 @@ saved as floats and flew: re-timed 12.0 s → 8.65 s, 173 frames, tracking max 0
 ---
 
 ## 6. What comes next
+
+**Video upload (4 Oct).** New capture takes the phone video from the browser's computer, so
+nothing has to be copied to the host by hand. Drop the video anywhere on the window (or use
+Capture & Splat ▸ Upload video, or the Upload… button beside the Video picker): New capture
+opens, selects the video, names the scene after the file if it has no name, and the upload
+runs in the background (status bar, and the *Videos on the host* tile: pause, resume,
+cancel). API: `POST /api/uploads` {name, size, modified} → id + offset (the id comes from
+name, size and the file's lastModified, so choosing the same file again resumes), `PUT
+/api/uploads/{id}?offset=N` raw chunk (≤ 64 MiB, optional `X-Chunk-SHA256`; a short, bad or
+oversized chunk is truncated away), `POST …/complete` renames it into `video_captures/`
+atomically and keeps the phone's timestamp; `GET /api/uploads`, `DELETE /api/uploads/{id}`,
+`GET /api/videos/{name}/probe` (ffprobe, from PATH or through `figs_env.sh`), `DELETE
+/api/videos/{name}` (refused while a queued or running job uses it). The page shows the
+source (resolution, codec, bit depth, HDR, fps, duration) and what the transcode will do with
+it: portrait video is an error (the transcode scales to 1920×1080), HDR/10-bit a warning (no
+tone-mapping), VFR and high frame rates notes. *Queue after upload* submits the capture the
+moment the video lands (keep the tab open). Tested in the cloud with headless Chromium:
+a 4K HEVC 10-bit HLG clip dropped and queued; 300 MB throttled to 25 MB/s survived a pause,
+a server kill and restart (identical SHA-256) and queued itself; a tab closed at 56 MB
+resumed at 56 MB when the file was chosen again; 76 backend tests pass. Not yet run against
+a host over the SSH port forward. The GTN lab footage (`common/sample_footages/GTN_lab_v1.MOV`)
+is 1.33 GB: 3840×2160 HEVC Main 10, HLG, 30 fps, 12,698 frames (7 min 03 s). The marker
+SVGs in `common/` are DICT_4X4_1000 id 0, which is the same pattern as DICT_4X4_50 id 0,
+printed at 180 mm and 340 mm (enter the side of the black square you measure).
 
 **Phase 3 — course editor (done 27 Sep).** Page *Course editor* (`#/course/<scene>/<course>`):
 

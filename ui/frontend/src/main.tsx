@@ -23,6 +23,7 @@ import Monitor from "./pages/Jobs";
 import JobPage from "./pages/Job";
 import Configs from "./pages/Configs";
 import NewCapture from "./pages/NewCapture";
+import { addFiles, isVideoFile, pickFiles } from "./uploads";
 import SvNetPage from "./pages/SvNet";
 
 // three.js and the editor load only when the course editor is opened.
@@ -108,6 +109,22 @@ function Window() {
     });
   }, [cur]);
   useEffect(() => save("galley.docs", docs.map((x) => x.href)), [docs]);
+  // a video dropped anywhere in the window is uploaded to the host and opens New capture
+  // (New capture handles drops on itself); anything else dropped is ignored, never opened
+  useEffect(() => {
+    const files = (e: DragEvent) => !!e.dataTransfer && Array.from(e.dataTransfer.types).includes("Files");
+    const over = (e: DragEvent) => { if (files(e)) { e.preventDefault(); e.dataTransfer!.dropEffect = "copy"; } };
+    const drop = (e: DragEvent) => {
+      if (!files(e)) return;
+      e.preventDefault();
+      const vids = Array.from(e.dataTransfer!.files).filter(isVideoFile);
+      if (!vids.length) return;
+      location.hash = "#/new";
+      setTimeout(() => addFiles(vids), 0);
+    };
+    addEventListener("dragover", over); addEventListener("drop", drop);
+    return () => { removeEventListener("dragover", over); removeEventListener("drop", drop); };
+  }, []);
   const close = useCallback((key: string) => {
     setDocs((ds) => {
       const i = ds.findIndex((x) => x.key === key); if (i < 0) return ds;
@@ -188,7 +205,7 @@ function Window() {
     "help.keys": { run: () => setDialog("keys") },
     "help.about": { run: () => setDialog("about") },
     "cap.new": { run: () => go("#/new") },
-    "cap.upload": { disabled: NO_BACKEND("Uploading videos") + " Copy the video into video_captures/ for now." },
+    "cap.upload": { run: () => { go("#/new"); pickFiles(); } },
     "splat.viewer": { disabled: NO_BACKEND("Launching ns-viewer as a job") },
     "splat.export": { disabled: NO_BACKEND("ns-export") },
     "sv.new": { run: () => go("#/svnet") },

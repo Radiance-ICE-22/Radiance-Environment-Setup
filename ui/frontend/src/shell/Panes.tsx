@@ -5,6 +5,7 @@ import { commands, useRegistryVersion, useUi } from "./core";
 import { useAppData } from "./data";
 import { Icon } from "./icons";
 import { Tip } from "./Tip";
+import { eta, fmtBytes, fmtDur, pending, useUploads } from "../uploads";
 
 // ── small shared widgets ────────────────────────────────────────────────────
 const PILL: Record<string, [string, string]> = {
@@ -280,11 +281,21 @@ export function StatusBar() {
     ["disk", d.machine?.disk ? `${d.machine.disk.free_gb} GB free` : "disk —", "Free space under project_root."],
     [run ? "run" : "queue", run ? <>{`Job #${run.id} · ${run.label} · ${duration(run)}`}<span className="sb-prog"><span /></span></> : `Queue: idle${queued ? ` · ${queued} queued` : ""}`, "The job queue: one GPU job at a time. Click to open the Monitor.", () => (location.hash = "#/jobs")],
   ];
+  const ups = useUploads();
+  const up = ups.list.find((u) => u.state === "uploading" || u.state === "starting" || u.state === "finishing") ?? ups.list.find((u) => u.state === "paused" || u.state === "error");
+  if (up) {
+    const n = ups.list.filter(pending).length;
+    const p = up.size ? Math.floor((100 * up.sent) / up.size) : 0;
+    fields.push(["upload", <span className="sb-up">{up.state === "error" ? `Upload failed: ${up.name}` : up.state === "paused" ? `Upload paused: ${up.name} ${p} %`
+      : `Uploading ${up.name} · ${p} %${up.rate ? ` · ${fmtBytes(up.rate)}/s · ${fmtDur(eta(up))} left` : ""}${n > 1 ? ` · ${n - 1} more` : ""}`}
+      <span className={`upbar ${up.state === "error" ? "bad" : up.state === "paused" ? "paused" : ""}`}><span style={{ width: `${p}%` }} /></span></span>,
+      "Video upload to the host's video_captures/. Click to open New capture, where it can be paused, resumed or cancelled.", () => (location.hash = "#/new")]);
+  }
   const ok = d.health?.ok && d.health.env_script && d.health.pipeline;
   return (
     <div className="statusbar">
       {fields.map(([ic, label, h, onClick], i) => (
-        <Tip key={i} tip={{ title: typeof label === "string" ? label : "Queue", body: h }}>
+        <Tip key={i} tip={{ title: typeof label === "string" ? label : ic === "upload" ? "Upload" : "Queue", body: h }}>
           <div className={`sb-f ${onClick ? "click" : ""}`} onClick={onClick}><Icon name={ic} size={14} />{label}</div>
         </Tip>
       ))}
