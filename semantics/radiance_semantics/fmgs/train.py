@@ -182,9 +182,9 @@ def train(g, views, maps_for, cfg: TrainConfig, out, device=None, render_backend
     impl_notes = None
     if cfg.impl == "auto":
         from .diag import resolve
-        impl, impl_notes = resolve(asdict(cfg.field_config()), dev, log)
-        cfg = replace(cfg, impl=impl)
-        log(f"  field implementation: {impl} (encoding/heads)")
+        impl, impl_notes, over = resolve(asdict(cfg.field_config()), dev, log)
+        cfg = replace(cfg, impl=impl, field_cfg={**cfg.field_cfg, **over})
+        log(f"  field implementation: {impl} (encoding/heads)" + (f", levels as {over['split']} grids" if over.get("split") else ""))
     level = 0
     if cfg.variant == "auto":
         cfg = replace(cfg, variant="faithful")

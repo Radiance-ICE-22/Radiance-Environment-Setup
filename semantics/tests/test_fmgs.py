@@ -91,7 +91,21 @@ def test_impl_split_and_cpu_resolve():
     for bad in ("tcnn/", "cuda", "torch/torch/torch"):
         with pytest.raises(ValueError):
             split_impl(bad)
-    assert resolve({}, "cpu", log=lambda m: None) == ("torch/torch", {})
+    assert resolve({}, "cpu", log=lambda m: None) == ("torch/torch", {}, {})
+
+
+def test_split_grid_keeps_the_ladder():
+    one, two = FieldConfig(), FieldConfig(split=2)
+    assert two.enc_dim == one.enc_dim == 192 and len(two.level_scales()) == 24
+    (n0, b0, s0), (n1, b1, s1) = two.groups()
+    assert (n0, b0, n1, b1) == (12, 16, 12, 98) and abs(s0 - one.per_level_scale) < 1e-12
+    a, b = one.level_scales(), two.level_scales()
+    assert a[:12] == pytest.approx(b[:12]) and b[-1] == pytest.approx(a[-1])        # same finest: 511
+    assert max(abs(x - y) / (x + 1) for x, y in zip(a, b)) < 0.01                    # boundaries move < 1 %
+    g = TorchHashGrid(FieldConfig(**{**SMALL, "split": 2}))
+    assert g(torch.rand(10, 3)).shape == (10, SMALL["levels"] * SMALL["features"])
+    with pytest.raises(ValueError):
+        FieldConfig(levels=24, split=5).groups()
 
 
 def test_hash_grid_checkpointed_gradients_match():

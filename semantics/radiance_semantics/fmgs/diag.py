@@ -25,6 +25,7 @@ MATRIX = [
     ("encoding", "24 lvl × 8 feat, 2^19", {"levels": 24, "features": 8, "log2_table": 19}, 65536),
     ("encoding", "FMGS 24 lvl × 8 feat, 2^20", FMGS, 4096),
     ("encoding", "FMGS 24 lvl × 8 feat, 2^20, 200k points", FMGS, 200_000),
+    ("encoding", "FMGS as 2 grids × 12 lvl (split 2), 200k points", {**FMGS, "split": 2}, 200_000),
     ("encoding", "24 lvl × 4 feat, 2^20", {"levels": 24, "features": 4, "log2_table": 20}, 65536),
     ("encoding", "24 lvl × 2 feat, 2^20", {"levels": 24, "features": 2, "log2_table": 20}, 65536),
     ("heads", "FMGS heads: CutlassMLP 2 × 256 → 512 / 384", FMGS, 65536),
@@ -91,22 +92,39 @@ def probe_child(part, cfg, n, timeout=300):
 
 
 def resolve(cfg, device, log=print):
-    """'auto' → "<enc>/<heads>": tiny-cuda-nn for each part that passes its probe on `device`."""
+    """impl 'auto' → ("<enc>/<heads>", probe notes, FieldConfig overrides).
+
+    Encoding: tiny-cuda-nn's grid as configured; else the same levels as consecutive tiny-cuda-nn
+    grids (split 2, 3, …: on intellisense08 one 24 × 8 grid fails to launch, 12 × 8 runs); else
+    PyTorch with the grid unchanged. Heads: tiny-cuda-nn, else PyTorch."""
     import torch
     if str(device).startswith("cpu") or not torch.cuda.is_available():
-        return "torch/torch", {}
+        return "torch/torch", {}, {}
     try:
         import tinycudann  # noqa: F401
     except Exception as e:                                          # noqa: BLE001
         log(f"  tiny-cuda-nn not importable ({e}): PyTorch field")
-        return "torch/torch", {"import": str(e)}
-    notes, out = {}, []
-    for part in ("encoding", "heads"):
-        r = probe_child(part, cfg, PROBE_N)
-        notes[part] = r
-        out.append("tcnn" if r["ok"] else "torch")
-        log(f"  tiny-cuda-nn {part}: {'ok' if r['ok'] else 'FAILED — using PyTorch'} ({r['msg']}, {r.get('ms', '?')} ms)")
-    return "/".join(out), notes
+        return "torch/torch", {"import": str(e)}, {}
+    cfg = dict(cfg)
+    levels, notes, over = cfg.get("levels", 24), {}, {}
+    enc = "torch"
+    for split in [cfg.get("split", 1)] + [s for s in (2, 3, 4, 6) if s > cfg.get("split", 1) and levels % s == 0 and levels // s >= 2]:
+        r = probe_child("encoding", {**cfg, "split": split}, PROBE_N)
+        notes[f"encoding split {split}"] = r
+        log(f"  tiny-cuda-nn encoding, {levels} levels as {split} grid{'s' if split > 1 else ''}: "
+            f"{'ok' if r['ok'] else 'FAILED'} ({r['msg']}, {r.get('ms', '?')} ms)")
+        if r["ok"]:
+            enc = "tcnn"
+            if split != cfg.get("split", 1):
+                over["split"] = split
+            break
+    if enc == "torch":
+        log("  → PyTorch encoding (same grid, slower)")
+    r = probe_child("heads", cfg, PROBE_N)
+    notes["heads"] = r
+    head = "tcnn" if r["ok"] else "torch"
+    log(f"  tiny-cuda-nn heads: {'ok' if r['ok'] else 'FAILED — using PyTorch'} ({r['msg']}, {r.get('ms', '?')} ms)")
+    return f"{enc}/{head}", notes, over
 
 
 def main(argv=None):
@@ -145,11 +163,12 @@ def main(argv=None):
             show(part, name, n, probe_child(part, cfg, n))
     else:
         print(f"  tinycudann cannot be imported ({why[:200]}): the PyTorch field only")
-    impl = resolve(FMGS, "cuda", log=lambda m: None)[0] if tv_ok else "torch/torch"
+    impl, _, over = resolve(FMGS, "cuda", log=lambda m: None) if tv_ok else ("torch/torch", {}, {})
     # The verdict: the field the trainer will build (impl auto) runs forward + backward on this GPU.
-    r = probe_child("field", {**FMGS, "impl": impl}, PROBE_N)
-    show("field", f"the trainer's field: {impl} (encoding/heads)", PROBE_N, r)
-    print(f"  → the trainer (impl auto) will use: {impl}  — {'usable' if r['ok'] else 'NOT usable'}")
+    r = probe_child("field", {**FMGS, **over, "impl": impl}, PROBE_N)
+    what = f"{impl}" + (f", split {over['split']}" if over.get("split") else "")
+    show("field", f"the trainer's field: {what}", PROBE_N, r)
+    print(f"  → the trainer (impl auto) will use: {what} (encoding/heads)  — {'usable' if r['ok'] else 'NOT usable'}")
     return 0 if r["ok"] else 1
 
 

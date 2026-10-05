@@ -144,7 +144,7 @@ grids are only ~71 × 40 CLIP and 64 × 36 DINO cells); the editor's **Compare**
 | `semantics/radiance_semantics/fmgs/field.py` | `FeatureField`: Instant-NGP hash grid (24 levels, 16 → 512, 2^20, 8 features = 192-d) on centres normalised by the scene's 1st–99th percentile box (+5 %), CLIP 512 and DINO 384 heads (2 × 256 ReLU). Implementation per part, `"<encoding>/<heads>"`: `tcnn` (HashGrid, CutlassMLP) or a PyTorch twin `torch` (same hashing and level resolutions; each level checkpointed under autograd, so 262k points do not keep 2 GB of gathers). `field.pt` records which. |
 | `.../fmgs/losses.py` | 0.2 · CLIP Huber (δ 1.25) + 0.8 · DINO L2 + 0.01 · pixel alignment, means over pixels with rendered alpha ≥ 0.5. Pixel alignment (our reading): mean \|cos(clip_p, clip_q) − cos(dino_p, dino_q)\| over sampled pixels and 3 × 3 neighbours at dilation 2, DINO = the fixed teacher map. |
 | `.../fmgs/train.py` | The trainer. Per step: one training view (refined pose), the trainable Gaussians in its frustum (the most opaque 40 %, picked once), field → features, gsplat render in 32-channel chunks, **divided by the rendered alpha** (so dropping the untrained 60 % does not darken the maps), losses against the upsampled teachers. Adam 1e-2 → 1e-3 exponential, eps 1e-15 (LERF's hash-field settings). Checkpoints every 1,000 steps (resume on the same settings), TensorBoard in `tb/`, `train.json`. Out-of-memory ladder (variant auto): hash table 2^19 → half the visible Gaussians per step → B-lite (render the 192-d encoding, heads per pixel; labelled as a variant); restarts from step 0, recorded. Gaussian checksum before/after. `python -m radiance_semantics.fmgs.train … --steps 200` is the smoke run (exit 0 = loss fell and Gaussians unchanged). |
-| `.../fmgs/diag.py` | tiny-cuda-nn probes, each in its own process with `CUDA_LAUNCH_BLOCKING=1`: a matrix of hash-grid and MLP configurations, then the field the trainer will build. `resolve()` is the trainer's `impl auto` (the default): tcnn for each part that passes its probe at 262,144 points, else PyTorch; CPU → torch/torch. `train.json` records the choice and the probe results. |
+| `.../fmgs/diag.py` | tiny-cuda-nn probes (incl. the split grid), each in its own process with `CUDA_LAUNCH_BLOCKING=1`: a matrix of hash-grid and MLP configurations, then the field the trainer will build. `resolve()` is the trainer's `impl auto` (the default): tcnn for each part that passes its probe at 262,144 points, else PyTorch; CPU → torch/torch. `train.json` records the choice and the probe results. |
 | `.../fmgs/bake.py` | Field at every Gaussian → unit rows. |
 | `.../lift.py` | `blend_weights()`: the lift's denominator pass on its own, so both tables agree on unseen rows. |
 | `figs/semantic_pipeline.py` | `--backend fmgs`: steps `fmgs` (train into `semantics/<run>/fmgs_train/`, checkpoint-file SHA before/after) and `bake` (table in `semantics/<run>/fmgs/`, `field.pt` copied in; unseen rows from the lift table when it is for the same checkpoint, else a blend-weight pass). `--fmgs-steps/-width/-variant/-impl/-table`. Backend is no longer sticky in `config.json` (a bare run is the lift). |
@@ -163,9 +163,18 @@ Not checkable in the cloud: tiny-cuda-nn, GPU memory and speed — the gate's fi
 **Gate run 1 (73e7968) failed** at the tiny-cuda-nn smoke on intellisense08: the HashGrid forward
 (24 × 8, 2^20, 200k points) raised `CUDA error: invalid configuration argument` in the kitchen build.
 Response: `fmgs/diag.py` (which configurations fail), `impl auto` with a per-part PyTorch fallback, and the
-gate's step 2 now runs the diag and fails only if the chosen field does not run. The diag output will say
-whether the fault is the encoding, the heads or both; if the PyTorch encoding is used, the field is the
-same model (same hashing), only slower.
+gate's step 2 now runs the diag and fails only if the chosen field does not run.
+
+**Diag on intellisense08** (tinycudann 2.0, CUDA 11.8, sm_75): every hash grid up to 96 output dims runs
+(16 × 2, 12 × 8, 24 × 4, 24 × 2, at 2^19 and 2^20); every 24 × 8 = 192-dim grid fails to launch, at any
+table size and point count. Both head types run. So the limit is the grid's width, not memory. The PyTorch
+encoding works (262k points forward + backward 2.8 s, 4.4 GB) but is ~20× slower than tcnn.
+Fix: `FieldConfig.split` — the 24 levels as consecutive tcnn grids of 12 × 8 (96 dims each), concatenated
+in level order. Same capacity (24 levels × 8 features, 2^20 entries per level) and the same ladder except
+that the second grid's base resolution is an integer (tcnn's `base_resolution` is): levels 16 → 84 and
+98 → 512 instead of one ladder 16 → 512 (every level within 1 %). The PyTorch twin computes the same split
+grid. `resolve()` tries the configured grid, then split 2, 3, 4, 6, then PyTorch; the choice (split in
+`field.pt`'s cfg and `train.json`) is recorded and is a reported deviation from FMGS.
 
 ## 4. Decisions and findings (Phase 0)
 

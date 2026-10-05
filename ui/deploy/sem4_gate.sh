@@ -54,8 +54,8 @@ fi
 
 echo; echo "=== $(stamp) FMGS field on the GPU: tiny-cuda-nn probes, PyTorch fallback"
 # Each tiny-cuda-nn case runs in its own process (CUDA_LAUNCH_BLOCKING=1). On intellisense08 the
-# 2^20 hash grid failed with "invalid configuration argument"; the trainer's impl auto then uses
-# PyTorch for the failing part. This step fails only if the field the trainer will build does not run.
+# 24 × 8 hash grid (192 dims) fails with "invalid configuration argument"; impl auto then splits it into two
+# 12-level tcnn grids (or falls back to PyTorch). This step fails only if the chosen field does not run.
 (
   source "$ROOT/figs_env.sh" >/dev/null 2>&1
   cd "$REPO/semantics" && python -m radiance_semantics.fmgs.diag 2>&1 | grep -vE "^\s*$|Warning"

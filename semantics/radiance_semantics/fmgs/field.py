@@ -38,6 +38,7 @@ class FieldConfig:
     layers: int = 2
     clip_dim: int = 512
     dino_dim: int = 384
+    split: int = 1                 # the levels as this many consecutive grids (tiny-cuda-nn on sm_75: ≤ 96 dims per grid)
 
     @property
     def enc_dim(self):
@@ -46,6 +47,26 @@ class FieldConfig:
     @property
     def per_level_scale(self):
         return math.exp((math.log(self.finest) - math.log(self.base)) / max(1, self.levels - 1))
+
+    def groups(self):
+        """[(n_levels, base_resolution, per_level_scale)] per grid. split = 1 is the FMGS grid. With split
+        = s the geometric ladder base → finest is cut into s runs of levels; each run starts at its
+        level's resolution rounded to an integer (tiny-cuda-nn's base_resolution is an integer) and
+        ends exactly where the ladder does, so only the run boundaries move (16 → 84, 98 → 512 for 24 levels)."""
+        if self.split == 1:
+            return [(self.levels, self.base, self.per_level_scale)]
+        if self.levels % self.split or self.levels // self.split < 2:
+            raise ValueError(f"split {self.split} must divide the {self.levels} levels into runs of ≥ 2")
+        n, b, out = self.levels // self.split, self.per_level_scale, []
+        for g in range(self.split):
+            lo = round(self.base * b ** (g * n))
+            hi = self.finest if g == self.split - 1 else self.base * b ** ((g + 1) * n - 1)
+            out.append((n, lo, (hi / lo) ** (1 / (n - 1))))
+        return out
+
+    def level_scales(self):
+        """tiny-cuda-nn's grid scale per level: base · s^k − 1 (resolution ⌈scale⌉ + 1)."""
+        return [base * s ** k - 1.0 for n, base, s in self.groups() for k in range(n)]
 
 
 def scene_box(means, pad=0.05):
@@ -69,12 +90,10 @@ class TorchHashGrid(nn.Module):
     def __init__(self, cfg: FieldConfig):
         super().__init__()
         self.cfg = cfg
-        b = cfg.per_level_scale
         self.scales, self.res, self.sizes, self.dense = [], [], [], []
         T = 2 ** cfg.log2_table
         tables = []
-        for lvl in range(cfg.levels):
-            scale = cfg.base * b ** lvl - 1.0
+        for scale in cfg.level_scales():
             res = int(math.ceil(scale)) + 1
             dense = res ** 3 <= T
             size = min(res ** 3, T)
@@ -121,11 +140,23 @@ def _mlp(n_in, n_out, hidden, layers):
     return nn.Sequential(*mods)
 
 
+class TcnnGrids(nn.Module):
+    """Consecutive tiny-cuda-nn hash grids (FieldConfig.split > 1), concatenated in level order."""
+
+    def __init__(self, grids):
+        super().__init__()
+        self.grids = nn.ModuleList(grids)
+
+    def forward(self, x):
+        return torch.cat([g(x) for g in self.grids], -1)
+
+
 def tcnn_encoding(c: FieldConfig):
     import tinycudann as tcnn
-    return tcnn.Encoding(3, {"otype": "HashGrid", "n_levels": c.levels, "n_features_per_level": c.features,
-                             "log2_hashmap_size": c.log2_table, "base_resolution": c.base,
-                             "per_level_scale": c.per_level_scale})
+    grids = [tcnn.Encoding(3, {"otype": "HashGrid", "n_levels": n, "n_features_per_level": c.features,
+                               "log2_hashmap_size": c.log2_table, "base_resolution": base, "per_level_scale": s})
+             for n, base, s in c.groups()]
+    return grids[0] if len(grids) == 1 else TcnnGrids(grids)
 
 
 def tcnn_head(c: FieldConfig, n_out, otype="CutlassMLP"):
