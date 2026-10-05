@@ -1,0 +1,33 @@
+[project]
+name = "radiance-semantics"
+version = "0.1.0"
+description = "Semantic feature embeddings (CLIP + DINOv2) attached to trained FiGS Gaussian splats"
+requires-python = ">=3.10"
+# Installed INTO the kitchen conda env by setup_scripts/install_semantics.sh, always with
+# --no-deps and under a constraints file that freezes every package already in the env:
+# tiny-cuda-nn and gsplat are compiled against torch 2.1.2, so nothing here may move torch,
+# torchvision, numpy or timm. The list below documents what the code imports; the install
+# script is what actually provides it.
+dependencies = [
+    "torch==2.1.2",            # kitchen's pin (compiled extensions depend on it)
+    "numpy<2",                 # extensions in kitchen are built against the 1.x ABI
+    "gsplat==1.0.0",           # nerfstudio 1.1.4's pin; N-D feature rasterization, ≤ 512 channels
+    "nerfstudio==1.1.4",
+    "open_clip_torch==2.24.0", # newest line that does not demand timm>=1.0 (nerfstudio pins timm 0.6.7)
+    "ftfy",
+    "regex",
+    "huggingface_hub<1.0",     # 1.x moved to httpx; open_clip 2.24 targets 0.x
+]
+
+[project.optional-dependencies]
+test = ["pytest>=7"]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["radiance_semantics*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

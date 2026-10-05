@@ -11,6 +11,8 @@
 #     ./verify_figs.sh                 # imports + GPU + notebook run
 #     ./verify_figs.sh --quick         # imports + GPU only, no notebook
 #     ./verify_figs.sh --scene backroom --course circuit
+#     ./verify_figs.sh --quick --semantics   # + OpenCLIP/DINOv2 smoke and the gsplat
+#                                            #   N-channel gradient probe (Phase 0)
 # =============================================================================
 
 set -uo pipefail
@@ -26,15 +28,17 @@ NB_TIMEOUT=1800
 # training from scratch (tens of minutes, heavy VRAM). Verification only needs
 # the *load an existing splat and fly it* path. Use --with-splat-gen to include.
 SPLAT_GEN=0
+SEMANTICS=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --quick)  QUICK=1; shift ;;
     --with-splat-gen) SPLAT_GEN=1; shift ;;
+    --semantics) SEMANTICS=1; shift ;;
     --scene)  SCENE="$2"; shift 2 ;;
     --course) COURSE="$2"; shift 2 ;;
     --prefix) PROJECT_ROOT="$2"; REPO_DIR="$PROJECT_ROOT/SousVide"; ENV_FILE="$PROJECT_ROOT/figs_env.sh"; shift 2 ;;
-    -h|--help) sed -n '2,18p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,20p' "$0"; exit 0 ;;
     *) echo "Unknown option: $1"; exit 2 ;;
   esac
 done
@@ -142,6 +146,24 @@ PY"
   if (( MAXVRAM < 6000 )); then
     printf '  %s!%s %s MiB VRAM — inference/simulation fine, splatfacto *training* will likely OOM\n' \
       "$YELLOW" "$RESET" "$MAXVRAM"; WARN=$((WARN+1))
+  fi
+fi
+
+# ------------------------------------------------------ semantic features (Phase 0)
+if (( SEMANTICS )); then
+  head2 "Semantic features (docs/SEMANTICS.md, Phase 0)"
+  if t "radiance_semantics" "python -c 'import radiance_semantics as r;print(r.__version__)'"; then
+    t "open_clip 2.24.0"     "python -c 'import importlib.metadata as m;v=m.version(\"open_clip_torch\");assert v==\"2.24.0\",v;print(v)'"
+    # torch 2.1.2 / nerfstudio 1.1.4 / gsplat 1.0.0 / numpy 1.x — the compiled extensions' ABI
+    t "pinned stack intact"  "python -m radiance_semantics.env_check >/dev/null && echo 'torch, nerfstudio, gsplat, numpy on their pins'"
+    # functional, not just imports: CLIP must tell red from blue; DINOv2 gives 384-d tokens
+    t "CLIP + DINOv2 smoke"  "python -m radiance_semantics.models --smoke | grep -v '^GALLEY_JSON'"
+    # gsplat renders 64-channel features and its gradients are exact (linearity, finite
+    # differences, blend weights, channel chunking) on 20k synthetic Gaussians
+    t "gsplat N-ch gradients" "python -m radiance_semantics.probe --quick | grep -E '✔|✗'"
+  else
+    printf '      %sinstall it: %s/setup_scripts/install_semantics.sh --prefix %s%s\n' \
+      "$DIM" "$(cd "$(dirname "$0")/.." && pwd)" "$PROJECT_ROOT" "$RESET"
   fi
 fi
 

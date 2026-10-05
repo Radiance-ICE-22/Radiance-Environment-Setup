@@ -5,7 +5,8 @@
 #  Installs, in order:
 #     Miniconda -> SousVide repo (+FiGS, acados, hloc submodules) -> acados
 #     -> conda env 'kitchen' -> tiny-cuda-nn (with the 3 known build fixes)
-#     -> nerfstudio + editable installs -> example GSplats -> verification
+#     -> nerfstudio + editable installs -> example GSplats -> figs_env.sh
+#     -> semantic features (OpenCLIP + DINOv2, torch untouched) -> verification
 #
 #  Everything is idempotent and resumable: completed steps are recorded in
 #  .figs_install_state/ and skipped on re-run. Delete a marker to force a redo.
@@ -31,6 +32,7 @@ CONDA_DIR=""                 # default: <prefix>/miniconda3  (override with --co
 GSPLAT_GDRIVE_ID="1kW5dzsfD3rbRA3RIQDyJPG6_UJaO9ALP"
 STALL_WARN_SECS=180          # warn if a step produces no output for this long
 MAKE_JOBS="$(nproc 2>/dev/null || echo 4)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 SKIP_GSPLATS=0
 VERIFY_ONLY=0
@@ -65,7 +67,7 @@ while [[ $# -gt 0 ]]; do
       # ~5 GB gsplats and the git clone are all path-independent and reused, so
       # the rebuild links from local cache instead of re-downloading.
       RELOCATED=1; NEW_HOST=1; SKIP_GSPLATS=1
-      REDO_STEPS="$REDO_STEPS apt_deps miniconda acados hostgcc conda_env tcnn pips envfile"
+      REDO_STEPS="$REDO_STEPS apt_deps miniconda acados hostgcc conda_env tcnn pips envfile semantics"
       shift ;;
     --list-steps)
       cat <<'EOF'
@@ -81,6 +83,7 @@ Step IDs (use with --redo):
   pips          nerfstudio + editable FiGS / acados_template / hloc
   gsplats       download + unpack the example GSplat dataset
   envfile       write figs_env.sh with the persistent exports
+  semantics     OpenCLIP + DINOv2 + radiance_semantics (setup_scripts/install_semantics.sh)
   verify        full verification suite
 EOF
       exit 0 ;;
@@ -138,7 +141,7 @@ else
   IS_TTY=0
 fi
 
-TOTAL_STEPS=12
+TOTAL_STEPS=13
 CHECK_COUNT_EXPECTED=19
 STEP_NO=0
 declare -a WARNINGS=()
@@ -1093,6 +1096,7 @@ run_verification() {
   check      "ns-train splatfacto"     "ns-train --help 2>&1 | grep -q splatfacto && echo registered"
   check_soft "example gsplats present" "test -d '$REPO_DIR/gsplats/capture' && du -sh '$REPO_DIR/gsplats'"
   check_soft "GPU idle VRAM"           "nvidia-smi --query-gpu=memory.used,memory.total --format=csv,noheader"
+  check_soft "radiance_semantics"      "python -c 'import radiance_semantics as r, importlib.metadata as m;print(r.__version__, \"open_clip\", m.version(\"open_clip_torch\"))'"
 
   # a real (tiny) CUDA op — catches driver/toolkit mismatches that imports miss
   check      "live CUDA matmul" \
@@ -1114,7 +1118,7 @@ fi
 
 preflight_report
 echo
-printf '%sPlan:%s 12 steps. Biggest time sinks: conda env (~15-25 min), tiny-cuda-nn build (~15-40 min), gsplats (~5 GB).\n' "$BOLD" "$RESET"
+printf '%sPlan:%s 13 steps. Biggest time sinks: conda env (~15-25 min), tiny-cuda-nn build (~15-40 min), gsplats (~5 GB).\n' "$BOLD" "$RESET"
 printf 'Total expected: %s45-90 minutes%s on a decent connection. Safe to Ctrl-C and re-run — progress is saved.\n\n' "$BOLD" "$RESET"
 if ! confirm "Proceed with install into $PROJECT_ROOT?"; then echo "Aborted."; exit 0; fi
 echo
@@ -1135,6 +1139,8 @@ else
   run_step gsplats "Example GSplat dataset (~5 GB)"            soft -- do_gsplats
 fi
 run_step envfile   "Write figs_env.sh"                         hard -- do_envfile
+# soft: FiGS and SOUS-VIDE work without it; it only adds the semantic-embedding tools.
+run_step semantics "Semantic features (OpenCLIP + DINOv2)"    soft -- bash "$SCRIPT_DIR/install_semantics.sh" --prefix "$PROJECT_ROOT"
 
 echo
 run_verification; VERIFY_RC=$?

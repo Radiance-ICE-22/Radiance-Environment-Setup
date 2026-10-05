@@ -420,6 +420,7 @@ turned back on over it).
   Home restores the default view. Motion eases in and out, and its speed scales with the distance to
   the orbit centre; Course ▸ Show ▸ *Key speed* multiplies it (remembered). Keys act only while the
   course document is active and no text field has focus.
+- **Semantic embeddings** are planned phase by phase in `docs/SEMANTICS_PLAN.md`; status and measured numbers in `docs/SEMANTICS.md` (Phase 0, environment and pose check, built 5 Oct). The splat editor below is that plan's Phase 3.
 - **Next, a splat editor for semantic goals:** a separate document, `#/splat/<scene>`, with the
   splat as the main view. Click picking: ray-cast against the Gaussians, nearest centre along the
   ray weighted by opacity. Then, once the splat carries semantic features (a LangSplat / feature-splat

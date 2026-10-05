@@ -16,9 +16,11 @@ artefacts either produces.
 | `setup_scripts/install_figs.sh` | Full install: miniconda, acados, tiny-cuda-nn, nerfstudio, the SousVide clone. Resumable, step-addressable. |
 | `setup_scripts/verify_figs.sh` | Verification suite — imports, binaries, GPU, an end-to-end render of a shipped scene. |
 | `setup_scripts/apply_overlay.sh` | Restores our configs into the freshly cloned SousVide. |
+| `setup_scripts/install_semantics.sh` | Adds OpenCLIP 2.24 + DINOv2 + `radiance_semantics` to kitchen without moving torch (also install step `semantics`). |
 | `figs/figs_pipeline.py` | The pipeline: 14 resumable steps from raw video to validated flight render (SfM and splat training are separate steps). |
 | `figs/tidy_sousvide.sh` | Keeps generated renders out of the upstream clone's root. |
 | `figs/sousvide_overlay/` | Capture configs and courses that must sit inside the clone. |
+| `semantics/` | `radiance_semantics`: per-Gaussian CLIP + DINOv2 features on a trained splat, for natural-language goals. Plan: `docs/SEMANTICS_PLAN.md`; status and numbers: `docs/SEMANTICS.md`. |
 | `ui/` | **Galley**, the web console for the pipeline (FastAPI + React). Status, how to run it, and what comes next: `docs/GALLEY_UI.md`. |
 | `docs/` | Flat, on purpose. `LAB_MACHINE.md`, `FiGS_pipeline_script_guide.md` and `GALLEY_UI.md` are the current ones; `FiGS_custom_video_guide.md` and `FiGS_pipeline.md` are reference. Anything mentioning `~/projects/figs_validation` is legacy for paths. The old VRAM pessimism was wrong: with `--cache-images cpu` a 4 GB card trains (see the script guide §9). |
 | `runs/` | JSON run records — every measurement from every completed run. |

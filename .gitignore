@@ -53,3 +53,7 @@ figs/.tmp/
 *.log.INFO.*
 *.cubin
 *.ptx
+
+# semantic embeddings (docs/SEMANTICS.md): step markers, editable-install metadata
+figs/.semantic_pipeline_state/
+semantics/*.egg-info/
