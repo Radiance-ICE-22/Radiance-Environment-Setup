@@ -14,7 +14,7 @@ from radiance_semantics import lift as L  # noqa: E402
 from radiance_semantics.fmgs import losses as LS  # noqa: E402
 from radiance_semantics.fmgs import train as T  # noqa: E402
 from radiance_semantics.fmgs.bake import bake  # noqa: E402
-from radiance_semantics.fmgs.field import FeatureField, FieldConfig, TorchHashGrid, normalise, scene_box  # noqa: E402
+from radiance_semantics.fmgs.field import FeatureField, FieldConfig, TorchHashGrid, normalise, scene_box, split_impl  # noqa: E402
 from radiance_semantics.render import Gaussians, render_features, viewmat_from_c2w  # noqa: E402
 
 SMALL = {"levels": 4, "features": 2, "base": 4, "finest": 32, "hidden": 32, "layers": 1, "clip_dim": 6, "dino_dim": 4}
@@ -78,10 +78,37 @@ def test_field_save_load_round_trip(tmp_path):
     x = torch.rand(7, 3)
     f.save(tmp_path / "f.pt", note=1)
     f2, d = FeatureField.load(tmp_path / "f.pt")
-    assert d["impl"] == "torch" and d["note"] == 1
+    assert d["impl"] == "torch/torch" and d["note"] == 1 and f2.impl == "torch/torch"
     assert torch.allclose(f(x)["clip"], f2(x)["clip"]) and f2(x)["dino"].shape == (7, 4)
     with pytest.raises(ValueError):
         FeatureField(torch.zeros(3), torch.ones(3), impl="bogus")
+
+
+def test_impl_split_and_cpu_resolve():
+    from radiance_semantics.fmgs.diag import resolve
+    assert split_impl("tcnn") == ("tcnn", "tcnn") and split_impl("torch") == ("torch", "torch")
+    assert split_impl("torch/tcnn") == ("torch", "tcnn")
+    for bad in ("tcnn/", "cuda", "torch/torch/torch"):
+        with pytest.raises(ValueError):
+            split_impl(bad)
+    assert resolve({}, "cpu", log=lambda m: None) == ("torch/torch", {})
+
+
+def test_hash_grid_checkpointed_gradients_match():
+    torch.manual_seed(0)
+    grid = TorchHashGrid(FieldConfig(**SMALL))
+    x = torch.rand(5000, 3)                      # > 4096: the checkpointed path
+    w = torch.randn(grid(x[:1]).shape[1])
+    grads = []
+    for ckpt in (True, False):
+        grid.zero_grad()
+        if ckpt:
+            y = grid(x)
+        else:
+            y = torch.cat([grid.level(x, l, t) for l, t in enumerate(grid.tables)], -1)
+        (y @ w).square().mean().backward()
+        grads.append([t.grad.clone() for t in grid.tables])
+    assert all(torch.allclose(a, b, atol=1e-7) for a, b in zip(*grads))
 
 
 # ── selection ─────────────────────────────────────────────────────────────────

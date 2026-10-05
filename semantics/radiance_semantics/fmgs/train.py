@@ -51,7 +51,7 @@ class TrainConfig:
     steps: int = 4200
     feat_width: int = 480
     variant: str = "auto"          # auto | faithful | blite
-    impl: str = "tcnn"             # tcnn | torch
+    impl: str = "auto"             # auto (probe tiny-cuda-nn per part) | tcnn | torch | <enc>/<heads>
     log2_table: int = 20
     subset_frac: float = 0.4
     subsample: float = 1.0
@@ -179,6 +179,12 @@ def train(g, views, maps_for, cfg: TrainConfig, out, device=None, render_backend
     views = [v for v in views if teachers.get(v.stem)]          # loads every view's maps once (fp16, CPU)
     if not views:
         raise RuntimeError("no view has teacher maps")
+    impl_notes = None
+    if cfg.impl == "auto":
+        from .diag import resolve
+        impl, impl_notes = resolve(asdict(cfg.field_config()), dev, log)
+        cfg = replace(cfg, impl=impl)
+        log(f"  field implementation: {impl} (encoding/heads)")
     level = 0
     if cfg.variant == "auto":
         cfg = replace(cfg, variant="faithful")
@@ -208,7 +214,7 @@ def train(g, views, maps_for, cfg: TrainConfig, out, device=None, render_backend
                 p.unlink()
             resume = False
     checksum1 = gauss_checksum(g)
-    stats.update(fallback={"level": level, "name": LADDER[level][0]} if auto else None,
+    stats.update(fallback={"level": level, "name": LADDER[level][0]} if auto else None, impl=cfg.impl, impl_probes=impl_notes,
                  variant=cfg.variant, config=asdict(cfg), field=asdict(cfg.field_config()),
                  gauss_checksum_before=checksum0, gauss_checksum_after=checksum1,
                  gauss_unchanged=checksum0 == checksum1, wall_seconds=round(time.time() - t_start, 1),
@@ -339,7 +345,7 @@ def main(argv=None):
     ap.add_argument("--steps", type=int, default=TrainConfig.steps)
     ap.add_argument("--feat-width", type=int, default=TrainConfig.feat_width)
     ap.add_argument("--variant", choices=["auto", "faithful", "blite"], default="auto")
-    ap.add_argument("--impl", choices=["tcnn", "torch"], default="tcnn")
+    ap.add_argument("--impl", default="auto", help="auto (default: probe tiny-cuda-nn per part), tcnn, torch, or <enc>/<heads>")
     ap.add_argument("--log2-table", type=int, default=TrainConfig.log2_table)
     ap.add_argument("--device")
     ap.add_argument("--render-backend", choices=["gsplat", "reference"], default="gsplat")

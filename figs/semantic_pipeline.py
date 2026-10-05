@@ -56,7 +56,7 @@ except ImportError:
 
 DEFAULTS = {"backend": "lift", "teachers": ["clip", "dino"], "feat_width": 960, "dino_width": 896,
             "scales": None, "batch": 256, "device": None, "render_backend": "gsplat", "limit": None,
-            "fmgs_steps": 4200, "fmgs_width": 480, "fmgs_variant": "auto", "fmgs_impl": "tcnn", "fmgs_table": 20}
+            "fmgs_steps": 4200, "fmgs_width": 480, "fmgs_variant": "auto", "fmgs_impl": "auto", "fmgs_table": 20}
 LISTS = ("teachers",)
 NOT_STICKY = ("backend",)        # never taken from config.json: a bare run (Galley's Continue) is the lift
 
@@ -489,7 +489,8 @@ def main(argv=None):
     ap.add_argument("--fmgs-width", type=int, help="FMGS feature render width in px (default 480; teachers are ~71 cells wide)")
     ap.add_argument("--fmgs-variant", choices=["auto", "faithful", "blite"],
                     help="auto = faithful FMGS with the out-of-memory fallback ladder (default)")
-    ap.add_argument("--fmgs-impl", choices=["tcnn", "torch"], help="field implementation (default tcnn)")
+    ap.add_argument("--fmgs-impl", choices=["auto", "tcnn", "torch", "torch/tcnn", "tcnn/torch"],
+                    help="field implementation, encoding/heads (default auto: tiny-cuda-nn where its probe passes)")
     ap.add_argument("--fmgs-table", type=int, help="log2 of the hash table size (default 20)")
     ap.add_argument("--device", help=argparse.SUPPRESS)               # tests: cpu
     ap.add_argument("--render-backend", choices=["gsplat", "reference"], help=argparse.SUPPRESS)

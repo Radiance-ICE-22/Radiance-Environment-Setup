@@ -8,16 +8,20 @@ Heads: CLIP (512) and DINO (384), each `layers` hidden layers of `hidden` ReLU u
 
 Defaults are the FMGS configuration (24 levels, 16 → 512, 2^20, 8 features; 192-d encoding).
 
-Two implementations of the same function:
-  "tcnn"   tiny-cuda-nn HashGrid + CutlassMLP (fp16 compute) — the GPU path on the hosts
-  "torch"  plain PyTorch (fp32) — CPU tests, and a fallback if tiny-cuda-nn misbehaves
-Their parameters are not interchangeable: field.pt records which one wrote it.
+Two implementations of each part (the encoding, the heads), chosen separately as "<enc>/<heads>":
+  "tcnn"   tiny-cuda-nn HashGrid / CutlassMLP (fp16 compute) — fast, on the GPU
+  "torch"  plain PyTorch (fp32) — CPU tests, and the fallback when tiny-cuda-nn fails on a GPU
+"auto" probes each tiny-cuda-nn part on the device first (fmgs/diag.py, in a child process) and uses
+PyTorch for a part that fails — on intellisense08 (RTX 2080, kitchen's tiny-cuda-nn build) the hash
+grid kernel was rejected with "invalid configuration argument" on 5 Oct. Parameters of the two
+implementations are not interchangeable: field.pt records which one wrote each part.
 """
 
 import math
 from dataclasses import asdict, dataclass
 
 import torch
+import torch.utils.checkpoint
 from torch import nn
 
 PRIMES = (1, 2654435761, 805459861)
@@ -78,27 +82,33 @@ class TorchHashGrid(nn.Module):
             tables.append(nn.Parameter(torch.empty(size, cfg.features).uniform_(-1e-4, 1e-4)))
         self.tables = nn.ParameterList(tables)
 
-    def forward(self, x):                       # x in [0, 1]³, [N, 3] → [N, L·F]
-        out = []
+    def level(self, x, lvl, table):             # one level, the 8 corners at once: [N, 3] → [N, F]
         corners = torch.tensor([[i >> 2 & 1, i >> 1 & 1, i & 1] for i in range(8)], device=x.device)
+        pos = x * self.scales[lvl] + 0.5
+        p0 = torch.floor(pos)
+        frac = pos - p0
+        idx = p0.long()[:, None, :] + corners                                   # [N, 8, 3]
+        w = torch.where(corners.bool(), frac[:, None, :], 1 - frac[:, None, :]).prod(-1)   # [N, 8]
+        if self.dense[lvl]:
+            r = self.res[lvl]
+            idx = idx.clamp(0, r - 1)
+            flat = idx[..., 0] + r * (idx[..., 1] + r * idx[..., 2])
+        else:
+            flat = (idx[..., 0] * PRIMES[0]) ^ (idx[..., 1] * PRIMES[1]) ^ (idx[..., 2] * PRIMES[2])
+        flat = flat % self.sizes[lvl]
+        return torch.einsum("nc,ncf->nf", w, table[flat])
+
+    def forward(self, x):                       # x in [0, 1]³, [N, 3] → [N, L·F]
+        # With gradients, each level is checkpointed: backward recomputes its gather instead of
+        # keeping [N, 8, F] per level (2 GB at 262k points × 24 levels), so the PyTorch fallback
+        # costs about as much memory as tiny-cuda-nn.
+        ckpt = torch.is_grad_enabled() and x.shape[0] > 4096
+        out = []
         for lvl, table in enumerate(self.tables):
-            pos = x * self.scales[lvl] + 0.5
-            p0 = torch.floor(pos)
-            frac = pos - p0
-            p0 = p0.long()
-            acc = 0
-            for c in corners:
-                idx = p0 + c
-                w = torch.prod(torch.where(c.bool(), frac, 1 - frac), dim=-1, keepdim=True)
-                if self.dense[lvl]:
-                    r = self.res[lvl]
-                    idx = idx.clamp(0, r - 1)
-                    flat = idx[:, 0] + r * (idx[:, 1] + r * idx[:, 2])
-                else:
-                    flat = (idx[:, 0] * PRIMES[0]) ^ (idx[:, 1] * PRIMES[1]) ^ (idx[:, 2] * PRIMES[2])
-                flat = flat % self.sizes[lvl]
-                acc = acc + w * table[flat]
-            out.append(acc)
+            if ckpt:
+                out.append(torch.utils.checkpoint.checkpoint(self.level, x, lvl, table, use_reentrant=False))
+            else:
+                out.append(self.level(x, lvl, table))
         return torch.cat(out, -1)
 
 
@@ -111,29 +121,42 @@ def _mlp(n_in, n_out, hidden, layers):
     return nn.Sequential(*mods)
 
 
+def tcnn_encoding(c: FieldConfig):
+    import tinycudann as tcnn
+    return tcnn.Encoding(3, {"otype": "HashGrid", "n_levels": c.levels, "n_features_per_level": c.features,
+                             "log2_hashmap_size": c.log2_table, "base_resolution": c.base,
+                             "per_level_scale": c.per_level_scale})
+
+
+def tcnn_head(c: FieldConfig, n_out, otype="CutlassMLP"):
+    import tinycudann as tcnn
+    return tcnn.Network(c.enc_dim, n_out, {"otype": otype, "activation": "ReLU", "output_activation": "None",
+                                           "n_neurons": c.hidden, "n_hidden_layers": c.layers})
+
+
+def split_impl(impl):
+    """"tcnn" | "torch" | "<enc>/<heads>" → (enc, heads)."""
+    parts = impl.split("/") if "/" in impl else [impl, impl]
+    if len(parts) != 2 or any(p not in ("tcnn", "torch") for p in parts):
+        raise ValueError(f"unknown field implementation {impl!r} (tcnn, torch or <enc>/<heads>; 'auto' is resolved first)")
+    return parts[0], parts[1]
+
+
 class FeatureField(nn.Module):
     def __init__(self, lo, hi, cfg: FieldConfig = None, impl="tcnn"):
         super().__init__()
         self.cfg = cfg or FieldConfig()
-        self.impl = impl
+        enc, head = split_impl(impl)
+        self.impl = f"{enc}/{head}"
         self.register_buffer("lo", torch.as_tensor(lo, dtype=torch.float32).clone())
         self.register_buffer("hi", torch.as_tensor(hi, dtype=torch.float32).clone())
         c = self.cfg
-        if impl == "tcnn":
-            import tinycudann as tcnn
-            self.encoding = tcnn.Encoding(3, {"otype": "HashGrid", "n_levels": c.levels, "n_features_per_level": c.features,
-                                              "log2_hashmap_size": c.log2_table, "base_resolution": c.base,
-                                              "per_level_scale": c.per_level_scale})
-            net = {"otype": "CutlassMLP", "activation": "ReLU", "output_activation": "None",
-                   "n_neurons": c.hidden, "n_hidden_layers": c.layers}
-            self.clip_head = tcnn.Network(c.enc_dim, c.clip_dim, net)
-            self.dino_head = tcnn.Network(c.enc_dim, c.dino_dim, net)
-        elif impl == "torch":
-            self.encoding = TorchHashGrid(c)
+        self.encoding = tcnn_encoding(c) if enc == "tcnn" else TorchHashGrid(c)
+        if head == "tcnn":
+            self.clip_head, self.dino_head = tcnn_head(c, c.clip_dim), tcnn_head(c, c.dino_dim)
+        else:
             self.clip_head = _mlp(c.enc_dim, c.clip_dim, c.hidden, c.layers)
             self.dino_head = _mlp(c.enc_dim, c.dino_dim, c.hidden, c.layers)
-        else:
-            raise ValueError(f"unknown field implementation {impl!r} (tcnn or torch)")
 
     def encode(self, xyz):
         """[N, 3] splat-frame points → [N, L·F] float32 encoding."""
