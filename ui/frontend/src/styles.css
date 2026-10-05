@@ -92,7 +92,15 @@ p { margin: 4px 0; }
 .rb-tab.on { background: #F5F8FC; border-color: var(--frame-line); height: 23px; }
 .rb-tab.ctx { color: #6B3BA8; background: linear-gradient(#F2E7FC, #E4D3F7); border-color: #C9AEE9; }
 .rb-tab.ctx.on { background: #F8F2FE; }
-.rb-body { height: 92px; display: flex; align-items: stretch; padding: 3px 3px 2px; background: linear-gradient(#F5F8FC, #E9F0F9 70%, #DCE6F3); border-bottom: 1px solid var(--frame-line); overflow-x: auto; overflow-y: hidden; }
+.rb-body { height: auto; min-height: 92px; display: flex; align-items: stretch; padding: 3px 3px 2px; background: linear-gradient(#F5F8FC, #E9F0F9 70%, #DCE6F3); border-bottom: 1px solid var(--frame-line); overflow-x: auto; overflow-y: hidden; }
+/* the ribbon's horizontal scrollbar (narrow windows): a thin half-transparent line under the groups.
+   min-height above, not height: the line adds its 4 px below the group labels instead of covering them */
+.rb-body::-webkit-scrollbar { height: 4px; background: transparent; }
+.rb-body::-webkit-scrollbar-track { background: transparent; }
+.rb-body::-webkit-scrollbar-thumb { background: rgb(29 78 158 / .35); border-radius: 2px; }
+.rb-body::-webkit-scrollbar-thumb:hover { background: rgb(29 78 158 / .6); }
+.rb-body::-webkit-scrollbar-button { display: none; }
+@supports (-moz-appearance: none) { .rb-body { scrollbar-width: thin; scrollbar-color: rgb(29 78 158 / .35) transparent; } }
 .rb-body.peek { position: absolute; left: 0; right: 0; top: 24px; box-shadow: 0 4px 10px rgb(0 0 0 / .2); }
 .ribbon.min .rb-tabs { border-bottom-color: var(--frame-line); }
 .rb-group { display: flex; flex-direction: column; padding: 0 3px; border-right: 1px solid #C5D5EA; box-shadow: 1px 0 #FBFDFF; flex: none; }

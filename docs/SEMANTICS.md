@@ -13,7 +13,7 @@ built, how to run it, and the numbers measured.
 | 0 | Environment and pose check | **DONE.** Gate PASSED on intellisense08, 5 Oct 09:48 (second run; the first found gsplat's 32-channel backward limit). |
 | 1 | Teacher features, lift backend, CLI query | **DONE.** Gate PASSED 5 Oct 16:12: 5 of 5 queries hit (second run, after the relative threshold and a corrected red tool chest annotation). |
 | 2 | Galley backend | **DONE.** Gate PASSED on intellisense08, 5 Oct 17:24 (second run; the first failed only on a host-dependent test, §9): cold query 5.8 s, warm ≤ 789 ms, 5 of 5 hits. |
-| 3 | Splat editor UI | Automated half of the gate PASSED on intellisense08, 5 Oct 19:01 (4e4a5a5, §10): query → course → flight, tracking 8 mm max; browser shows 532 k Gaussians recoloured in 20 ms + 71 ms frame. **Browser half pending** (`sem3_gate.sh --check sem_red_tool_chest`). |
+| 3 | Splat editor UI | **DONE.** Gate PASSED on intellisense08, 5 Oct: automated half 19:01 (query → course → flight, tracking max 8 mm) and browser half 19:21 (whiteboard sent from the editor, 3-keyframe course flown, tracking max 73 mm); 532 k Gaussians recoloured in 20 ms + 71 ms frame (§10). |
 | 4 | FMGS backend (`splatfacto-sem`) | Not started |
 | 5 | Evaluation and comparison | Not started |
 | 6 | Language → waypoints → SV-Net | Not started |
@@ -293,7 +293,7 @@ gate (§8), so going through Galley and the worker changes nothing in the result
 (0.80); labels for row 0: floor 0.255, wall 0.218, ceiling 0.217. Worker restarts 0. `.splat` records =
 table rows = 532,361.
 
-## 10. Phase 3 gate (intellisense08, 5 Oct 19:01, 4e4a5a5) — automated half PASSED
+## 10. Phase 3 gate (intellisense08, 5 Oct, 4e4a5a5) — PASSED
 
 | Check | Result |
 | --- | --- |
@@ -319,3 +319,17 @@ Notes:
   lone candidate showed "runner-up at 100%". It now says "only one cluster" and shows the runner-up as
   (1 − margin). The cloud stand-in worker had the same misreading, which is why the E2E run missed it.
   The redundant "goal" label (it overlapped the annotation pin) is gone.
+
+**Browser half (5 Oct 19:21) — PASSED.** Whiteboard queried and sent from the splat editor, then flown from
+the course editor (job 20), checked with `sem3_gate.sh --check sem_whiteboard`:
+
+| Check | Result |
+| --- | --- |
+| `semantic_goal` | “whiteboard” · lift · score 28.87 · approach (−1.108, −7.014, −1.401) |
+| Final keyframe | the approach point, yaw −2.203 facing the board |
+| Course | 3 keyframes (approach appended), 0 outside the captured volume |
+| Flight | succeeded · 70 frames at 20 Hz (3.5 s) · tracking mean 0.015 / max 0.073 m · pixel std 47.3 · no dark frames |
+
+With the automated half and the browser recolour figure above, every Phase 3 gate item is met:
+query → pick → Send to course → Save and fly passes course, simulate and validate and ends at the approach
+point, and recolouring is far under the 2 s budget (no need for further loader work).
