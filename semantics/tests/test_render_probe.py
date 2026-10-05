@@ -40,6 +40,44 @@ def test_check_catches_a_nonlinear_renderer(monkeypatch):
     assert not r["ok"] and r["linearity_rel"] > 1e-2
 
 
+class FakeGsplat:
+    """Stands in for gsplat 1.0.0's rasterization on the CPU: a fixed linear renderer that, like
+    the real CUDA backward kernel, refuses more than 32 channels when gradients are needed."""
+
+    def __init__(self, n, W, H, seed=0):
+        gen = torch.Generator().manual_seed(seed)
+        w = torch.rand(H * W, n, generator=gen) * (torch.rand(H * W, n, generator=gen) < 0.2)
+        self.w = w / w.sum(1, keepdim=True).clamp_min(1.0) * 0.9         # blend weights, alpha ≤ 0.9
+        self.W, self.H, self.calls = W, H, []
+
+    def __call__(self, means, quats, scales, opacities, colors, viewmats, Ks, width, height, **kw):
+        self.calls.append((colors.shape[-1], colors.requires_grad))
+        if colors.requires_grad and colors.shape[-1] > 32:
+            raise RuntimeError(f"Unsupported number of channels: {colors.shape[-1]}")
+        img = (self.w @ colors).reshape(1, height, width, -1)
+        return img, self.w.sum(1).reshape(1, height, width, 1), {}
+
+
+def test_gsplat_path_chunks_gradients_to_32(monkeypatch):
+    import gsplat
+    g, vm, K, W, H = small_scene()
+    fake = FakeGsplat(len(g), W, H)
+    monkeypatch.setattr(gsplat, "rasterization", fake)
+    f = torch.zeros(len(g), 96, requires_grad=True)
+    F2D = torch.randn(H, W, 96)
+    img, _ = render.render_features(g, f, vm, K, W, H, backend="gsplat")
+    (img * F2D).sum().backward()
+    assert all(c <= 32 for c, rg in fake.calls if rg)                    # three 32-channel chunks
+    assert torch.allclose(f.grad, fake.w.T @ F2D.reshape(-1, 96), atol=1e-5)
+    with torch.no_grad():                                                # no grad: one 96-wide call
+        fake.calls.clear()
+        render.render_features(g, torch.ones(len(g), 96), vm, K, W, H, backend="gsplat")
+    assert fake.calls == [(96, False)]
+    r = probe.check(g, vm, K, W, H, channels=32, backend="gsplat", seed=2)   # 2C = 64 with grad
+    assert r["ok"], r
+    assert r["grad_chunk_rel"] < 1e-6
+
+
 def test_weights_reproduce_alpha():
     g, vm, K, W, H = small_scene()
     ones = torch.ones(len(g), 1)
@@ -67,6 +105,7 @@ def test_from_splatfacto_activates_parameters():
 
 
 def test_lift_passes_and_res_parsing():
+    assert probe.lift_passes(32) == 16 + 12 + 1
     assert probe.lift_passes(64) == 8 + 6 + 1
     assert probe.lift_passes(128) == 4 + 3 + 1
     assert probe.parse_res("480x270, 960X540".replace(" ", "")) == [(480, 270), (960, 540)]

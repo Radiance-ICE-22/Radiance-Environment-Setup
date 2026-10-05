@@ -7,7 +7,7 @@
 #   3. verify_figs.sh --quick --semantics — the usual imports/GPU checks plus CLIP/DINOv2 smoke
 #      and the quick gsplat N-channel gradient probe
 #   4. probe on 1.5 M synthetic Gaussians and on SCENE's real splat (480x270 and 960x540):
-#      gradient identities, ms per 64-channel forward+backward, peak VRAM, lift-time estimate
+#      gradient identities (incl. 64 channels with grad via 32-channel chunking), ms per 32-channel forward+backward, peak VRAM, lift-time estimate
 #   5. camera check on SCENE: 10 training views rendered with the refined (SO3xR3) pose and the
 #      raw transforms.json pose, PSNR against the training images, held-out PSNR, correction size
 #   6. verdict

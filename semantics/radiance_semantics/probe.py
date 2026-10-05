@@ -13,8 +13,10 @@ Checks, at each resolution (all exact identities because rendering is linear in 
                  blend weights (the lift denominators) sum to the total alpha and are ≥ 0
   chunking       rendering 2C channels at once equals two C-channel chunks
 
-Timing is one forward + backward with C channels (default 64, the lift's chunk size); from it
-the probe estimates one full lift (512 CLIP + 384 DINO channels + one weight pass per image).
+Timing is one forward + backward with C channels (default 32: gsplat 1.0.0's backward kernel
+takes at most 32, so that is the lift's chunk size); from it the probe estimates one full lift
+(512 CLIP + 384 DINO channels + one weight pass per image). A further check renders 2C channels
+WITH gradients, which goes through render_features' automatic chunking.
 """
 
 import argparse
@@ -104,11 +106,25 @@ def check(g, viewmat, K, width, height, channels, backend, seed=0, fd_count=5):
         chunk = float((whole - parts).abs().max() / whole.abs().max().clamp_min(1e-12))
         del both, whole, parts
 
+    # 2C channels with gradients: on gsplat this exceeds the backward kernel's limit when C = 32,
+    # so render_features must chunk it; the gradient must equal the two C-channel gradients.
+    F2 = torch.randn(height, width, 2 * C, generator=gen).to(dev)
+    f2 = torch.zeros(n, 2 * C, device=dev, requires_grad=True)
+    (render_features(g, f2, viewmat, K, width, height, backend)[0] * F2).sum().backward()
+    ga = torch.zeros(n, C, device=dev, requires_grad=True)
+    gb = torch.zeros(n, C, device=dev, requires_grad=True)
+    (render_features(g, ga, viewmat, K, width, height, backend)[0] * F2[..., :C]).sum().backward()
+    (render_features(g, gb, viewmat, K, width, height, backend)[0] * F2[..., C:]).sum().backward()
+    both_grad = torch.cat([ga.grad, gb.grad], -1)
+    grad_chunk = float((f2.grad - both_grad).abs().max() / both_grad.abs().max().clamp_min(1e-12))
+    del F2, f2, ga, gb, both_grad
+
     res = {"linearity_rel": lin, "finite_diff_rel_max": max(fd) if fd else None, "finite_diff_n": len(fd),
            "ones_vs_alpha_abs": ones_vs_alpha, "weight_sum_rel": w_sum, "weight_min": w_min,
-           "chunk_rel": chunk, "visible": visible, "visible_frac": visible / n, "alpha_mean": a_sum / (width * height)}
+           "chunk_rel": chunk, "grad_chunk_rel": grad_chunk, "visible": visible, "visible_frac": visible / n,
+           "alpha_mean": a_sum / (width * height)}
     res["ok"] = (lin < TOL and (not fd or max(fd) < TOL) and ones_vs_alpha < 1e-4 and w_sum < TOL
-                 and w_min > -1e-5 and chunk < 1e-4 and visible > 0)
+                 and w_min > -1e-5 and chunk < 1e-4 and grad_chunk < 1e-4 and visible > 0)
     return res
 
 
@@ -154,7 +170,7 @@ def main(argv=None):
     ap.add_argument("--project-root", help="FiGS prefix (default: from figs_env.sh)")
     ap.add_argument("--scene", help="use this scene's trained splat and a training camera (default: synthetic)")
     ap.add_argument("--n", type=int, default=1_500_000, help="synthetic Gaussians (≈ backroom's 371 MB checkpoint)")
-    ap.add_argument("--channels", type=int, default=64)
+    ap.add_argument("--channels", type=int, default=32, help="≤ 32 on gsplat 1.0.0 (backward kernel limit)")
     ap.add_argument("--res", default="480x270,960x540", help="comma-separated WxH")
     ap.add_argument("--reps", type=int, default=3)
     ap.add_argument("--backend", default="gsplat", choices=["gsplat", "reference"])
@@ -210,9 +226,17 @@ def main(argv=None):
         else:
             vm, K = synthetic_camera(W, H, device)
         key = f"{W}x{H}"
-        with VramMonitor(0.5) as mon, Timer() as tm:
-            r = check(g, vm, K, W, H, a.channels, a.backend, seed=a.seed)
-            s, peak = bench(g, vm, K, W, H, a.channels, a.backend, a.reps)
+        try:
+            with VramMonitor(0.5) as mon, Timer() as tm:
+                r = check(g, vm, K, W, H, a.channels, a.backend, seed=a.seed)
+                s, peak = bench(g, vm, K, W, H, a.channels, a.backend, a.reps)
+        except RuntimeError as e:                    # CUDA errors: report and go on to the next size
+            fail(f"{key}: {type(e).__name__}: {e}")
+            out["res"][key] = {"ok": False, "error": str(e)}
+            all_ok = False
+            if device == "cuda":
+                torch.cuda.empty_cache()
+            continue
         r.update(fwd_bwd_s=round(s, 4), peak_alloc_mib=peak, peak_device_mib=mon.peak, check_s=round(tm.s, 1))
         r["lift_estimate_s"] = round(out["n_images"] * lift_passes(a.channels) * s, 1)
         out["res"][key] = r
@@ -220,7 +244,7 @@ def main(argv=None):
         (ok if r["ok"] else fail)(
             f"{key}: linearity {r['linearity_rel']:.1e}, finite diff {r['finite_diff_rel_max'] or 0:.1e} "
             f"(n={r['finite_diff_n']}), weights {r['weight_sum_rel']:.1e} (min {r['weight_min']:.1e}), "
-            f"chunks {r['chunk_rel']:.1e}")
+            f"chunks {r['chunk_rel']:.1e} (with grad {r['grad_chunk_rel']:.1e})")
         info(f"{r['visible']:,} Gaussians visible ({r['visible_frac']:.0%}), mean alpha {r['alpha_mean']:.2f}")
         info(f"forward+backward {r['fwd_bwd_s'] * 1000:.0f} ms; peak allocated {peak} MiB, device {mon.peak} MiB; "
              f"one lift over {out['n_images']} images ≈ {r['lift_estimate_s'] / 60:.1f} min")

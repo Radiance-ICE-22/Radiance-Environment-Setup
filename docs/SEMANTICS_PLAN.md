@@ -49,7 +49,7 @@ reproduce the training images. Test scene: backroom on intellisense08.
 **Checks**
 
 - [ ] `setup_scripts/verify_figs.sh --semantics` — imports, one CLIP image and text forward pass, one DINOv2 forward pass, torch still `2.1.2`.
-- [ ] `semantics/radiance_semantics/probe.py` — build random Gaussians at backroom's size, render 64 feature channels with the gsplat call splatfacto uses, and backpropagate. Compare `f.grad` against a finite difference on a few Gaussians. Log ms and peak MiB at 480×270 and 960×540.
+- [ ] `semantics/radiance_semantics/probe.py` — build random Gaussians at backroom's size, render 32 feature channels with the gsplat call splatfacto uses (gsplat 1.0.0's backward kernel takes at most 32; found at the first gate, 5 Oct), and backpropagate. Compare `f.grad` against a finite difference on a few Gaussians. Log ms and peak MiB at 480×270 and 960×540.
 - [ ] `semantics/radiance_semantics/cameras.py` — load the run with nerfstudio `eval_setup`, list the training cameras and image paths, and apply the trained camera optimizer to each camera (look up the exact 1.1.4 call, e.g. `CameraOptimizer.apply_to_camera`).
 - [ ] `cameras` check — render 10 training views with optimized poses and with raw `transforms.json` poses. Report PSNR for both against the images.
 
@@ -89,7 +89,7 @@ second command turns a phrase into ranked 3D candidates with an approach point. 
 **Lift backend: `radiance_semantics/lift.py`**
 
 - [ ] For each training camera with optimized pose: render per-Gaussian features `f = 0` that require grad at `--feat-res`, take `loss = (render(f) · F2D).sum()`, backpropagate, and add `f.grad` into a host-RAM accumulator. One pass with `f = 1` gives the weight sums.
-- [ ] Work in 64-channel chunks so 512 + 384 channels fit in 8 GB.
+- [ ] Work in 32-channel chunks (gsplat 1.0.0's backward limit; `render_features` chunks automatically), so 512 + 384 channels are 16 + 12 passes plus one weight pass per image. Later speed-up: project and sort once per camera, then call `rasterize_to_pixels` per chunk.
 - [ ] Divide by the weights, then L2-normalise CLIP vectors. Gaussians with zero weight (never seen) get a zero vector and a mask bit.
 - [ ] Optional flag for later: `--diffuse` (LUDVIG-style DINO graph diffusion). Leave it off in v1.
 
@@ -222,7 +222,7 @@ further changes. nerfstudio and SousVide are not edited.
 - [ ] Override `get_training_callbacks` to drop densify, prune and opacity reset. Override `get_param_groups` to return only `feature_field`.
 - [ ] Pick the trainable subset once: about 40% of Gaussians by opacity, then per view by projected radius from the rasterizer's output, as FMGS does.
 - [ ] `FeatureField` (`fmgs/field.py`): tiny-cuda-nn hash grid (24 levels, resolution 16→512, table 2^20, 8 features per level) on centres normalised by the scene's 1st–99th percentile box, then two tiny-cuda-nn MLP heads: CLIP 512 and DINO 384.
-- [ ] `get_outputs`: evaluate the field only for visible selected Gaussians, rasterize the features with gsplat at `--feat-res` in channel chunks, and return the `clip` and `dino` maps next to the (frozen) RGB.
+- [ ] `get_outputs`: evaluate the field only for visible selected Gaussians, rasterize the features with gsplat at `--feat-res` in 32-channel chunks (28 per step for 512 + 384 — the backward limit makes B-lite below more attractive), and return the `clip` and `dino` maps next to the (frozen) RGB.
 - [ ] Losses (`fmgs/losses.py`): 0.2 · CLIP Huber (δ 1.25) against the pyramid grid, 0.8 · DINO L2, and 0.01 · pixel alignment (dot-product consistency between a pixel and its neighbours across the CLIP and DINO spaces).
 - [ ] Learning rates: start from LERF's hash-grid settings and record what was used.
 

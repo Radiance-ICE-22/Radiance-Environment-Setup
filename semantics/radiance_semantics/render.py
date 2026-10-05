@@ -8,9 +8,13 @@ so for any 2D feature map F, the gradient of  L(f) = sum_p <image[p], F[p]>  wit
 f_i is  sum_p w_i(p) F[p]  — the weighted sum the lift backend needs (Occam's LGS / LUDVIG).
 probe.py checks exactly this on the installed gsplat.
 
-`gsplat`    gsplat 1.0.0 `rasterization` with sh_degree=None (N-D features, up to 512 channels;
-            other counts are padded to the next power of two), packed=False, classic mode —
-            the same call as nerfstudio 1.1.4's splatfacto. Needs CUDA.
+`gsplat`    gsplat 1.0.0 `rasterization` with sh_degree=None, packed=False, classic mode — the
+            same call as nerfstudio 1.1.4's splatfacto. Needs CUDA. Channel limits (measured
+            on intellisense08, 5 Oct; see rasterization.cu): the FORWARD kernel takes 1, 2, 3,
+            4, 8, 16, 32, 64, 128, 256 or 512 channels (others are padded up), but the BACKWARD
+            kernel only 1–4, 8, 16 or 32 — 64 fails with "Unsupported number of channels".
+            So when the features require grad, render_features splits them into chunks of
+            GRAD_CHUNK channels and concatenates (autograd flows through the concat).
 `reference` dense PyTorch alpha compositing using gsplat's own projection (gsplat.cuda.
             _torch_impl), for small scenes on the CPU. Only for tests: it has no tiling and no
             early stop, so it matches gsplat to within the T < 1e-4 cut-off, not bit for bit.
@@ -22,6 +26,7 @@ import torch
 
 ALPHA_MIN = 1.0 / 255.0     # gsplat skips weaker contributions
 ALPHA_MAX = 0.999
+GRAD_CHUNK = 32             # widest feature tensor gsplat 1.0.0's backward kernel accepts
 
 
 @dataclass
@@ -58,6 +63,11 @@ def render_features(g, features, viewmat, K, width, height, backend="gsplat"):
     splatfacto's get_viewmat produces; K: [3, 3] pixel intrinsics for width × height.
     """
     if backend == "gsplat":
+        C = features.shape[-1]
+        if features.requires_grad and C > GRAD_CHUNK:
+            parts = [render_features(g, features[:, i:i + GRAD_CHUNK], viewmat, K, width, height, backend)
+                     for i in range(0, C, GRAD_CHUNK)]
+            return torch.cat([p[0] for p in parts], -1), parts[0][1]
         from gsplat import rasterization
         img, alpha, _ = rasterization(
             means=g.means, quats=g.quats, scales=g.scales, opacities=g.opacities, colors=features,

@@ -158,7 +158,7 @@ if (( SEMANTICS )); then
     t "pinned stack intact"  "python -m radiance_semantics.env_check >/dev/null && echo 'torch, nerfstudio, gsplat, numpy on their pins'"
     # functional, not just imports: CLIP must tell red from blue; DINOv2 gives 384-d tokens
     t "CLIP + DINOv2 smoke"  "python -m radiance_semantics.models --smoke | grep -v '^GALLEY_JSON'"
-    # gsplat renders 64-channel features and its gradients are exact (linearity, finite
+    # gsplat renders 32-channel features (its backward limit) and the gradients are exact (linearity, finite
     # differences, blend weights, channel chunking) on 20k synthetic Gaussians
     t "gsplat N-ch gradients" "python -m radiance_semantics.probe --quick | grep -E '✔|✗'"
   else
