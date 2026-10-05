@@ -29,6 +29,8 @@ from datetime import datetime
 from .log import Timer, VramMonitor, emit, fail, info, ok, section, warn
 
 TOL = 2e-3                  # relative; fp32 sums over ~10^5–10^6 pixel contributions
+FD_TOL = 5e-3               # single-entry finite differences: fp32 atomic noise on small gradients
+                            # (1.7e-3 measured on synthetic 1.5 M, intellisense08, 5 Oct)
 
 
 def synthetic(n, seed, device):
@@ -123,7 +125,7 @@ def check(g, viewmat, K, width, height, channels, backend, seed=0, fd_count=5):
            "ones_vs_alpha_abs": ones_vs_alpha, "weight_sum_rel": w_sum, "weight_min": w_min,
            "chunk_rel": chunk, "grad_chunk_rel": grad_chunk, "visible": visible, "visible_frac": visible / n,
            "alpha_mean": a_sum / (width * height)}
-    res["ok"] = (lin < TOL and (not fd or max(fd) < TOL) and ones_vs_alpha < 1e-4 and w_sum < TOL
+    res["ok"] = (lin < TOL and (not fd or max(fd) < FD_TOL) and ones_vs_alpha < 1e-4 and w_sum < TOL
                  and w_min > -1e-5 and chunk < 1e-4 and grad_chunk < 1e-4 and visible > 0)
     return res
 

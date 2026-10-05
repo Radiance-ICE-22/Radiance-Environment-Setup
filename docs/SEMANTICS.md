@@ -10,8 +10,8 @@ built, how to run it, and the numbers measured.
 
 | Phase | What | State |
 | --- | --- | --- |
-| 0 | Environment and pose check | First gate on intellisense08, 5 Oct: install, CLIP/DINOv2 smoke and the camera check PASSED; the probe FAILED (gsplat's backward kernel takes ≤ 32 channels). Fixed (automatic 32-channel chunking); **gate to re-run.** |
-| 1 | Teacher features, lift backend, CLI query | Not started (waits on the Phase 0 gate) |
+| 0 | Environment and pose check | **DONE.** Gate PASSED on intellisense08, 5 Oct 09:48 (second run; the first found gsplat's 32-channel backward limit). |
+| 1 | Teacher features, lift backend, CLI query | Built and cloud-tested 5 Oct (44 tests; lift → export → query run end to end on a CPU-built splatfacto run). **Gate not yet run** — needs the 5 annotations (§6). |
 | 2 | Galley backend | Not started |
 | 3 | Splat editor UI | Not started |
 | 4 | FMGS backend (`splatfacto-sem`) | Not started |
@@ -53,6 +53,27 @@ What each check proves (all must pass for the gate):
 - **Probe** — four exact identities of gsplat's feature rendering, which the lift backend relies on: linearity, finite differences, blend weights reproducing the alpha image (the lift denominators), channel chunking, and 2C channels WITH gradients through render_features' automatic 32-channel chunking. Plus ms per 32-channel forward + backward, peak VRAM, and a lift-time estimate (CLIP 512 + DINO 384 channels + one weight pass per training image).
 - **Cameras** — refined-pose PSNR on training views ≥ raw-pose PSNR (−0.05 dB tolerance); also reports the size of the SO3xR3 corrections and held-out PSNR. Image strips (refined | raw | training image) are written for a visual check.
 
+## 3b. Phase 1: what was added
+
+| Path | |
+| --- | --- |
+| `figs/semantic_pipeline.py` | Resumable steps `preflight → cameras → teachers → lift → export` (svnet_pipeline's pattern: chained fingerprints incl. the checkpoint key, one child process per step, `--status`, `--from/--only/--redo`). |
+| `figs/semantic_query.py` | Phrase → ranked candidates (course frame) with approach point and gap; `--eval` scores queries.json (gate: 4 of 5). |
+| `semantics/radiance_semantics/teachers.py` | CLIP pyramid (7 scales 0.05–0.5 of the short side, half-crop stride, averaged on one grid) and DINOv2 (896 px wide) per frame, fp16, cached per tag, resumable. |
+| `semantics/radiance_semantics/lift.py` | Blend-weighted average of the teacher maps onto every Gaussian over the training views with refined poses; 32-channel chunks; accumulators on the GPU when ≤ 2.5 GB. |
+| `semantics/radiance_semantics/store.py` | The per-Gaussian table (clip.f16, dino.f16, weight.f32, geom.f32, pca_rgb.u8, index.json), atomic swap, order hash. |
+| `semantics/radiance_semantics/query.py` | LERF relevancy (T = 10, canonical negatives), voxel connected-component clusters, approach point, gap, hit scoring. |
+| `semantics/radiance_semantics/annotations.py` | queries.json (course frame) with the five gate objects. |
+| `figs/course_tools.py` | `splat_order()` factored out of `splat` (identical result, tested against the old code) — the one definition of the .splat record order. |
+| `ui/deploy/sem1_gate.sh` | The Phase 1 gate. |
+
+```bash
+source ~/Radiance/figs/figs_env.sh
+python figs/semantic_pipeline.py --scene backroom              # teachers dominate (tens of minutes)
+python figs/semantic_query.py --scene backroom "red tool chest"
+python figs/semantic_query.py --scene backroom --eval          # after §6
+```
+
 ## 4. Decisions and findings (Phase 0)
 
 - **OpenCLIP is pinned at 2.24.0.** 3.x requires `timm>=1.0.17`; nerfstudio 1.1.4 pins `timm==0.6.7`. 2.24 imports timm only optionally and needs just ftfy, regex, tqdm and huggingface_hub. Verified: under the constraints file, asking for 3.3.0 is refused and nothing moves.
@@ -65,6 +86,15 @@ What each check proves (all must pass for the gate):
 - **pipeline loading needs cwd = `gsplats/workspace`** (ns-train ran there; config.yml paths are relative). `cameras.in_workspace` handles it, and `load_pipeline` forces `cache_images=cpu` to keep VRAM for rendering.
 
 Verified in the cloud (no GPU): 26 tests, against torch 2.1.2 (CPU), gsplat 1.0.0's own projection code, nerfstudio 1.1.4 and open_clip 2.24.0 — our view matrix equals splatfacto's `get_viewmat`, `optimized_c2w` equals nerfstudio's `CameraOptimizer` correction, the probe's identities hold on a dense reference renderer and fail on a deliberately non-linear one. `load_pipeline` was run end to end on a tiny CPU-built splatfacto run in the FiGS layout (checkpoint pose corrections recovered exactly, cwd restored). `install_semantics.sh` was dry-run against a Python 3.10 env. Not verifiable in the cloud: anything on CUDA (gsplat's rasterizer, timings) and the weight downloads.
+
+## 4b. Decisions (Phase 1)
+
+- **Teachers for all 300 frames, lift over the 270 training views.** Frames are keyed by file stem; the 30 held-out frames' features are there for later evaluation.
+- **"Unseen" means weight exactly 0** everywhere (lift, table, query). The first end-to-end run counted 10,741 seen Gaussians in the lift and 11,592 in the table: weights in (0, 1e-8] had zeroed features but positive weight. Fixed and tested.
+- **Selection score = (relevancy − threshold) × opacity**, not × volume: weighting by volume would favour walls and floor.
+- **Flat captures:** when the cameras span less than 2 × margin on an axis (usually height — the phone held at one height), the waypoint box falls back to the cameras' own range on that axis instead of becoming empty, so the approach altitude stays where the camera flew.
+- **Hit rule for the gate:** the top candidate's box grown by 0.3 m contains the annotation, or its centroid is within 0.75 m.
+- **Probe finite-difference tolerance 5e-3** (others stay 2e-3): single-entry differences carry fp32 atomic noise (1.7e-3 measured).
 
 ## 5. Measured on the hosts
 
@@ -81,6 +111,40 @@ First gate, intellisense08 (RTX 2080 8 GB, driver 535), 5 Oct 09:22–09:24, rep
 
 The camera result settles the design point: features lifted with transforms.json poses would be projected through cameras that render ~4 dB worse — up to 39 mm and 2° off. The lift uses the refined poses.
 
-| Host | Probe (synthetic 1.5 M) 480×270 / 960×540 | Probe (backroom, 532 k) | Peak VRAM | Lift estimate (backroom) |
-| --- | --- | --- | --- | --- |
-| intellisense08 (RTX 2080 8 GB) | — | — | — | — |
+Second gate, intellisense08, 5 Oct 09:47–09:48 — **all five checks PASS** (records:
+`SousVide/runs/semantics_p0_probe_{synthetic,backroom}_2026-10-05_0947.json`,
+`semantics_p0_cameras_backroom_2026-10-05_0948.json`). Install re-run changed nothing (weights cached, 4 s);
+camera check identical to the first run.
+
+gsplat probe, 32 channels, one forward + backward (lift estimate = 29 passes × 300 transforms.json frames):
+
+| Scene | Resolution | Contributing Gaussians | fwd + bwd | Peak allocated / device | Lift estimate | Worst identity error |
+| --- | --- | --- | --- | --- | --- | --- |
+| backroom (532,361) | 480×270 | 50,412 (9%) | 8 ms | 242 / 1893 MiB | 1.1 min | finite diff 1.9e-4 |
+| backroom (532,361) | 960×540 | 54,086 (10%) | 14 ms | 323 / 2153 MiB | 2.0 min | finite diff 7.5e-4 |
+| synthetic (1.5 M) | 480×270 | 3,898 (0.3%) | 22 ms | 633 / 4197 MiB | 3.3 min | finite diff 1.7e-3 |
+| synthetic (1.5 M) | 960×540 | 3,917 (0.3%) | 51 ms | 764 / 4565 MiB | 7.5 min | finite diff 1.5e-3 |
+
+Reading it:
+- The lift itself is cheap: ~2 min for backroom at 960×540, ~2.2 GB on the device. Teacher extraction (the CLIP pyramid) will dominate Phase 1's time, not the lift.
+- The synthetic scene is dense and opaque (mean alpha 1.00), so only the front ~0.3% of Gaussians get any weight; "visible" in the probe means *contributing*, and the warning there is about occlusion, not field of view. Its numbers bound cost for a 1.5 M splat; backroom's are the ones to plan with.
+- Chunked gradients (64 channels with grad through two 32-channel calls) match unchunked ones to ≤ 1.1e-6.
+- The synthetic finite-difference error (1.7e-3) is close to the shared 2e-3 tolerance — fp32 atomic accumulation on single small gradients, not a bug (linearity over all Gaussians is 4e-5–4e-4). Phase 1 gives that check its own tolerance (5e-3) so it cannot flake.
+
+## 6. Phase 1 gate: annotations
+
+The five objects, chosen 5 Oct from the Phase 0 image strips (`D:\Projects\FYP\semantics_p0\p0_cameras`):
+red tool chest, shop vacuum, green foam mats, garden cart, whiteboard. For each: Galley → course editor on
+backroom → Show ▸ Splat → place the Goal marker on the object → read its position (course frame), then on
+intellisense08:
+
+```bash
+source ~/Radiance/figs/figs_env.sh
+python -m radiance_semantics.annotations --scene backroom init
+python -m radiance_semantics.annotations --scene backroom set "red tool chest" X Y Z    # once per object
+python -m radiance_semantics.annotations --scene backroom list
+tmux new -d -s sem1 'bash ~/Radiance/Radiance-Environment-Setup/ui/deploy/sem1_gate.sh > ~/sem1_gate.log 2>&1'
+```
+
+The gate can run before the annotations: the pipeline completes and the gate reports PENDING; re-run with
+`SKIP_PULL=1` once they are set (finished steps are skipped).

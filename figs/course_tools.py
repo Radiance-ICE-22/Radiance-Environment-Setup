@@ -186,6 +186,18 @@ def _param(state, name):
     raise KeyError(f"checkpoint has no '{name}' parameter (not a splatfacto model?)")
 
 
+def splat_order(means, scales, opac_logits, min_opacity=0.05, max_splats=1_000_000):
+    """Checkpoint indices of the Gaussians the browser .splat keeps, in file order: opacity ≥
+    min_opacity and finite, most visible first (volume × opacity), at most max_splats.
+    radiance_semantics' export calls this too, so semantic table row i IS .splat record i —
+    keep it the single definition (index.json stores a hash of the result)."""
+    alpha = 1.0 / (1.0 + np.exp(-np.asarray(opac_logits).reshape(-1)))
+    keep = (alpha >= min_opacity) & np.isfinite(means).all(1) & np.isfinite(scales).all(1)
+    idx = np.nonzero(keep)[0]
+    importance = np.exp(scales[idx].sum(1)) * alpha[idx]      # same order as antimatter15's converter
+    return idx[np.argsort(-importance)][:max_splats]
+
+
 def cmd_splat(a):
     import torch
     t0 = time.time()
@@ -199,10 +211,7 @@ def cmd_splat(a):
     n_total = len(means)
 
     alpha = 1.0 / (1.0 + np.exp(-opac))
-    keep = (alpha >= a.min_opacity) & np.isfinite(means).all(1) & np.isfinite(scales).all(1)
-    idx = np.nonzero(keep)[0]
-    importance = np.exp(scales[idx].sum(1)) * alpha[idx]      # same order as antimatter15's converter
-    idx = idx[np.argsort(-importance)][: a.max_splats]
+    idx = splat_order(means, scales, opac, a.min_opacity, a.max_splats)
 
     q = quats[idx]
     q = q / np.maximum(np.linalg.norm(q, axis=1, keepdims=True), 1e-12)

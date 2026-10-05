@@ -18,6 +18,7 @@ artefacts either produces.
 | `setup_scripts/apply_overlay.sh` | Restores our configs into the freshly cloned SousVide. |
 | `setup_scripts/install_semantics.sh` | Adds OpenCLIP 2.24 + DINOv2 + `radiance_semantics` to kitchen without moving torch (also install step `semantics`). |
 | `figs/figs_pipeline.py` | The pipeline: 14 resumable steps from raw video to validated flight render (SfM and splat training are separate steps). |
+| `figs/semantic_pipeline.py`, `figs/semantic_query.py` | Per-Gaussian CLIP + DINOv2 features for a trained splat, and phrase → 3D goal queries (`docs/SEMANTICS.md`). |
 | `figs/tidy_sousvide.sh` | Keeps generated renders out of the upstream clone's root. |
 | `figs/sousvide_overlay/` | Capture configs and courses that must sit inside the clone. |
 | `semantics/` | `radiance_semantics`: per-Gaussian CLIP + DINOv2 features on a trained splat, for natural-language goals. Plan: `docs/SEMANTICS_PLAN.md`; status and numbers: `docs/SEMANTICS.md`. |
