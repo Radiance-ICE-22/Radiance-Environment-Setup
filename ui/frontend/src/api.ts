@@ -186,6 +186,73 @@ export function splatUrl(scene: string, file: string) {
   return `/api/scenes/${encodeURIComponent(scene)}/splat/${encodeURIComponent(file)}${tok ? `?token=${encodeURIComponent(tok)}` : ""}`;
 }
 
+// ── semantic features (docs/SEMANTICS.md) ──────────────────────────────────
+export const SEM_STEPS = ["preflight", "cameras", "teachers", "lift", "export"] as const;
+export type SemStep = (typeof SEM_STEPS)[number];
+export type SemBackend = "lift" | "fmgs";
+export interface SemanticRun {
+  scene: string; backend?: "lift"; teachers?: ("clip" | "dino")[]; feat_width?: number; dino_width?: number; batch?: number;
+  from_step?: SemStep; only?: SemStep; stop_after?: SemStep; redo?: SemStep[];
+}
+export interface SemTable {
+  run: string; backend: SemBackend; rows: number | null; key: string | null; stale: boolean; active_run: boolean;
+  teacher_tag: string | null; order_sha: string | null; created: string | null; mb: number; seen_rows: number | null;
+  lift: { seconds: number | null; passes: number | null; peak_vram_mib: number | null; render_width: number | null; views: number | null };
+}
+export interface SemStatus {
+  scene: string; run: string | null; key: string | null; steps: { step: SemStep; done: boolean; when: string | null }[];
+  config: Record<string, any>; results: Record<string, any>; tables: SemTable[]; ready: SemBackend[];
+  queries: { total: number; annotated: number }; busy: number | null | boolean; script: boolean;
+}
+export interface Candidate {
+  rank: number; score: number; n: number; large: boolean; centroid: V3; box: { lo: V3; hi: V3 };
+  approach: V3; cameras: number; gap: number | null; gap_ok: boolean | null; centroid_splat: V3;
+}
+export interface QueryResult {
+  text: string; negatives: string[]; threshold: number; tau: number; peak: number; rel_alpha: number;
+  rel_pct: Record<string, number>; n_selected: number; rel_max: number; rel_p99: number; voxel: number;
+  candidates: Candidate[]; margin: number | null; ambiguous: boolean; frame: string; ms: Record<string, number>;
+}
+export interface TableInfo { key: string | null; n: number; backend: string | null; teacher_tag: string | null; order_sha: string | null; run: string | null }
+export interface QueryReply { result: QueryResult; table: TableInfo; stale: boolean; worker_ms: number | null; relevancy_id: string | null }
+export interface QueryReq {
+  text: string; backend?: SemBackend; negatives?: string[]; threshold?: number; rel_alpha?: number; standoff?: number;
+  margin?: number; top?: number; relevancy?: boolean;
+}
+export interface LabelsReply { scores: [string, number][]; seen: boolean; position_splat: V3; table: TableInfo; stale: boolean }
+export interface Annotation { text: string; position: V3 | null; set?: string; [k: string]: unknown }
+export interface Annotations { version?: number; frame?: string; queries: Annotation[]; updated?: string; [k: string]: unknown }
+export interface WorkerStatus { running: boolean; pid: number | null; started: number | null; last_used: number | null; idle_s: number; restarts: number; script: string; log: string }
+
+/** GET raw bytes (relevancy, PCA) with the token header; returns the bytes and the response headers. */
+async function bytes(path: string): Promise<{ data: Uint8Array; headers: Headers }> {
+  const tok = getToken();
+  const r = await fetch(`/api${path}`, { headers: tok ? { Authorization: `Bearer ${tok}` } : {} });
+  if (!r.ok) {
+    let msg = r.statusText;
+    try { const j = await r.json(); msg = typeof j.detail === "string" ? j.detail : j.detail?.message ?? JSON.stringify(j); } catch { /* not json */ }
+    throw new ApiError(r.status, msg);
+  }
+  return { data: new Uint8Array(await r.arrayBuffer()), headers: r.headers };
+}
+const sc = (s: string) => `/scenes/${encodeURIComponent(s)}/semantics`;
+export const semApi = {
+  status: (scene: string) => req<SemStatus>("GET", sc(scene)),
+  submit: (r: SemanticRun) => req<{ id: number }>("POST", "/jobs/semantics", r),
+  query: (scene: string, q: QueryReq) => req<QueryReply>("POST", `${sc(scene)}/query`, q),
+  relevancy: async (scene: string, rid: string) => (await bytes(`${sc(scene)}/relevancy/${encodeURIComponent(rid)}`)).data,
+  pca: async (scene: string, backend: SemBackend) => {
+    const r = await bytes(`${sc(scene)}/${backend}/pca`);
+    return { data: r.data, stale: r.headers.get("X-Table-Stale") === "1", key: r.headers.get("X-Table-Key") };
+  },
+  labels: (scene: string, index: number, labels: string[], backend: SemBackend = "lift") =>
+    req<LabelsReply>("POST", `${sc(scene)}/labels`, { index, labels, backend }),
+  queries: (scene: string) => req<Annotations>("GET", `${sc(scene)}/queries`),
+  saveQueries: (scene: string, a: Annotations) => req<Annotations>("PUT", `${sc(scene)}/queries`, a),
+  worker: () => req<WorkerStatus>("GET", "/semantics/worker"),
+  stopWorker: () => req<{ stopped: boolean }>("POST", "/semantics/worker/stop"),
+};
+
 // ── SV-Net cohorts (Phase 4) ─────────────────────────────────────────────────
 export const SV_STEPS = ["preflight", "rollout", "observe", "train_hist", "train_comm", "deploy"] as const;
 export type SvStep = (typeof SV_STEPS)[number];
@@ -278,5 +345,6 @@ export function rerun(j: Job): Promise<{ id: number }> {
   if (j.kind === "figs") return api.submitFigs(p as unknown as FigsRun);
   if (j.kind === "svnet") return svApi.submit(p as unknown as SvnetRun);
   if (j.kind === "selftest") return api.submitSelftest(Number(p.seconds ?? 20));
+  if (j.kind === "semantics") return semApi.submit(p as unknown as SemanticRun);
   return Promise.reject(new Error(`cannot re-run a ${j.kind} job`));
 }

@@ -31,6 +31,7 @@ import SvNetPage from "./pages/SvNet";
 // If the server was updated after this page loaded, the old chunk is gone (404): say so instead
 // of showing "Loading the 3D editor…" forever.
 const CoursePage = lazy(() => import("./pages/Course").catch(() => ({ default: StaleBuild })));
+const SplatEditor = lazy(() => import("./pages/SplatEditor").catch(() => ({ default: StaleBuild })));
 
 /** The build this page runs (the hashed index-*.js it loaded). */
 const BUILD = (document.querySelector('script[src*="/assets/index-"]') as HTMLScriptElement | null)?.src.split("/assets/")[1] ?? null;
@@ -67,6 +68,7 @@ function describe(r: string[]): DocDesc {
   const href = enc(r);
   if (top === "scene" && a) return { key: `scene:${a}`, href, title: a, icon: "scene", route: r };
   if (top === "new") return { key: "new", href, title: "New capture", icon: "camera", route: r };
+  if (top === "splat" && a) return { key: `splat:${a}`, href, title: `${a} · semantics`, icon: "semantic", route: r };
   if (top === "course") return { key: "course", href, title: a ? `${a} / ${b ?? "new course"}` : "Course editor", icon: "route", route: r };
   if (top === "svnet" && a) return { key: `svnet:${a}`, href, title: a, icon: "cohort", route: r };
   if (top === "svnet") return { key: "svnet", href, title: "SV-Net", icon: "network", route: r };
@@ -75,7 +77,7 @@ function describe(r: string[]): DocDesc {
   if (top === "configs") return { key: "configs", href, title: b ? `${b}.json` : a ? `Configs · ${a}` : "Configs", icon: "config", route: r };
   return { key: "home", href: "#/", title: "Home", icon: "home", route: [] };
 }
-const TAB_FOR: [RegExp, string][] = [[/^home$/, "Home"], [/^(scene:|new$)/, "Capture & Splat"], [/^course$/, "Course"], [/^svnet/, "SV-Net"], [/^(jobs$|job:)/, "Jobs"], [/^configs$/, "Configs"]];
+const TAB_FOR: [RegExp, string][] = [[/^home$/, "Home"], [/^(scene:|new$)/, "Capture & Splat"], [/^course$/, "Course"], [/^splat:/, "Semantics"], [/^svnet/, "SV-Net"], [/^(jobs$|job:)/, "Jobs"], [/^configs$/, "Configs"]];
 const MAX_DOCS = 14;
 
 function useHash() {
@@ -171,7 +173,7 @@ function Window() {
   const showOut = fs ? fsPanes.output : layout.output;
 
   // the scene the Home and Course pickers default to
-  const scene = cur.route[0] === "scene" || cur.route[0] === "course" ? cur.route[1] : undefined;
+  const scene = cur.route[0] === "scene" || cur.route[0] === "course" || cur.route[0] === "splat" ? cur.route[1] : undefined;
   const lastScene = useRef<string | undefined>(undefined);
   if (scene) lastScene.current = scene;
   const ctxScene = scene ?? lastScene.current ?? d.scenes.find((s) => s.loadable)?.scene ?? d.scenes[0]?.scene;
@@ -213,7 +215,7 @@ function Window() {
     "sv.new": { run: () => go("#/svnet") },
     "sv.open": { value: ctxCohort ?? "", options: d.cohorts.map((c) => c.cohort), set: (v) => v && go(`#/svnet/${v}`) },
     "sv.compare": { disabled: NO_BACKEND("Comparing cohorts") },
-    "jobs.kind": { value: ui.jobKind, options: [["all", "all"], "figs", "svnet", "selftest"], set: (v) => setUi({ jobKind: v }) },
+    "jobs.kind": { value: ui.jobKind, options: [["all", "all"], "figs", "svnet", "semantics", "selftest"], set: (v) => setUi({ jobKind: v }) },
     "jobs.scene": { value: ui.jobScene, options: [["all", "all"], ...d.scenes.map((s) => s.scene), ...d.cohorts.map((c) => [c.cohort, `${c.cohort} (cohort)`] as [string, string])], set: (v) => setUi({ jobScene: v }) },
     "jobs.status": { value: ui.jobStatus, options: [["all", "all"], "queued", "running", "succeeded", "failed", "cancelled", "interrupted"], set: (v) => setUi({ jobStatus: v }) },
     "log.follow": { checked: ui.follow, run: () => setUi({ follow: !ui.follow }) },
@@ -302,7 +304,7 @@ function Window() {
               <div className="docs">
                 {docs.map((doc) => (
                   <DocCtx.Provider key={doc.key} value={{ key: doc.key, active: doc.key === cur.key }}>
-                    <div className={`doc ${doc.key === "course" ? "doc-fill" : doc.key === "configs" ? "doc-fill doc-cfg" : ""}`} style={{ display: doc.key === cur.key ? undefined : "none" }}>
+                    <div className={`doc ${doc.key === "course" || doc.key.startsWith("splat:") ? "doc-fill" : doc.key === "configs" ? "doc-fill doc-cfg" : ""}`} style={{ display: doc.key === cur.key ? undefined : "none" }}>
                       <DocView doc={doc} />
                     </div>
                   </DocCtx.Provider>
@@ -339,6 +341,7 @@ function DocView({ doc }: { doc: DocDesc }) {
     case "scene": return <ScenePage scene={r[1]} />;
     case "new": return <NewCapture />;
     case "course": return <Suspense fallback={<p className="muted pad">Loading the 3D editor…</p>}><CoursePage scene={r[1]} name={r[2]} /></Suspense>;
+    case "splat": return <Suspense fallback={<p className="muted pad">Loading the splat editor…</p>}><SplatEditor scene={r[1]} q={r[2]} /></Suspense>;
     case "svnet": return <SvNetPage cohort={r[1]} />;
     case "jobs": return r[1] ? <JobPage id={Number(r[1])} /> : <Monitor />;
     case "configs": return <Configs family={(r[1] as Family) ?? "courses"} name={r[2]} />;
@@ -396,7 +399,8 @@ function Dialogs({ dialog, close }: { dialog: Exclude<DialogState, null>; close:
   return (
     <Dialog title="Galley help" onClose={close}>
       <div className="help">
-        <p><b>Ribbon.</b> Tabs group the commands by task: <i>Home</i> (context, queue, machine), <i>Capture &amp; Splat</i>, <i>Course</i>, <i>SV-Net</i>, <i>Jobs</i>, <i>Configs</i> and <i>View</i>.
+        <p><b>Ribbon.</b> Tabs group the commands by task: <i>Home</i> (context, queue, machine), <i>Capture &amp; Splat</i>, <i>Course</i>, <i>SV-Net</i>, <i>Jobs</i>, <i>Configs</i> and <i>View</i>;
+          <i> Semantics</i> appears with the splat editor (Explorer ▸ Scenes ▸ a scene ▸ Semantics): query the splat in words and send the result to a course.
           Commands act on the active document; a greyed command says in its tooltip what to open first. Rest the pointer on any command for its help and the script it runs.
           <i> Keyframe Tools</i> and <i>Model Tools</i> appear when a keyframe or a model is selected.</p>
         <p><b>Explorer</b> (left) lists scenes, courses, cohorts, config files and jobs. Click to open a document; documents stay open as tabs and keep their state.</p>

@@ -411,3 +411,15 @@ table.kf .num { width: 64px; }
 .sb-up .upbar { width: 90px; }
 .upline.wrap { flex-wrap: wrap; }
 .upline.wrap > span:nth-child(2) { white-space: normal; }
+
+/* ── splat editor (pages/SplatEditor.tsx) ── */
+.viewport .qbar { position: absolute; left: 8px; right: 8px; top: 8px; display: flex; gap: 4px; align-items: center; max-width: 640px;
+  background: rgb(255 255 255 / .94); border: 1px solid var(--line2); padding: 3px 5px; border-radius: 3px; box-shadow: 0 1px 4px rgb(0 0 0 / .25); }
+.viewport .qbar input { flex: 1; min-width: 80px; font-size: 13px; padding: 2px 6px; }
+.viewport .qbar select { width: 70px; }
+.viewport .qbar button { min-height: 22px; }
+table.cands td, table.cands th { padding: 1px 5px; white-space: nowrap; }
+table.cands tr.sel td, table.grid tr.sel td { background: var(--sel); }
+table.grid tr.click { cursor: pointer; }
+.bar { height: 8px; background: #E6EBF2; border-radius: 2px; overflow: hidden; }
+.bar > span { display: block; height: 100%; background: #F0A030; }

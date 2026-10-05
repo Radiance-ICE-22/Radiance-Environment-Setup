@@ -58,7 +58,12 @@ To change the UI, on any machine with Node 20+:
 ```bash
 cd ui/frontend && npm ci && npm run build     # then commit dist/
 npm run dev                                    # live reload, proxies /api to :8800
+npm test                                       # unit tests of the pure modules (Node ≥ 22.6)
 ```
+
+`frontend/tests/compare/` (drei's splat renderer vs ours, pixel diff) and `frontend/tests/e2e/`
+(Galley + stand-in tools over a synthetic room, driven by Playwright) are cloud checks, described
+at the top of each file; they need Playwright's Chromium and are not run on the hosts.
 
 ## Pages
 
@@ -69,6 +74,7 @@ npm run dev                                    # live reload, proxies /api to :8
 | Scene | step markers; active and archived models with Archive / Promote; reconstruction, training and flight stats; training curve (TensorBoard); ArUco detections per 10 s; flight video; fly a course; retrain; run arbitrary steps |
 | Jobs / Job | queue, live log over WebSocket with the current progress line, cancel |
 | Course editor | 3D course over the scene's sparse point cloud and camera path, in the course frame (z down); keyframe table with free cells and derivative matrix; move/yaw gizmos, click-to-add; live minimum-snap preview (FiGS `MinTimeSnap`) with speed, acceleration, thrust and body-rate charts against the expert's bounds, clearance and volume checks; re-time like the expert; save; fly the expert; semantic-goal marker. Loaded on demand (three.js is ~1 MB) |
+| Splat editor (`#/splat/<scene>`) | ask the splat in words: the query's relevancy lights up the matching Gaussians (or PCA colours of the features), candidates with box, approach point and the drone's sphere, click a Gaussian for its best labels, annotate ground truth and Query all, *Send to course* writes `semantic_goal` (+ the approach point as the final keyframe) and opens the course for Fly; builds the feature table as a queued job. Contextual *Semantics* ribbon tab; loaded on demand |
 | SV-Net | cohorts of `svnet_pipeline.py`: new cohort (scene, courses, rollout method, students, epochs, evaluation; preflight-only size estimate), per-cohort steps and run controls (continue, step ranges, force redo, fresh network), rollouts kept per course, live and saved loss curves, evaluation table (per-point tracking error next to upstream's TTE/PP) and deployment videos |
 | Configs | JSON editor for every SousVide config family with server-side validation; captures, courses and pilots are mirrored into `figs/sousvide_overlay/` |
 

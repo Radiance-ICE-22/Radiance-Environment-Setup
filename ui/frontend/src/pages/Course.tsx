@@ -3,7 +3,7 @@
 // The Course tab (File, Edit, Preview, Checks, Show, Fly) and Keyframe Tools drive it; the
 // selected keyframe's details and derivative matrix are in Properties, problems in Output.
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { active, api, ApiError, courseApi, flightUrl, Geometry, Job, Preview, SplatMeta, splatUrl } from "../api";
+import { active, api, ApiError, courseApi, flightUrl, Geometry, Job, Preview } from "../api";
 import { TimeChart } from "../charts";
 import { usePoll } from "../components";
 import { Problem as PaneProblem, ToProblems, ToProperties, useCommands, useDoc } from "../shell/core";
@@ -11,10 +11,11 @@ import { useAppData } from "../shell/data";
 import { Icon } from "../shell/icons";
 import { Pill, Prop, PropSection, Splitter, Tile } from "../shell/Panes";
 import Scene3D, { Tool, ViewOpts } from "../course/Scene3D";
+import { useSplat } from "../splat/load";
 import { useDrone } from "../course/Drone";
 import {
   AXES, blankLoop, Cell, emptyAxes, Course, CourseFile, displayPos, fromFile, insertAfter, inside, MAX_ORDERS, ORDERS,
-  pos0, problems, round, toFile, Vec3,
+  pos0, problems, round, SemanticGoal, toFile, Vec3, withGoalAt,
 } from "../course/model";
 
 const UPSTREAM = ["circuit", "traverse", "infinity", "button_prod"];
@@ -56,24 +57,31 @@ export default function CoursePage({ scene, name }: { scene?: string; name?: str
   const [navSpeed, setNavSpeed] = useState(() => { try { return Number(localStorage.getItem("galley.navSpeed")) || 1; } catch { return 1; } });
 
   // ── Gaussian splat (toggle): exported from the active checkpoint on first use, then cached ──
-  type SplatUi = { on: boolean; meta: SplatMeta | null; busy: boolean; state: "loading" | "ready" | "error" | null; err: string | null };
-  const SPLAT0: SplatUi = { on: false, meta: null, busy: false, state: null, err: null };
-  const [splat, setSplat] = useState<SplatUi>(SPLAT0);
-  useEffect(() => { setSplat(SPLAT0); }, [scene]);   // eslint-disable-line react-hooks/exhaustive-deps
-  const onSplatState = useCallback((st: "loading" | "ready" | "error", m?: string) =>
-    setSplat((x) => ({ ...x, state: st, err: st === "error" ? `Splat did not load: ${m ?? "unknown error"}` : x.err })), []);
-  const toggleSplat = async () => {
-    if (splat.on) { setSplat((x) => ({ ...x, on: false })); return; }
+  // (splat/load.tsx: one download shared with the splat editor)
+  const [splatOn, setSplatOn] = useState(false);
+  useEffect(() => { setSplatOn(false); }, [scene]);
+  const sp = useSplat(scene, splatOn);
+  const [splatDrawn, setSplatDrawn] = useState(false);
+  const [splatGpuErr, setSplatGpuErr] = useState<string | null>(null);
+  useEffect(() => { setSplatDrawn(false); setSplatGpuErr(null); }, [sp.data]);
+  const splat = {
+    on: splatOn, meta: sp.meta, busy: sp.state === "exporting",
+    state: !splatOn ? null : sp.state === "error" || splatGpuErr ? "error" : sp.state === "ready" && splatDrawn ? "ready" : "loading",
+    err: splatGpuErr ? `Splat did not draw: ${splatGpuErr}` : sp.err ? `Splat did not load: ${sp.err}` : null,
+  };
+  const toggleSplat = () => {
+    if (splatOn) { setSplatOn(false); return; }
     if (!scene) return;
-    if (splat.meta?.file) { setSplat((x) => ({ ...x, on: true, err: null })); setOpts((o) => ({ ...o, points: false })); return; }
-    setSplat((x) => ({ ...x, busy: true, err: null }));
-    try {
-      const m = await courseApi.splat(scene);
-      setSplat({ on: true, meta: m, busy: false, state: "loading", err: null });
-      setOpts((o) => ({ ...o, points: false }));
-    } catch (e) { setSplat((x) => ({ ...x, busy: false, err: e instanceof ApiError ? e.message : String(e) })); }
+    setSplatOn(true); setOpts((o) => ({ ...o, points: false }));
   };
 
+  // the splat editor's Send to course saved this course: load it again (unless edited here)
+  const [reloadN, setReloadN] = useState(0);
+  const dirtyRef = useRef(false);
+  useEffect(() => {
+    const f = (e: Event) => { const n = (e as CustomEvent).detail?.name; if (n && n === name && !dirtyRef.current) setReloadN((k) => k + 1); };
+    addEventListener("galley:course-saved", f); return () => removeEventListener("galley:course-saved", f);
+  }, [name]);
   useEffect(() => {
     setMsg(null); setSel(null); hist.current = [];
     if (!name) { setCourse(null); setSaved(""); setIntCells([]); return; }
@@ -83,7 +91,7 @@ export default function CoursePage({ scene, name }: { scene?: string; name?: str
       setCourse(c); setSaved(JSON.stringify(toFile(c)));
     }).catch((e) => setMsg({ ok: false, text: String(e.message ?? e) }));
     courseApi.lint(name).then((l) => setIntCells(l.int_cells)).catch(() => setIntCells([]));
-  }, [name]);
+  }, [name, reloadN]);
 
   const edit = useCallback((fn: (c: Course) => Course, push = true) => {
     setCourse((c) => c && fn(c));
@@ -94,6 +102,7 @@ export default function CoursePage({ scene, name }: { scene?: string; name?: str
   const file = useMemo(() => (course ? toFile(course) : null), [course]);
   const fileJson = useMemo(() => (file ? JSON.stringify(file) : ""), [file]);
   const dirty = !!course && fileJson !== saved;
+  dirtyRef.current = dirty;
   const probs = useMemo(() => (course ? problems(course) : []), [course]);
 
   // ── preview (auto, fixed times) and expert solve ───────────────────────────
@@ -380,12 +389,12 @@ export default function CoursePage({ scene, name }: { scene?: string; name?: str
                     onYaw={(i, y) => setCell(i, 3, 0, round(y), false)}
                     onAdd={(v) => { if (!course) return; const i = sel ?? course.kfs.length - 2;
                       edit((c) => insertAfter(c, i, v)); setSel(Math.min(i, course.kfs.length - 2) + 1); setTool("move"); }}
-                    onGoalMove={(v) => edit((c) => ({ ...c, goal: c.goal && { ...c.goal, position: v.map((x) => round(x)) as Vec3 } }), false)}
+                    onGoalMove={(v) => edit((c) => ({ ...c, goal: c.goal && withGoalAt(c.goal, v.map((x) => round(x)) as Vec3) }), false)}
                     keyNav={docIsActive} navSpeed={navSpeed}
-                    splatUrl={splat.on && splat.meta?.file && scene ? splatUrl(scene, splat.meta.file) : null} onSplatState={onSplatState} />
+                    splat={splat.on && sp.state === "ready" ? sp.data : null} onSplatReady={() => setSplatDrawn(true)} onSplatError={setSplatGpuErr} />
                 ) : <p className="muted" style={{ padding: 16 }}>{geoErr ?? "Loading scene…"}</p>}
                 <div className="vtag">{scene}{name ? ` / ${name}` : course ? ` / ${saveName} (unsaved)` : ""}{dirty ? " ●" : ""} · course frame (x, −y, −z): z down
-                  {splat.busy && " · exporting the splat…"}{splat.on && splat.state === "loading" && ` · loading the splat (${mb(splat.meta?.bytes)})…`}
+                  {splat.busy && " · exporting the splat…"}{splat.on && splat.state === "loading" && !splat.busy && ` · ${sp.state === "downloading" ? `downloading the splat (${mb(splat.meta?.bytes)}, ${Math.round(sp.progress * 100)}%)` : "loading the splat"}…`}
                   {splat.on && splat.state === "ready" && ` · splat: ${(splat.meta?.n_written ?? 0).toLocaleString()} Gaussians`}</div>
                 <div className="overlay">
                   <div className="seg">
@@ -444,15 +453,16 @@ export default function CoursePage({ scene, name }: { scene?: string; name?: str
               </Tile>
               {course && (job || course.goal) && (
                 <div className="tiles cols-2" style={{ flex: "none" }}>
-                  <Tile title="Semantic goal" icon="goal" meta="thesis hook">
+                  <Tile title="Semantic goal" icon="goal" meta={course.goal?.query ? `“${course.goal.query}” · ${course.goal.backend ?? "?"}` : "thesis hook"}>
                     {course.goal ? (
                       <>
+                        {course.goal.query && <GoalOrigin g={course.goal} scene={scene} compact />}
                         <label className="f">Label<input value={course.goal.label} placeholder="e.g. the red chair"
                           onChange={(e) => edit((c) => ({ ...c, goal: c.goal && { ...c.goal, label: e.target.value } }))} /></label>
                         <div className="row small" style={{ marginTop: 3 }}><span className="mono">{course.goal.position.map((v) => v.toFixed(2)).join(", ")}</span><span className="spacer" />
                           <button className="lnk" onClick={() => { setGoalSel(true); setSel(null); }}>select</button>
                           <button className="lnk" onClick={() => { edit((c) => ({ ...c, goal: null })); setGoalSel(false); }}>remove</button></div>
-                      </>) : <p className="empty">None: Edit ▸ Goal places one.</p>}
+                      </>) : <p className="empty">None: Edit ▸ Goal places one, or query the splat (<a href={`#/splat/${scene}`}>splat editor</a>) and Send to course.</p>}
                   </Tile>
                   <Tile title="Last flight" icon="fly" meta={job ? <Pill s={job.status} label={`#${job.id}`} /> : undefined}>
                     {job ? (
@@ -516,9 +526,10 @@ export default function CoursePage({ scene, name }: { scene?: string; name?: str
                 onChange={(e) => edit((c) => ({ ...c, goal: c.goal && { ...c.goal, label: e.target.value } }))} /></label>
                 <div className="fields" style={{ gridTemplateColumns: "repeat(3, 1fr)", marginTop: 4 }}>{[0, 1, 2].map((a) => (
                   <label key={a} className="f">{"xyz"[a]}<NumIn value={course.goal!.position[a]} onCommit={(v) => v !== null &&
-                    edit((c) => ({ ...c, goal: c.goal && { ...c.goal, position: c.goal.position.map((x, j) => (j === a ? v : x)) as Vec3 } }))} /></label>))}</div></div>
+                    edit((c) => ({ ...c, goal: c.goal && withGoalAt(c.goal, c.goal.position.map((x, j) => (j === a ? v : x)) as Vec3) }))} /></label>))}</div></div>
+              {course.goal.query && <GoalOrigin g={course.goal} scene={scene} />}
               <p className="muted small" style={{ padding: "4px 8px" }}>Saved as semantic_goal in the course file. FiGS and SousVide read only waypoints and forces, so it does not change the flight:
-                it marks where the natural-language goal extension plugs in. Drag it in the 3D view.</p>
+                the keyframes do (Send to course puts the approach point last). Dragging the goal keeps its query but drops the score, which belonged to the resolved position.</p>
             </PropSection>
           </>
         ) : (
@@ -557,6 +568,24 @@ export default function CoursePage({ scene, name }: { scene?: string; name?: str
       </ToProperties>
       <ToProblems items={paneProbs} />
     </DocActive>
+  );
+}
+
+/** Where a semantic goal came from (splat editor ▸ Send to course): read-only, with a way back. */
+function GoalOrigin({ g, scene, compact }: { g: SemanticGoal; scene?: string; compact?: boolean }) {
+  const back = scene && g.query ? `#/splat/${encodeURIComponent(scene)}/${encodeURIComponent(g.query)}` : null;
+  if (compact) return (
+    <div className="small" style={{ marginBottom: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+      title={`query “${g.query}” · ${g.backend ?? "?"} · score ${g.score ?? "moved by hand"}${g.approach ? ` · approach ${g.approach.join(", ")}` : ""}`}>
+      “{g.query}” · <span className="mono">{g.backend ?? "?"} · {g.score !== undefined ? g.score.toFixed(1) : "moved"}</span>{back && <> · <a href={back}>open in splat editor</a></>}
+    </div>
+  );
+  return (
+    <table className="kv small" style={{ margin: compact ? "0 0 3px" : "4px 0" }}><tbody>
+      <tr><td>Query</td><td>“{g.query}”{back && <> · <a href={back}>open in splat editor</a></>}</td></tr>
+      <tr><td>Backend · score</td><td className="mono">{g.backend ?? "—"} · {g.score !== undefined ? g.score.toFixed(1) : <span className="muted" title="moved by hand since it was resolved">moved</span>}</td></tr>
+      {g.approach && <tr><td>Approach</td><td className="mono">{g.approach.map((v) => v.toFixed(2)).join(", ")}</td></tr>}
+    </tbody></table>
   );
 }
 

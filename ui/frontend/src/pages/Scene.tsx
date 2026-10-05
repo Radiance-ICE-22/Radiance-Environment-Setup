@@ -1,7 +1,7 @@
 // Scene & Splat document: pipeline steps, reconstruction, training, models, last flight.
 // The Capture & Splat tab drives it: Reconstruct (SfM, Train + options), Models, Steps.
 import { useEffect, useState } from "react";
-import { active, api, ApiError, ArchivedModel, FigsRun, flightUrl, Model, Step, STEPS } from "../api";
+import { active, api, ApiError, ArchivedModel, FigsRun, flightUrl, Model, semApi, Step, STEPS } from "../api";
 import { BarChart, LineChart } from "../charts";
 import { Select, TrainOptions, useMachineTrainDefaults, usePoll, useSubmit } from "../components";
 import { Problem, ToProblems, ToProperties, useCommands, useUi } from "../shell/core";
@@ -143,7 +143,8 @@ export default function ScenePage({ scene }: { scene: string }) {
         <FlyCourse scene={scene} courses={d.courses.map((c) => c.name)} />
       </div>
 
-      <div className="tiles cols-2">
+      <div className="tiles cols-3">
+        <SemanticsTile scene={scene} />
         <Tile title="Retrain the splat" icon="retrain" meta="reuses this scene's SfM; runs train and verify">
           <TrainOptions r={tr} set={setT} vramMib={d.machine?.gpu.vram_mib} />
           {err && <p className="err">{err}</p>}
@@ -228,6 +229,33 @@ function TrainingCurve({ scene, runKey }: { scene: string; runKey: string }) {
       {!data || tags.length === 0
         ? <p className="empty">No TensorBoard events for the active model. Train with logging set to “tensorboard” to record curves.</p>
         : <LineChart points={data.series[pick!]} xLabel="step" yLabel={pick!} log={log} />}
+    </Tile>
+  );
+}
+
+/** Per-Gaussian semantic features of the active model (docs/SEMANTICS.md): status per backend, cost, the editor. */
+function SemanticsTile({ scene }: { scene: string }) {
+  const d = useAppData();
+  const job = d.jobs.find((j) => j.kind === "semantics" && j.scene === scene && active(j.status));
+  const st = usePoll(() => semApi.status(scene), job ? 5000 : 30000, [scene, job?.id, job?.status]);
+  const s = st.data;
+  const row = (b: "lift" | "fmgs") => {
+    const t = s?.tables.find((x) => x.active_run && x.backend === b);
+    const state = b === "lift" && job ? "running" : t ? (t.stale ? "stale" : "ready") : "not built";
+    return (
+      <tr key={b}><td>{b}</td><td><Pill s={state === "ready" ? "succeeded" : state === "running" ? "running" : state === "stale" ? "warning" : "queued"} label={state} /></td>
+        <td className="small">{t ? `${t.rows?.toLocaleString()} rows · ${t.mb} MB${t.lift.seconds ? ` · ${Math.round(t.lift.seconds)} s` : ""}${t.lift.peak_vram_mib ? ` · ${t.lift.peak_vram_mib} MiB` : ""}` : b === "fmgs" ? "Phase 4" : "—"}</td></tr>
+    );
+  };
+  return (
+    <Tile title="Semantics" icon="semantic" meta={s?.run ?? undefined} actions={<a className="small" href={`#/splat/${scene}`}>open the splat editor</a>}>
+      {s ? (
+        <>
+          <table className="kv"><tbody>{row("lift")}{row("fmgs")}</tbody></table>
+          <p className="muted small" style={{ marginTop: 4 }}>Steps: {s.steps.filter((x) => x.done).map((x) => x.step).join(", ") || "none"}
+            {s.results?.teachers?.seconds ? ` · teachers ${Math.round(s.results.teachers.seconds / 60)} min` : ""} · {s.queries.annotated} of {s.queries.total} annotated queries</p>
+          <p className="muted small">Ask the splat in words (“red tool chest”), see the matches light up, and send the result to a course as its goal.</p>
+        </>) : <p className="muted">{st.err ?? "Loading…"}</p>}
     </Tile>
   );
 }

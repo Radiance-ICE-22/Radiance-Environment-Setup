@@ -11,8 +11,24 @@ export interface CourseFile {
   semantic_goal?: SemanticGoal;
   [k: string]: unknown;
 }
-/** Hook for the thesis extension. FiGS and SousVide read only `waypoints` and `forces`. */
-export interface SemanticGoal { label: string; position: [number, number, number] }
+/**
+ * The natural-language goal (thesis extension). FiGS and SousVide read only `waypoints` and
+ * `forces`. Set by the splat editor's Send to course: the query it was resolved from, the
+ * backend, the candidate's score and box, and the approach point (also the final keyframe when
+ * that option was on). `score` is only meaningful while `position` is the resolved centroid, so
+ * moving the goal by hand drops it (withGoalAt).
+ */
+export interface SemanticGoal {
+  label: string; position: [number, number, number];
+  query?: string; backend?: string; score?: number;
+  extent?: { lo: [number, number, number]; hi: [number, number, number] };
+  approach?: [number, number, number];
+  [k: string]: unknown;
+}
+export function withGoalAt(g: SemanticGoal, position: [number, number, number]): SemanticGoal {
+  const { score: _s, ...rest } = g;
+  return { ...rest, position };
+}
 
 /** Editor state: keyframes as an ordered list (names are unique keys in the file). */
 export interface KF { name: string; t: number; fo: Cell[][] }
@@ -146,3 +162,45 @@ export function blankLoop(wbox: Box | null, cbox: Box | null): Course {
 export const emptyAxes = (b: Box | null) => (b ? [0, 1, 2].filter((a) => b.lo[a] > b.hi[a]).map((a) => "xyz"[a]) : []);
 
 export const round = (v: number, d = 3) => Math.round(v * 10 ** d) / 10 ** d;
+
+// ── semantic goal → course (splat editor ▸ Send to course) ────────────────────
+export const wrapPi = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
+/** Yaw (course frame: heading (cos ψ, sin ψ) in x, y) from `from` looking at `to`. */
+export const yawToward = (from: Vec3, to: Vec3) => Math.atan2(to[1] - from[1], to[0] - from[0]);
+const rest = (p: Vec3, yaw: number): Cell[][] => [[round(p[0]), 0], [round(p[1]), 0], [round(p[2]), 0], [round(yaw), 0]];
+
+/**
+ * Append the approach point as the new final keyframe, at rest and facing the goal. The old
+ * final keyframe becomes a pass-through (position and yaw kept, derivatives freed); the new
+ * yaw is unwrapped to within π of it; the time grows with the distance at `speed` m/s.
+ */
+export function appendApproach(c: Course, approach: Vec3, goal: Vec3, speed = 0.8): Course {
+  const last = c.kfs[c.kfs.length - 1];
+  const prevPos = displayPos(c, c.kfs.length - 1);
+  const prevYaw = last?.fo[3][0] ?? 0;
+  const yaw = prevYaw + wrapPi(yawToward(approach, goal) - prevYaw);
+  const dist = Math.hypot(approach[0] - prevPos[0], approach[1] - prevPos[1], approach[2] - prevPos[2]);
+  const t = round((last?.t ?? 0) + Math.max(2.5, dist / speed), 2);
+  const kfs = c.kfs.map((k, i) => (i === c.kfs.length - 1 ? { ...k, fo: k.fo.map((r) => [r[0]]) } : k));
+  let name = "goal", n = 1;
+  while (kfs.some((k) => k.name === name)) name = `goal${n++}`;
+  return { ...c, kfs: [...kfs, { name, t, fo: rest(approach, yaw) }] };
+}
+
+/**
+ * A new two-keyframe course to the approach point: from where the capture started (the first
+ * camera position, moved into the waypoint box), at rest at both ends, facing the goal at the end.
+ */
+export function courseToGoal(start: Vec3, approach: Vec3, goal: Vec3, wbox: Box | null, speed = 0.8): Course {
+  const s = start.map((v, a) => (wbox && wbox.lo[a] <= wbox.hi[a] ? Math.min(Math.max(v, wbox.lo[a]), wbox.hi[a]) : v)) as Vec3;
+  const yawEnd = yawToward(approach, goal);
+  const yawStart = yawToward(s, approach);
+  const dist = Math.hypot(approach[0] - s[0], approach[1] - s[1], approach[2] - s[2]);
+  return {
+    Nco: 6, forces: null, goal: null, extra: {}, wpExtra: {},
+    kfs: [
+      { name: "start", t: 0, fo: rest(s, yawStart) },
+      { name: "goal", t: round(Math.max(3, dist / speed), 2), fo: rest(approach, yawStart + wrapPi(yawEnd - yawStart)) },
+    ],
+  };
+}

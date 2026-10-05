@@ -81,7 +81,8 @@ export function Explorer({ activeHref, defaultScene, onClose }: { activeHref: st
     { id: "scenes", label: "Scenes", icon: "folder", meta: String(d.scenes.length), kids: [
       ...d.scenes.map((s) => ({ id: `scene:${s.scene}`, label: s.scene, icon: s.loadable ? "scene" : "warning", bad: !s.loadable,
         meta: s.loadable ? "model ✓" : s.models === 0 ? "no model" : `${s.models} models`, href: `#/scene/${s.scene}`,
-        kids: [{ id: `sc:${s.scene}:course`, label: "Course editor", icon: "route", href: `#/course/${s.scene}` }] })),
+        kids: [{ id: `sc:${s.scene}:course`, label: "Course editor", icon: "route", href: `#/course/${s.scene}` },
+          { id: `sc:${s.scene}:splat`, label: "Semantics (splat editor)", icon: "semantic", href: `#/splat/${s.scene}` }] })),
       { id: "new", label: "New capture…", icon: "camera", href: "#/new" }] },
     { id: "courses", label: "Courses", icon: "folder", meta: String(d.courses.length), kids: d.courses.map((c) => ({ id: `course:${c.name}`, label: c.name, icon: "route", href: sc ? `#/course/${sc}/${c.name}` : `#/course` })) },
     { id: "cohorts", label: "Cohorts", icon: "folder", meta: String(d.cohorts.length), kids: [

@@ -12,8 +12,8 @@ built, how to run it, and the numbers measured.
 | --- | --- | --- |
 | 0 | Environment and pose check | **DONE.** Gate PASSED on intellisense08, 5 Oct 09:48 (second run; the first found gsplat's 32-channel backward limit). |
 | 1 | Teacher features, lift backend, CLI query | **DONE.** Gate PASSED 5 Oct 16:12: 5 of 5 queries hit (second run, after the relative threshold and a corrected red tool chest annotation). |
-| 2 | Galley backend | API checks PASSED on intellisense08, 5 Oct (§9): cold query 5.9 s, warm ≤ 754 ms, 5 of 5 hits. One backend test was host-dependent (fixed in the test, not the API); **re-run `sem2_gate.sh` to close the gate.** |
-| 3 | Splat editor UI | Not started |
+| 2 | Galley backend | **DONE.** Gate PASSED on intellisense08, 5 Oct 17:24 (second run; the first failed only on a host-dependent test, §9): cold query 5.8 s, warm ≤ 789 ms, 5 of 5 hits. |
+| 3 | Splat editor UI | Built and cloud-tested 5 Oct (§3d): 14 frontend unit tests, 26-step headless-Chromium run against Galley with stand-in tools, renderer checked against drei's. **Gate not yet run** (`ui/deploy/sem3_gate.sh`). |
 | 4 | FMGS backend (`splatfacto-sem`) | Not started |
 | 5 | Evaluation and comparison | Not started |
 | 6 | Language → waypoints → SV-Net | Not started |
@@ -91,6 +91,45 @@ Design points:
 - **No new course endpoint**: `semantic_goal` with the extra fields (`query`, `backend`, `score`, `extent`, `approach`) already round-trips through `PUT /api/configs/courses/{name}` (tested).
 - **Archive/Promote wait for semantic jobs** like figs and SV-Net jobs (the job carries the scene).
 - In the cloud end-to-end run (50 k rows, stand-in text encoder): cold query 1.4 s, warm 0.19 s. backroom has 532 k rows; Phase 1's CLI measured ~0.72 s warm per query there.
+
+## 3d. Phase 3: what was added (splat editor)
+
+`#/splat/<scene>` (Explorer ▸ Scenes ▸ a scene ▸ Semantics) with the contextual **Semantics** ribbon tab:
+Build (features job, Continue, stop the worker) · Query (backend, candidates, standoff, threshold, relative,
+negatives) · View (colour / relevancy / PCA, floor, candidates only, pins, camera path, key speed) · Goal
+(Send to course, approach keyframe) · Annotate (label, save, Query all).
+
+| Path | |
+| --- | --- |
+| `ui/frontend/src/splat/format.ts` | Parses the browser `.splat` (32-byte records; course frame (x, −y, −z)); positions, largest scale, opacity, colours. |
+| `ui/frontend/src/splat/SplatMesh.tsx` | The splat renderer, vendored from drei 10.7.9's `<Splat>` (same shaders, covariance packing and worker sort) but fed a parsed buffer, with a `colors` prop that rewrites only the colour words and re-uploads that texture. Sorts only when the view changed. |
+| `ui/frontend/src/splat/recolor.ts` | Colour modes: rgb, relevancy (heat from the floor up, the rest a dimmed grey), PCA; *candidates only* greys everything outside a box. |
+| `ui/frontend/src/splat/pick.ts` | Click → the Gaussian with the largest blend weight T·α along the ray (what the pixel mostly shows). A plain pass over all centres. |
+| `ui/frontend/src/splat/load.tsx` | `useSplat(scene)`: export (cached on the host) → download with progress → parse; one parsed copy per URL shared by the course editor and the splat editor. `SplatLayer` = renderer + error boundary. |
+| `ui/frontend/src/splat/SplatScene.tsx` | The editor's 3D view: splat, candidate boxes, goal, approach point with the drone's sphere, annotation pins, picked Gaussian. |
+| `ui/frontend/src/three/common.tsx` | `Label`, `boxEdges`, `Frame`, `KeyNav` moved out of `course/Scene3D.tsx`, shared by both views. |
+| `ui/frontend/src/pages/SplatEditor.tsx` | The page: query bar, Candidates / Features / Annotations tiles, Properties (picked Gaussian + best labels, candidate, query and table), Send to course and Build dialogs. |
+| `ui/frontend/src/course/model.ts` | `SemanticGoal` gains `query`, `backend`, `score`, `extent`, `approach`; `withGoalAt` (moving the goal drops `score`); `appendApproach`, `courseToGoal`. |
+| `ui/frontend/src/pages/Course.tsx`, `course/Scene3D.tsx` | Splat through the shared loader; goal tile shows the query with *open in splat editor*; the approach point is drawn; the course reloads when the splat editor saved it. |
+| `ui/frontend/src/pages/Scene.tsx` | Semantics tile: lift / fmgs state, rows, size, lift time, peak VRAM. |
+| `ui/frontend/src/api.ts`, `shell/*`, `main.tsx` | `semApi`; the Semantics tab; route; Explorer entry; `semantics` jobs re-run and filter; 4 icons. Ribbon fix: a contextual tab asked for by a lazily loaded document is no longer reset to Home before the document registers. |
+| `ui/frontend/tests/` | `*.test.ts` (`npm test`, Node ≥ 22.6); `compare/` (drei vs SplatMesh pixel diff); `e2e/` (Galley + stand-in tools over a synthetic room, Playwright). Cloud checks; nothing here ships. |
+| `ui/deploy/sem3_gate.sh` | The Phase 3 gate. |
+
+**Send to course.** New course: two keyframes at rest — the first camera position (kept inside the
+waypoint box) and the approach point facing the object — plus `semantic_goal`. Existing course: the
+approach point is appended as the final keyframe (at rest, yaw facing the object, unwrapped to within π
+of the previous one; the old last keyframe becomes a pass-through); only the goal changes if the option is
+off. The course editor then opens it for Fly.
+
+**Cloud measurements (5 Oct).** Renderer vs drei on 3,000 random anisotropic Gaussians: mean |Δ| 0.18/255,
+max 8 (normalised vs raw quantised quaternions), identical coverage. Recolour CPU time (colour build +
+colour-word rewrite): 1 M Gaussians 27 ms in node; 60 k in Chromium 3–12 ms; the texture upload happens in
+the next frame (software GL in the cloud, so its time there means nothing — read it on the host). Pick:
+1 M Gaussians within the 200 ms test budget in node.
+
+**Not in Phase 3:** *Compare* (lift | FMGS side by side) waits for an FMGS table (Phase 4); the command is
+there, disabled.
 
 ## 4. Decisions and findings (Phase 0)
 
@@ -219,9 +258,9 @@ Notes for later phases:
 - The five queries are a development set now (they shaped the threshold). Phase 5 uses a separate frozen
   set of ≥ 15 queries per scene, annotated before results are seen.
 
-## 9. Phase 2 gate (intellisense08, 5 Oct, 6a1cb86)
+## 9. Phase 2 gate (intellisense08, 5 Oct) — PASSED
 
-The API checks ran against the restarted Galley and called it the same way the splat editor will. All passed:
+First run (6a1cb86): the API checks ran against the restarted Galley and called it the same way the splat editor will. All passed:
 
 | Check | Result |
 | --- | --- |
@@ -238,3 +277,18 @@ frontend (`ui/frontend/dist`, present on the host but not in the cloud copy), th
 the static mount, which answers POST with 405 instead of 404. The fix is in the test, not the API:
 it now sends a scene name the route rejects (`bad.name` → 400). The suite was re-checked with and
 without a `dist` directory.
+
+Second run (5 Oct 17:24, with the test fix): **PASSED**, backend tests and API checks.
+
+| Query | Warm | Error | Approach (course frame) | Gap |
+| --- | --- | --- | --- | --- |
+| red tool chest | 737 ms | 0.346 m | (−0.630, 1.111, −1.109) | +0.40 |
+| shop vacuum | 730 ms | 0.015 m | (−1.081, −5.628, −0.973) | +0.20 |
+| green foam mats | 717 ms | 0.209 m | (−0.171, −5.060, −0.973) | −0.12 |
+| garden cart | 721 ms | 0.218 m | (−1.108, −4.910, −0.973) | +0.20 |
+| whiteboard | 789 ms | 0.379 m | (−1.108, −7.014, −1.401) | +0.26 |
+
+Cold query 5.8 s (worker 5.47 s); warm max 789 ms, mean 739 ms. Errors are identical to the Phase 1 CLI
+gate (§8), so going through Galley and the worker changes nothing in the results. Relevancy max byte 204
+(0.80); labels for row 0: floor 0.255, wall 0.218, ceiling 0.217. Worker restarts 0. `.splat` records =
+table rows = 532,361.

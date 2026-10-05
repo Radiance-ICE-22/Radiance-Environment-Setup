@@ -1,6 +1,10 @@
 // Galley icon set: 24 px grid, two-tone (same as the Figma design system's icon/<name> components).
 // Used at 32 px on large ribbon buttons and 16 px elsewhere.
 const IC: Record<string, string> = {
+ "semantic": '<ellipse cx="8" cy="13" rx="5.5" ry="3.5" fill="#2F6FDD" fill-opacity=".55" transform="rotate(-25 8 13)"/><ellipse cx="12" cy="17" rx="5" ry="3" fill="#3FA34D" fill-opacity=".55"/><path d="M12.5 2.5h9v7h-5l-2.5 2.5v-2.5h-1.5z" fill="#FFF7D6" stroke="#B8741A" stroke-linejoin="round"/><path d="M14.5 5h5M14.5 7h3.5" stroke="#B8741A"/>',
+ "heat": '<rect x="2.5" y="8" width="19" height="8" rx="1" fill="url(#hg)" stroke="#5B6475"/><defs><linearGradient id="hg"><stop offset="0" stop-color="#781C6D"/><stop offset=".5" stop-color="#ED6925"/><stop offset="1" stop-color="#FCFFA4"/></linearGradient></defs><path d="M6 19.5v2M12 19.5v2M18 19.5v2" stroke="#5B6475"/>',
+ "pca": '<circle cx="8" cy="9" r="5" fill="#D9473B" fill-opacity=".75"/><circle cx="16" cy="9" r="5" fill="#3FA34D" fill-opacity=".75"/><circle cx="12" cy="15.5" r="5" fill="#2F6FDD" fill-opacity=".75"/>',
+ "send": '<path d="M3 11.5l18-8-6 17-3.5-6.5z" fill="#DCEEFF" stroke="#1D4E9E" stroke-linejoin="round"/><path d="M11.5 14l9.5-10.5" stroke="#1D4E9E"/><circle cx="5" cy="20" r="2" fill="#A855F7"/>',
  "new": '<path d="M5 2.5h9l5 5V21.5H5z" fill="#fff" stroke="#5B6475"/><path d="M14 2.5v5h5" fill="#DCE6F4" stroke="#5B6475"/><circle cx="17" cy="17" r="5" fill="#3FA34D"/><path d="M17 14.3v5.4M14.3 17h5.4" stroke="#fff" stroke-width="1.8"/>',
  "open": '<path d="M2.5 5.5h7l2 2h10v13h-19z" fill="#F5C842" stroke="#B8741A"/><path d="M2.5 10.5h19.5l-2 10h-17.5z" fill="#FBD96B" stroke="#B8741A"/>',
  "save": '<rect x="3.5" y="3.5" width="17" height="17" rx="2" fill="#2F6FDD" stroke="#1D4E9E"/><rect x="7" y="3.5" width="10" height="6" fill="#fff"/><rect x="13.5" y="4.5" width="2" height="4" fill="#2F6FDD"/><rect x="6.5" y="13" width="11" height="7.5" fill="#DCE6F4"/>',

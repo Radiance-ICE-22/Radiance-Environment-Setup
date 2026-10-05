@@ -71,7 +71,11 @@ export function Ribbon({ tab, setTab, minimized, setMinimized, appMenu }: {
   const [peek, setPeek] = useState(false);
   const visible = TABS.filter((t) => !t.contextual || commands.get(t.contextual)?.checked);
   const cur = visible.find((t) => t.name === tab) ?? visible[0];
-  useEffect(() => { if (cur.name !== tab) setTab(cur.name); }, [cur.name, tab, setTab]);
+  // fall back to a visible tab, except while a contextual tab's document has not registered its
+  // context yet (the splat editor is lazy-loaded): its tab appears as soon as it does
+  const wanted = TABS.find((t) => t.name === tab);
+  const pendingCtx = !!wanted?.contextual && commands.get(wanted.contextual) === undefined;
+  useEffect(() => { if (cur.name !== tab && !pendingCtx) setTab(cur.name); }, [cur.name, tab, setTab, pendingCtx]);
   const showBody = !minimized || peek;
   return (
     <div className={`ribbon ${minimized ? "min" : ""}`} onMouseLeave={() => setPeek(false)}>
