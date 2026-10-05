@@ -8,11 +8,13 @@ ap = argparse.ArgumentParser(); ap.add_argument("--project-root"); ap.add_argume
 SC = synth.scene()
 print(json.dumps({"ready": True, "pid": os.getpid()}), flush=True)
 
-def rel_for(text):
+def rel_for(text, backend="lift"):
+    """Relevancy by colour words; the 'fmgs' stand-in is sharper (narrower kernel, higher peak)."""
     words = [w for w in text.lower().replace(",", " ").split() if w in synth.COLOURS]
     if not words: return [0.5] * len(SC)
     tgt = [sum(synth.COLOURS[w][a] for w in words) / len(words) for a in range(3)]
-    return [0.45 + 0.4 * math.exp(-sum((c[a] - tgt[a]) ** 2 for a in range(3)) / (2 * 45 ** 2)) for (_, _, c) in SC]
+    s, top = (30, 0.48) if backend == "fmgs" else (45, 0.4)
+    return [0.45 + top * math.exp(-sum((c[a] - tgt[a]) ** 2 for a in range(3)) / (2 * s ** 2)) for (_, _, c) in SC]
 
 def clusters(sel, vox=0.1):
     cell = {}
@@ -34,7 +36,7 @@ def clusters(sel, vox=0.1):
 
 def query(req):
     t0 = time.time(); s = req.get("settings") or {}
-    rel = rel_for(req["text"])
+    rel = rel_for(req["text"], req.get("backend", "lift"))
     top = sorted(rel, reverse=True)[:100]; peak = sum(top) / len(top)
     thr = s.get("threshold", 0.55); a = s.get("rel_alpha", 0.5); tau = thr + a * max(0.0, peak - thr)
     sel = [i for i, r in enumerate(rel) if r >= tau]
@@ -59,7 +61,7 @@ def query(req):
            "rel_max": max(rel), "rel_p99": 0.8, "voxel": 0.1, "candidates": cands, "margin": margin,
            "ambiguous": margin is not None and margin < 0.25, "frame": "course (x, -y, -z), z down",
            "ms": {"encode": 1, "relevancy": 1, "total": round((time.time() - t0) * 1000)}}
-    out = {"ok": True, "ms": res["ms"]["total"], "result": res, "table": {"key": "e2e", "n": len(SC), "backend": "lift"}, "stale": False}
+    out = {"ok": True, "ms": res["ms"]["total"], "result": res, "table": {"key": "e2e", "n": len(SC), "backend": req.get("backend", "lift")}, "stale": False}
     if req.get("relevancy"): out["relevancy_b64"] = base64.b64encode(bytes(round(r * 255) for r in rel)).decode()
     return out
 

@@ -9,7 +9,7 @@
 // The Semantics ribbon tab (Build, Query, View, Goal, Annotate) drives it.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  active, Annotation, Annotations, api, ApiError, Candidate, courseApi, Geometry, QueryReply, SEM_STEPS, SemBackend,
+  active, Annotation, Annotations, api, ApiError, Candidate, courseApi, Geometry, QueryReply, SEM_BACKEND_STEPS, SemBackend,
   semApi, SemanticRun, SemStatus, SemStep, SemTable,
 } from "../api";
 import { usePoll, useShowJob } from "../components";
@@ -22,7 +22,8 @@ import { appendApproach, CourseFile, courseToGoal, fromFile, problems, SemanticG
 import { buildColors, ColorMode, countLit, heatCss } from "../splat/recolor";
 import { mb, useSplat } from "../splat/load";
 import type { Pick } from "../splat/pick";
-import SplatScene from "../splat/SplatScene";
+import SplatScene, { makeLink } from "../splat/SplatScene";
+import SplatCompare, { CompareQuery } from "./SplatCompare";
 
 const DEFAULT_LABELS = ["floor", "wall", "ceiling", "table", "chair", "shelf", "box", "door", "window", "cabinet", "bin", "light"];
 const BODY_R = 0.19;            // the drone's bounding sphere (course_tools / Phase 1 gap), when no model is loaded
@@ -63,7 +64,8 @@ export default function SplatEditor({ scene, q }: { scene: string; q?: string })
   const status = usePoll(() => semApi.status(scene), semJob ? 4000 : 20000, [scene, semJob?.id, semJob?.status]);
   const st = status.data;
   const table = (b: SemBackend): SemTable | null => st?.tables.find((t) => t.active_run && t.backend === b) ?? null;
-  const bstate = (b: SemBackend): BState => (b === "lift" && semJob ? "running" : table(b) ? (table(b)!.stale ? "stale" : "ready") : "none");
+  const jobBackend = (semJob?.params?.backend as SemBackend | undefined) ?? "lift";
+  const bstate = (b: SemBackend): BState => (semJob && jobBackend === b ? "running" : table(b) ? (table(b)!.stale ? "stale" : "ready") : "none");
 
   // ── query ──────────────────────────────────────────────────────────────────
   const [text, setText] = useState(q ?? "");
@@ -81,6 +83,10 @@ export default function SplatEditor({ scene, q }: { scene: string; q?: string })
   const [selC, setSelC] = useState<number | null>(null);
   const [picked, setPicked] = useState<Pick | null>(null);
   const seq = useRef(0);
+  // Compare (View ▸ Compare): the same query on the other backend, in a second view with a linked camera
+  const [compare, setCompare] = useState(false);
+  const [cmpQ, setCmpQ] = useState<CompareQuery | null>(null);
+  const link = useMemo(makeLink, []);
   const cands = reply?.result.candidates ?? [];
   const cand = selC !== null ? cands[selC] ?? null : null;
 
@@ -98,6 +104,7 @@ export default function SplatEditor({ scene, q }: { scene: string; q?: string })
       const bytes = r.relevancy_id ? await semApi.relevancy(scene, r.relevancy_id) : null;
       if (my !== seq.current) return;
       setReply(r); setRel(bytes); setTook(performance.now() - start);
+      setCmpQ({ text: t, nonce: my, standoff: qs.standoff, top: qs.top, threshold: qs.threshold, rel_alpha: qs.rel_alpha, negatives });
       setSelC(r.result.candidates.length ? 0 : null); setHover(null); setPicked(null);
       setFloor(r2(Math.min(0.95, Math.max(0.3, r.result.tau))));
       if (bytes) setMode("relevancy");
@@ -213,6 +220,8 @@ export default function SplatEditor({ scene, q }: { scene: string; q?: string })
 
   // ── dialogs ────────────────────────────────────────────────────────────────
   const [dlg, setDlg] = useState<null | "send" | "build">(null);
+  const [sendFrom, setSendFrom] = useState<{ cand: Candidate; text: string; backend: SemBackend } | null>(null);
+  const openSend = () => { setSendFrom(null); setDlg("send"); };
   const [approachKf, setApproachKf] = useState(true);
 
   // ── keyboard: Esc clears the pick / selection (document-local) ─────────────
@@ -248,7 +257,7 @@ export default function SplatEditor({ scene, q }: { scene: string; q?: string })
     "sem.worker": { run: () => semApi.stopWorker().then(() => setQErr(null)).catch((e) => setQErr(errMsg(e))) },
     "sem.query": { run: () => runQuery(), disabled: noTable || (busy && "Querying…"), label: busy ? "Querying…" : undefined },
     "run": { run: () => runQuery(), disabled: noTable || (busy && "Querying…") },
-    "sem.backend": { value: backend, options: [["lift", "lift"], ["fmgs", "fmgs (Phase 4)"]], set: (v) => setBackend(v === "fmgs" ? "fmgs" : "lift") },
+    "sem.backend": { value: backend, options: [["lift", "lift"], ["fmgs", "fmgs"]], set: (v) => setBackend(v === "fmgs" ? "fmgs" : "lift") },
     "sem.top": { value: qs.top, set: (v) => setQs({ ...qs, top: Math.min(20, Math.max(1, Math.round(Number(v) || 5))) }) },
     "sem.standoff": { value: qs.standoff, set: (v) => setQs({ ...qs, standoff: Math.min(5, Math.max(0, Number(v) || 0)) }) },
     "sem.threshold": { value: qs.threshold ?? "", set: (v) => setQs({ ...qs, threshold: num(v) === undefined ? undefined : Math.min(1, Math.max(0, num(v)!)) }) },
@@ -263,13 +272,14 @@ export default function SplatEditor({ scene, q }: { scene: string; q?: string })
     "view.cam": { checked: camPath, run: () => setCamPath(!camPath), disabled: !geo && "Loading the scene…" },
     "view.navspeed": { value: String(navSpeed), options: [["0.25", "0.25×"], ["0.5", "0.5×"], ["1", "1×"], ["2", "2×"], ["4", "4×"]],
       set: (v) => { setNavSpeed(Number(v)); try { localStorage.setItem("galley.navSpeed", v); } catch { /* */ } } },
-    "sem.send": { run: () => setDlg("send"), disabled: noQuery || (!cand && "Select a candidate (Candidates tile).") },
+    "sem.send": { run: openSend, disabled: noQuery || (!cand && "Select a candidate (Candidates tile).") },
     "sem.approachkf": { checked: approachKf, set: (v) => setApproachKf(v === "true") },
     "sem.annotate": { checked: annMode, run: () => { setAnnMode(!annMode); setPicked(null); setAnnMsg(null); }, disabled: !sp.data && "Wait for the splat to load." },
     "sem.annlabel": { value: annLabel, set: setAnnLabel },
     "sem.annsave": { run: saveAnn, disabled: !annDirty && "No unsaved annotations." },
     "sem.annquery": { run: evaluate, disabled: noTable || (!pins.some((a) => a.position) && "No placed annotations.") || (evalBusy && "Running…") },
-    "sem.compare": { disabled: "Lift | FMGS side by side needs an FMGS table (Phase 4)." },
+    "sem.compare": { checked: compare, run: () => setCompare(!compare),
+      disabled: !(st?.ready.includes("lift") && st?.ready.includes("fmgs")) && "Compare needs both tables for this checkpoint: lift and fmgs (Build ▸ Build features, backend fmgs)." },
   });
 
   // ── problems ───────────────────────────────────────────────────────────────
@@ -298,9 +308,9 @@ export default function SplatEditor({ scene, q }: { scene: string; q?: string })
   return (
     <div className="cw" ref={wrap}>
       <div className="cw-top" style={{ flex: "1 1 0" }}>
-        <div className="cw-view">
+        <div className={`cw-view ${compare ? "split" : ""}`}>
           <div className="viewport" style={{ background: "#0d1117" }}>
-            <SplatScene data={sp.state === "ready" ? sp.data : null} colors={colors}
+            <SplatScene data={sp.state === "ready" ? sp.data : null} colors={colors} link={link} linkId="main"
               onSplatReady={() => setDrawn(true)} onSplatError={setGpuErr} onRecolor={setGpuMs}
               geo={geo} boxId={scene} candidates={cands} hover={hover} selected={selC}
               bodyRadius={bodyR} pins={pins} showPins={showPins || annMode} pinSel={pinSel}
@@ -313,7 +323,7 @@ export default function SplatEditor({ scene, q }: { scene: string; q?: string })
                 <option value="lift">lift</option><option value="fmgs" disabled={!table("fmgs")}>fmgs</option></select>
               <button type="submit" className="push primary" disabled={!!noTable || busy}>{busy ? "…" : "Query"}</button>
             </form>
-            <div className="vtag" style={{ top: 44 }}>{scene} · course frame (x, −y, −z): z down · {splatTag}
+            <div className="vtag" style={{ top: 44 }}>{compare && <b>{backend} · </b>}{scene} · course frame (x, −y, −z): z down · {splatTag}
               {reply && ` · “${reply.result.text}” ${reply.worker_ms ?? "?"} ms worker${took !== null ? `, ${Math.round(took)} ms total` : ""}`}</div>
             {annMode && <div className="msgbar" style={{ position: "absolute", left: 8, right: 8, top: 70 }}><Icon name="pin" size={16} />
               <span><b>Annotate:</b> click the object to place “{(annLabel || text).trim() || "…"}” (Annotate ▸ Label). Esc leaves. {annMsg?.ok && annMsg.text}</span>
@@ -329,9 +339,11 @@ export default function SplatEditor({ scene, q }: { scene: string; q?: string })
                 {colors && gpuMs && ` · recoloured in ${Math.round(buildMs + gpuMs.cpu)} ms + frame ${Math.round(gpuMs.frame)} ms`}</div>
             </div>
           </div>
+          {compare && <SplatCompare scene={scene} data={sp.state === "ready" ? sp.data : null} geo={geo} backend={backend === "lift" ? "fmgs" : "lift"}
+            q={cmpQ} mode={mode} link={link} bodyR={bodyR} onSend={(c, tx, b) => { setSendFrom({ cand: c, text: tx, backend: b }); setDlg("send"); }} />}
         </div>
         <Splitter dir="v" onDrag={(dx) => setSide(Math.max(300, Math.min((wrap.current?.clientWidth ?? 1400) - 360, sideW - dx)))} onReset={() => setSide(430)} />
-        <div className="cw-side" style={{ width: sideW, maxWidth: "46%", overflow: "auto" }}>
+        <div className="cw-side" style={{ width: sideW, maxWidth: compare ? "30%" : "46%", overflow: "auto" }}>
           <Tile title="Candidates" icon="search" className="flush" meta={reply ? `“${reply.result.text}” · ${reply.result.n_selected.toLocaleString()} selected · τ ${reply.result.tau.toFixed(3)}` : undefined}>
             {reply ? (cands.length ? (
               <table className="grid cands">
@@ -343,7 +355,7 @@ export default function SplatEditor({ scene, q }: { scene: string; q?: string })
                     <td className="num">{c.score.toFixed(1)}</td><td className="num">{c.n.toLocaleString()}</td>
                     <td className="mono small">{size(c)}{c.large && <span className="warn"> large</span>}</td>
                     <td className={`num ${c.gap_ok === false ? "bad" : ""}`}>{c.gap === null ? "—" : c.gap.toFixed(2)}</td>
-                    <td><button className="lnk" onClick={(e) => { e.stopPropagation(); setSelC(i); setDlg("send"); }}>send…</button></td>
+                    <td><button className="lnk" onClick={(e) => { e.stopPropagation(); setSelC(i); openSend(); }}>send…</button></td>
                   </tr>))}</tbody>
               </table>) : <p className="empty pad">No Gaussian is above the threshold for “{reply.result.text}”. Try other words, or lower Query ▸ Threshold.</p>)
               : <p className="empty pad">{ready ? "Type a phrase above and press Enter." : String(noTable)}</p>}
@@ -375,9 +387,11 @@ export default function SplatEditor({ scene, q }: { scene: string; q?: string })
         </div>
       </div>
 
-      {dlg === "send" && cand && reply && <SendDialog scene={scene} cand={cand} text={reply.result.text} backend={backend} geo={geo}
+      {dlg === "send" && sendFrom && <SendDialog scene={scene} cand={sendFrom.cand} text={sendFrom.text} backend={sendFrom.backend} geo={geo}
         approachKf={approachKf} setApproachKf={setApproachKf} onClose={() => setDlg(null)} />}
-      {dlg === "build" && <BuildDialog scene={scene} defaultsWidth={d.machine?.defaults.semantic_feat_width as number | undefined}
+      {dlg === "send" && !sendFrom && cand && reply && <SendDialog scene={scene} cand={cand} text={reply.result.text} backend={backend} geo={geo}
+        approachKf={approachKf} setApproachKf={setApproachKf} onClose={() => setDlg(null)} />}
+      {dlg === "build" && <BuildDialog scene={scene} defaults={d.machine?.defaults} initialBackend={table("lift") && !table("fmgs") ? "fmgs" : "lift"}
         onClose={() => setDlg(null)} onSubmitted={(id) => { setDlg(null); show(id); status.reload(); }} />}
 
       <ToProperties>
@@ -416,7 +430,7 @@ export default function SplatEditor({ scene, q }: { scene: string; q?: string })
               <Prop k="Gap" mono tone={cand.gap_ok === false ? "bad" : cand.gap_ok ? "ok" : undefined}>{cand.gap === null ? "—" : `${cand.gap.toFixed(2)} m`} (drone sphere {bodyR} m)</Prop>
               <Prop k="Seen by" mono>{cand.cameras} training cameras</Prop>
             </PropSection>
-            <div style={{ padding: "4px 8px" }}><button className="push primary" onClick={() => setDlg("send")}>Send to course…</button></div>
+            <div style={{ padding: "4px 8px" }}><button className="push primary" onClick={openSend}>Send to course…</button></div>
           </>
         ) : (
           <>
@@ -464,6 +478,7 @@ function FeaturesTile({ st, bstate, semJob, onBuild }: {
     return <Pill s={s === "ready" ? "succeeded" : s === "running" ? "running" : s === "stale" ? "warning" : "queued"} label={`${b}: ${s === "none" ? "not built" : s}`} />;
   };
   const lift = st?.tables.find((t) => t.active_run && t.backend === "lift");
+  const fm = st?.tables.find((t) => t.active_run && t.backend === "fmgs");
   return (
     <Tile title="Features" icon="semantic" meta={st?.run ?? undefined} actions={<button onClick={onBuild}>Build…</button>}>
       <div className="row" style={{ gap: 6, flexWrap: "wrap" }}>{pill("lift")}{pill("fmgs")}
@@ -472,6 +487,9 @@ function FeaturesTile({ st, bstate, semJob, onBuild }: {
         <span key={x.step} className={`pill ${x.done ? "pill-ok" : "pill-q"}`} title={x.when ?? "not done"}>{x.step}</span>))}</div>}
       {lift && <p className="muted small" style={{ marginTop: 4 }}>lift: {lift.rows?.toLocaleString()} rows · {lift.mb} MB · {lift.lift.seconds ? `${Math.round(lift.lift.seconds)} s` : "—"}
         {lift.lift.peak_vram_mib ? ` · peak ${lift.lift.peak_vram_mib} MiB` : ""} · {lift.teacher_tag ?? ""}</p>}
+      {fm && <p className="muted small">fmgs: {fm.rows?.toLocaleString()} rows · {fm.mb} MB · {fm.fmgs?.steps ?? "?"} steps in {fm.lift.seconds ? `${Math.round(fm.lift.seconds / 60)} min` : "—"}
+        {fm.fmgs?.peak_vram_mib_device ? ` · peak ${fm.fmgs.peak_vram_mib_device} MiB` : ""} · {fm.fmgs?.variant ?? ""}{fm.fmgs?.fallback?.level ? ` (fallback: ${fm.fmgs.fallback.name})` : ""}
+        {fm.fmgs?.loss_first != null && fm.fmgs?.loss_last != null ? ` · loss ${fm.fmgs.loss_first} → ${fm.fmgs.loss_last}` : ""}</p>}
       {st && st.queries.total > 0 && <p className="muted small">{st.queries.annotated} of {st.queries.total} annotated queries</p>}
     </Tile>
   );
@@ -547,28 +565,56 @@ function SendDialog({ scene, cand, text, backend, geo, approachKf, setApproachKf
 }
 
 // ── Build features (semantic_pipeline.py) ──────────────────────────────────────
-function BuildDialog({ scene, defaultsWidth, onClose, onSubmitted }: { scene: string; defaultsWidth?: number; onClose: () => void; onSubmitted: (id: number) => void }) {
+function BuildDialog({ scene, defaults, initialBackend, onClose, onSubmitted }: {
+  scene: string; defaults?: Record<string, unknown>; initialBackend: SemBackend; onClose: () => void; onSubmitted: (id: number) => void;
+}) {
+  const [backend, setBackend] = useState<SemBackend>(initialBackend);
   const [dino, setDino] = useState(true);
   const [fw, setFw] = useState<number | undefined>(undefined);
+  const [fm, setFm] = useState<{ steps?: number; width?: number; variant: "auto" | "faithful" | "blite"; table?: number }>({ variant: "auto" });
   const [how, setHow] = useState<"continue" | "redo" | "only">("continue");
-  const [step, setStep] = useState<SemStep>("lift");
+  const steps = SEM_BACKEND_STEPS[backend];
+  const [step, setStep] = useState<SemStep>(steps[3]);
+  useEffect(() => { setStep(SEM_BACKEND_STEPS[backend][3]); }, [backend]);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const r: SemanticRun = { scene, teachers: dino ? ["clip", "dino"] : ["clip"], ...(fw ? { feat_width: fw } : {}),
+  const r: SemanticRun = { scene, backend, teachers: dino ? ["clip", "dino"] : ["clip"],
+    ...(backend === "lift" && fw ? { feat_width: fw } : {}),
+    ...(backend === "fmgs" ? { ...(fm.steps ? { fmgs_steps: fm.steps } : {}), ...(fm.width ? { fmgs_width: fm.width } : {}),
+      ...(fm.variant !== "auto" ? { fmgs_variant: fm.variant } : {}), ...(fm.table ? { fmgs_table: fm.table } : {}) } : {}),
     ...(how === "redo" ? { from_step: step, redo: [step] } : how === "only" ? { only: step, redo: [step] } : {}) };
   const submit = async () => { setBusy(true); setErr(null); try { onSubmitted((await semApi.submit(r)).id); } catch (e) { setErr(errMsg(e)); setBusy(false); } };
+  const num = (v: string) => (v === "" ? undefined : Number(v));
   return (
     <Dialog title={`Build semantic features · ${scene}`} onClose={onClose} footer={<button className="push primary" disabled={busy} onClick={submit}>{busy ? "Queueing…" : "Queue"}</button>}>
-      <p className="small">Runs <span className="mono">figs/semantic_pipeline.py</span> as a GPU job: cameras (refined poses) → teachers (CLIP pyramid, DINOv2 per frame; the slow
-        part, ~30 min on backroom) → lift (onto each Gaussian, ~3 min) → export. Finished steps are skipped, so Continue resumes where it stopped.</p>
+      <p className="small">Runs <span className="mono">figs/semantic_pipeline.py</span> as a GPU job. Shared steps: cameras (refined poses) → teachers (CLIP pyramid and
+        DINOv2 per frame; the slow part, ~30 min on backroom, done once for both backends). Then <b>lift</b>: average the teacher maps onto each Gaussian
+        (~3 min, training-free), or <b>fmgs</b>: train a hash-grid feature field against the frozen Gaussians (~20–40 min) and bake it. Finished steps are skipped.</p>
       <div className="fields">
+        <label className="f">Backend<select value={backend} onChange={(e) => setBackend(e.target.value as SemBackend)}>
+          <option value="lift">lift (training-free)</option><option value="fmgs">fmgs (hash-grid field, Phase 4)</option></select></label>
         <label className="check small"><input type="checkbox" checked={dino} onChange={(e) => setDino(e.target.checked)} />DINOv2 too (CLIP is always used)</label>
-        <label className="f">Feature width (px)<input type="number" min={64} max={1920} placeholder={defaultsWidth ? `${defaultsWidth} (machine profile)` : "script default"}
-          value={fw ?? ""} onChange={(e) => setFw(e.target.value === "" ? undefined : Number(e.target.value))} /></label>
+        {backend === "lift" ? (
+          <label className="f">Feature width (px)<input type="number" min={64} max={1920} placeholder={defaults?.semantic_feat_width ? `${defaults.semantic_feat_width} (machine profile)` : "script default"}
+            value={fw ?? ""} onChange={(e) => setFw(num(e.target.value))} /></label>
+        ) : (
+          <>
+            <label className="f">Training steps<input type="number" min={10} max={100000} placeholder="4200" value={fm.steps ?? ""} onChange={(e) => setFm({ ...fm, steps: num(e.target.value) })} /></label>
+            <label className="f">Render width (px)<input type="number" min={64} max={1920} placeholder={defaults?.semantic_fmgs_width ? `${defaults.semantic_fmgs_width} (machine profile)` : "480"}
+              value={fm.width ?? ""} onChange={(e) => setFm({ ...fm, width: num(e.target.value) })} /></label>
+            <label className="f">Variant<select value={fm.variant} onChange={(e) => setFm({ ...fm, variant: e.target.value as typeof fm.variant })}>
+              <option value="auto">auto: FMGS, falls back if out of memory</option><option value="faithful">FMGS only (no fallback)</option>
+              <option value="blite">B-lite (render the encoding; a labelled variant)</option></select></label>
+            <label className="f">Hash table (log2)<input type="number" min={14} max={22} placeholder="20" value={fm.table ?? ""} onChange={(e) => setFm({ ...fm, table: num(e.target.value) })} /></label>
+          </>
+        )}
         <label className="f">Steps<select value={how} onChange={(e) => setHow(e.target.value as typeof how)}>
           <option value="continue">Continue (skip finished steps)</option><option value="redo">Redo from a step</option><option value="only">Only one step</option></select></label>
-        {how !== "continue" && <label className="f">Step<select value={step} onChange={(e) => setStep(e.target.value as SemStep)}>{SEM_STEPS.map((s) => <option key={s}>{s}</option>)}</select></label>}
+        {how !== "continue" && <label className="f">Step<select value={step} onChange={(e) => setStep(e.target.value as SemStep)}>{steps.map((s) => <option key={s}>{s}</option>)}</select></label>}
       </div>
+      {backend === "fmgs" && <p className="muted small" style={{ marginTop: 6 }}>Out-of-memory ladder (auto): hash table 2^19 → half the visible Gaussians per step → B-lite;
+        the one used is recorded in the table's index. Training writes checkpoints every 1,000 steps (a cancelled job resumes) and TensorBoard curves under
+        semantics/&lt;run&gt;/fmgs_train/.</p>}
       <p className="muted small mono" style={{ marginTop: 6 }}>{JSON.stringify(r)}</p>
       {err && <p className="err">{err}</p>}
     </Dialog>

@@ -25,17 +25,19 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from .pipeline import check_scene, trained_models
 from .settings import Settings
 
-STEPS = ["preflight", "cameras", "teachers", "lift", "export"]
-SemStep = Literal["preflight", "cameras", "teachers", "lift", "export"]
+STEPS = ["preflight", "cameras", "teachers", "lift", "export", "fmgs", "bake"]
+SemStep = Literal["preflight", "cameras", "teachers", "lift", "export", "fmgs", "bake"]
+BACKEND_STEPS = {"lift": ["preflight", "cameras", "teachers", "lift", "export"],
+                 "fmgs": ["preflight", "cameras", "teachers", "fmgs", "bake"]}
 BACKENDS = ("lift", "fmgs")
 RUN_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.\-]{0,63}$")
 
 
 class SemanticRun(BaseModel):
     """One invocation of semantic_pipeline.py. Unset fields fall back to the scene's saved settings,
-    then the machine profile's defaults (semantic_feat_width), then the script's defaults."""
+    then the machine profile's defaults (semantic_feat_width for the lift), then the script's defaults."""
     scene: str
-    backend: Literal["lift"] = "lift"           # Phase 4 adds "fmgs"
+    backend: Literal["lift", "fmgs"] = "lift"
     teachers: list[Literal["clip", "dino"]] = Field(default_factory=list, max_length=2)
     feat_width: Optional[int] = Field(None, ge=64, le=1920)
     dino_width: Optional[int] = Field(None, ge=224, le=1792)
@@ -44,6 +46,11 @@ class SemanticRun(BaseModel):
     only: Optional[SemStep] = None
     stop_after: Optional[SemStep] = None
     redo: list[SemStep] = []
+    # fmgs only (Phase 4)
+    fmgs_steps: Optional[int] = Field(None, ge=10, le=100_000)
+    fmgs_width: Optional[int] = Field(None, ge=64, le=1920)
+    fmgs_variant: Optional[Literal["auto", "faithful", "blite"]] = None
+    fmgs_table: Optional[int] = Field(None, ge=14, le=22)
 
     @field_validator("scene")
     @classmethod
@@ -63,8 +70,16 @@ class SemanticRun(BaseModel):
             raise ValueError("teachers must include clip")
         if self.only and (self.from_step or self.stop_after):
             raise ValueError("'only' cannot be combined with 'from_step' or 'stop_after'")
-        if self.from_step and self.stop_after and STEPS.index(self.stop_after) < STEPS.index(self.from_step):
+        steps = BACKEND_STEPS[self.backend]
+        for name, v in (("from_step", self.from_step), ("only", self.only), ("stop_after", self.stop_after)):
+            if v and v not in steps:
+                raise ValueError(f"{name} '{v}' is not a {self.backend} step ({', '.join(steps)})")
+        if any(r not in steps for r in self.redo):
+            raise ValueError(f"redo: {self.backend} steps are {', '.join(steps)}")
+        if self.from_step and self.stop_after and steps.index(self.stop_after) < steps.index(self.from_step):
             raise ValueError("stop_after comes before from_step")
+        if self.backend == "lift" and any(v is not None for v in (self.fmgs_steps, self.fmgs_width, self.fmgs_variant, self.fmgs_table)):
+            raise ValueError("fmgs_* options need backend fmgs")
         return self
 
 
@@ -75,9 +90,12 @@ def script(s: Settings) -> Path:
 def build_argv(s: Settings, r: SemanticRun) -> list[str]:
     argv = [s.python, str(script(s)), "--project-root", str(s.project_root), "--scene", r.scene,
             "--backend", r.backend]
-    fw = r.feat_width or s.defaults.get("semantic_feat_width")
+    fw = r.feat_width or (s.defaults.get("semantic_feat_width") if r.backend == "lift" else None)
+    fmw = r.fmgs_width or (s.defaults.get("semantic_fmgs_width") if r.backend == "fmgs" else None)
     flags = {"--teachers": ",".join(r.teachers) if r.teachers else None, "--feat-width": fw,
              "--dino-width": r.dino_width, "--batch": r.batch,
+             "--fmgs-steps": r.fmgs_steps, "--fmgs-width": fmw, "--fmgs-variant": r.fmgs_variant,
+             "--fmgs-table": r.fmgs_table,
              "--from": r.from_step, "--only": r.only, "--stop-after": r.stop_after}
     for k, v in flags.items():
         if v is not None:
@@ -151,6 +169,9 @@ def status(s: Settings, scene: str) -> dict:
             "seen_rows": ix.get("metrics", {}).get("seen_rows"),
             "lift": {k: ix.get("metrics", {}).get("lift", {}).get(k)
                      for k in ("seconds", "passes", "peak_vram_mib", "render_width", "views")},
+            "fmgs": ({k: ix.get("metrics", {}).get("fmgs", {}).get(k)
+                      for k in ("steps", "variant", "fallback", "loss_first", "loss_last", "peak_vram_mib_device", "it_per_s")}
+                     if backend == "fmgs" else None),
         })
     tables.sort(key=lambda t: (not t["active_run"], t["run"], t["backend"]))
     ann = load_queries(s, scene)

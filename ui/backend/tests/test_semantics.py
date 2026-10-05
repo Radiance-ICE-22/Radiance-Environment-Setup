@@ -117,10 +117,27 @@ def test_argv_and_profile_default(settings):
     assert sem.build_argv(settings, sem.SemanticRun(scene="backroom", feat_width=960))[-1] == "960"
 
 
+def test_fmgs_argv(settings):
+    settings.defaults.update(semantic_feat_width=960, semantic_fmgs_width=480)
+    r = sem.SemanticRun(scene="backroom", backend="fmgs", from_step="fmgs", redo=["fmgs"], fmgs_steps=200,
+                        fmgs_variant="blite", fmgs_table=19)
+    argv = sem.build_argv(settings, r)
+    val = lambda f: argv[argv.index(f) + 1]                                            # noqa: E731
+    assert val("--backend") == "fmgs" and val("--from") == "fmgs" and val("--redo") == "fmgs"
+    assert val("--fmgs-steps") == "200" and val("--fmgs-variant") == "blite" and val("--fmgs-table") == "19"
+    assert val("--fmgs-width") == "480" and "--feat-width" not in argv               # the lift's width is not used
+    assert "--fmgs-width" not in sem.build_argv(settings, sem.SemanticRun(scene="backroom"))
+
+
 @pytest.mark.parametrize("bad", [{"scene": "../x"}, {"scene": "b", "teachers": ["dino"]},
                                  {"scene": "b", "only": "lift", "from_step": "teachers"},
                                  {"scene": "b", "from_step": "export", "stop_after": "teachers"},
-                                 {"scene": "b", "dino_width": 900}, {"scene": "b", "backend": "nerf"}])
+                                 {"scene": "b", "dino_width": 900}, {"scene": "b", "backend": "nerf"},
+                                 {"scene": "b", "backend": "fmgs", "from_step": "lift"},
+                                 {"scene": "b", "from_step": "bake"},
+                                 {"scene": "b", "backend": "fmgs", "redo": ["export"]},
+                                 {"scene": "b", "fmgs_steps": 100},
+                                 {"scene": "b", "backend": "fmgs", "fmgs_table": 30}])
 def test_run_validation(bad):
     with pytest.raises(ValueError):
         sem.SemanticRun(**bad)
@@ -163,7 +180,7 @@ def test_job_through_queue_and_archive_waits(client, sem_project):
     log = " ".join(x["line"] for x in client.get(f"/api/jobs/{j['id']}/log").json())
     assert '"--feat-width", "480"' in log and '"--backend", "lift"' in log
     st = client.get("/api/scenes/backroom/semantics").json()
-    assert [x["done"] for x in st["steps"]] == [False, True, True, True, True] and st["config"]["feat_width"] == "480"
+    assert [x["done"] for x in st["steps"]] == [False, True, True, True, True, False, False] and st["config"]["feat_width"] == "480"
     assert st["busy"] is False and st["script"] is True
     assert client.post("/api/jobs/semantics", json={"scene": "backroom1"}).status_code == 400   # no model
     assert client.post("/api/jobs/semantics", json={"scene": "../etc"}).status_code == 422

@@ -171,7 +171,8 @@ with sync_playwright() as p:
         # build job from the editor
         pg.goto(B + "/#/splat/backroom")
         pg.locator('[data-cmd="sem.build"]').click()
-        pg.locator(".dlg select").first.select_option("redo")
+        pg.locator(".dlg label", has_text="Backend").locator("select").select_option("lift")
+        pg.locator(".dlg label", has_text="Steps").locator("select").select_option("redo")
         pg.locator(".dlg").get_by_role("button", name="Queue").click()
         time.sleep(1.0)
         expect(pg.get_by_text("lift: running")).to_be_visible(timeout=10000)

@@ -241,10 +241,10 @@ function SemanticsTile({ scene }: { scene: string }) {
   const s = st.data;
   const row = (b: "lift" | "fmgs") => {
     const t = s?.tables.find((x) => x.active_run && x.backend === b);
-    const state = b === "lift" && job ? "running" : t ? (t.stale ? "stale" : "ready") : "not built";
+    const state = job && ((job.params?.backend as string | undefined) ?? "lift") === b ? "running" : t ? (t.stale ? "stale" : "ready") : "not built";
     return (
       <tr key={b}><td>{b}</td><td><Pill s={state === "ready" ? "succeeded" : state === "running" ? "running" : state === "stale" ? "warning" : "queued"} label={state} /></td>
-        <td className="small">{t ? `${t.rows?.toLocaleString()} rows · ${t.mb} MB${t.lift.seconds ? ` · ${Math.round(t.lift.seconds)} s` : ""}${t.lift.peak_vram_mib ? ` · ${t.lift.peak_vram_mib} MiB` : ""}` : b === "fmgs" ? "Phase 4" : "—"}</td></tr>
+        <td className="small">{t ? `${t.rows?.toLocaleString()} rows · ${t.mb} MB${t.lift.seconds ? ` · ${Math.round(t.lift.seconds)} s` : ""}${t.lift.peak_vram_mib ? ` · ${t.lift.peak_vram_mib} MiB` : ""}${t.fmgs?.variant ? ` · ${t.fmgs.variant}` : ""}${t.fmgs?.fallback?.level ? ` (fallback ${t.fmgs.fallback.level})` : ""}` : "—"}</td></tr>
     );
   };
   return (

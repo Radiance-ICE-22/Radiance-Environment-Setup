@@ -14,7 +14,7 @@ built, how to run it, and the numbers measured.
 | 1 | Teacher features, lift backend, CLI query | **DONE.** Gate PASSED 5 Oct 16:12: 5 of 5 queries hit (second run, after the relative threshold and a corrected red tool chest annotation). |
 | 2 | Galley backend | **DONE.** Gate PASSED on intellisense08, 5 Oct 17:24 (second run; the first failed only on a host-dependent test, §9): cold query 5.8 s, warm ≤ 789 ms, 5 of 5 hits. |
 | 3 | Splat editor UI | **DONE.** Gate PASSED on intellisense08, 5 Oct: automated half 19:01 (query → course → flight, tracking max 8 mm) and browser half 19:21 (whiteboard sent from the editor, 3-keyframe course flown, tracking max 73 mm); 532 k Gaussians recoloured in 20 ms + 71 ms frame (§10). |
-| 4 | FMGS backend (`splatfacto-sem`) | Not started |
+| 4 | FMGS backend | Built and cloud-tested 5 Oct (§3e): standalone trainer (decided 5 Oct, not an `ns-train` plugin), 12 new semantics tests incl. real CPU training runs, the pipeline's fmgs → bake run end to end on a CPU splatfacto run, editor Compare (12-step browser run). **Gate not yet run** (`ui/deploy/sem4_gate.sh`). |
 | 5 | Evaluation and comparison | Not started |
 | 6 | Language → waypoints → SV-Net | Not started |
 
@@ -130,6 +130,34 @@ the next frame (software GL in the cloud, so its time there means nothing — re
 
 **Not in Phase 3:** *Compare* (lift | FMGS side by side) waits for an FMGS table (Phase 4); the command is
 there, disabled.
+
+## 3e. Phase 4: what was added (FMGS backend)
+
+Decisions (Suhan, 5 Oct): a **standalone trainer** instead of the planned `ns-train splatfacto-sem`
+plugin — the splat is frozen, so training needs only the cameras and the Phase 1 teacher maps, not the
+RGB images a nerfstudio datamanager would load, and it shares the lift's refined cameras and gsplat
+rendering path exactly (a fair Phase 5 comparison); **faithful FMGS at 480×270** by default (the teacher
+grids are only ~71 × 40 CLIP and 64 × 36 DINO cells); the editor's **Compare** view in this phase.
+
+| Path | |
+| --- | --- |
+| `semantics/radiance_semantics/fmgs/field.py` | `FeatureField`: Instant-NGP hash grid (24 levels, 16 → 512, 2^20, 8 features = 192-d) on centres normalised by the scene's 1st–99th percentile box (+5 %), CLIP 512 and DINO 384 heads (2 × 256 ReLU). `tcnn` (HashGrid + CutlassMLP) on the GPU; a PyTorch twin (`torch`) for CPU tests and as a fallback. `field.pt` records which one. |
+| `.../fmgs/losses.py` | 0.2 · CLIP Huber (δ 1.25) + 0.8 · DINO L2 + 0.01 · pixel alignment, means over pixels with rendered alpha ≥ 0.5. Pixel alignment (our reading): mean \|cos(clip_p, clip_q) − cos(dino_p, dino_q)\| over sampled pixels and 3 × 3 neighbours at dilation 2, DINO = the fixed teacher map. |
+| `.../fmgs/train.py` | The trainer. Per step: one training view (refined pose), the trainable Gaussians in its frustum (the most opaque 40 %, picked once), field → features, gsplat render in 32-channel chunks, **divided by the rendered alpha** (so dropping the untrained 60 % does not darken the maps), losses against the upsampled teachers. Adam 1e-2 → 1e-3 exponential, eps 1e-15 (LERF's hash-field settings). Checkpoints every 1,000 steps (resume on the same settings), TensorBoard in `tb/`, `train.json`. Out-of-memory ladder (variant auto): hash table 2^19 → half the visible Gaussians per step → B-lite (render the 192-d encoding, heads per pixel; labelled as a variant); restarts from step 0, recorded. Gaussian checksum before/after. `python -m radiance_semantics.fmgs.train … --steps 200` is the smoke run (exit 0 = loss fell and Gaussians unchanged). |
+| `.../fmgs/bake.py` | Field at every Gaussian → unit rows. |
+| `.../lift.py` | `blend_weights()`: the lift's denominator pass on its own, so both tables agree on unseen rows. |
+| `figs/semantic_pipeline.py` | `--backend fmgs`: steps `fmgs` (train into `semantics/<run>/fmgs_train/`, checkpoint-file SHA before/after) and `bake` (table in `semantics/<run>/fmgs/`, `field.pt` copied in; unseen rows from the lift table when it is for the same checkpoint, else a blend-weight pass). `--fmgs-steps/-width/-variant/-impl/-table`. Backend is no longer sticky in `config.json` (a bare run is the lift). |
+| `ui/backend/galley/semantics.py` | `SemanticRun.backend` lift \| fmgs with per-backend step validation and `fmgs_*` options; profile key `semantic_fmgs_width` (480 on both hosts); status lists all seven steps and an fmgs summary per table. |
+| `ui/frontend/src/pages/SplatEditor.tsx`, `SplatCompare.tsx`, `splat/SplatScene.tsx` | Build dialog: backend choice and FMGS options. **View ▸ Compare**: the right view runs every query on the other backend with its own colours, candidates and picked labels, can send its own candidate to a course, and follows the left view's camera (`CamLink`). Features tile and scene tile: fmgs variant, fallback, loss, VRAM. |
+| `ui/deploy/sem4_gate.sh` | The Phase 4 gate. |
+
+Cloud checks (5 Oct): 60 semantics tests (12 new: losses by hand, hash grid, subset/frustum, faithful and
+B-lite training on a synthetic scene whose teacher maps are rendered from known features — loss falls,
+Gaussians unchanged, resume, the OOM ladder, bake); the real pipeline `--backend fmgs` on the CPU
+splatfacto run (torch field, reference renderer): trained, checkpoint unchanged, baked 50,000 rows, and
+both tables answer through the query worker; 113 Galley tests; browser runs 26/26 (Phase 3 regression)
+and 12/12 (Phase 4: build fmgs from the editor, Compare with a linked camera, send the FMGS candidate).
+Not checkable in the cloud: tiny-cuda-nn, GPU memory and speed — the gate's first two steps.
 
 ## 4. Decisions and findings (Phase 0)
 

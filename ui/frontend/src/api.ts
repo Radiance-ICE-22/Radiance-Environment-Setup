@@ -187,17 +187,24 @@ export function splatUrl(scene: string, file: string) {
 }
 
 // ── semantic features (docs/SEMANTICS.md) ──────────────────────────────────
-export const SEM_STEPS = ["preflight", "cameras", "teachers", "lift", "export"] as const;
+export const SEM_STEPS = ["preflight", "cameras", "teachers", "lift", "export", "fmgs", "bake"] as const;
 export type SemStep = (typeof SEM_STEPS)[number];
 export type SemBackend = "lift" | "fmgs";
+/** semantic_pipeline.py's steps per backend (the first three are shared). */
+export const SEM_BACKEND_STEPS: Record<SemBackend, SemStep[]> = {
+  lift: ["preflight", "cameras", "teachers", "lift", "export"], fmgs: ["preflight", "cameras", "teachers", "fmgs", "bake"],
+};
 export interface SemanticRun {
-  scene: string; backend?: "lift"; teachers?: ("clip" | "dino")[]; feat_width?: number; dino_width?: number; batch?: number;
+  scene: string; backend?: SemBackend; teachers?: ("clip" | "dino")[]; feat_width?: number; dino_width?: number; batch?: number;
   from_step?: SemStep; only?: SemStep; stop_after?: SemStep; redo?: SemStep[];
+  fmgs_steps?: number; fmgs_width?: number; fmgs_variant?: "auto" | "faithful" | "blite"; fmgs_table?: number;
 }
 export interface SemTable {
   run: string; backend: SemBackend; rows: number | null; key: string | null; stale: boolean; active_run: boolean;
   teacher_tag: string | null; order_sha: string | null; created: string | null; mb: number; seen_rows: number | null;
   lift: { seconds: number | null; passes: number | null; peak_vram_mib: number | null; render_width: number | null; views: number | null };
+  fmgs: { steps: number | null; variant: string | null; fallback: { level: number; name: string } | null; loss_first: number | null;
+    loss_last: number | null; peak_vram_mib_device: number | null; it_per_s: number | null } | null;
 }
 export interface SemStatus {
   scene: string; run: string | null; key: string | null; steps: { step: SemStep; done: boolean; when: string | null }[];

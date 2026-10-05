@@ -4,12 +4,14 @@ from pathlib import Path
 sys.path.insert(0, os.environ["E2E_DIR"])
 import server_lib
 ap = argparse.ArgumentParser()
-for f in ("--project-root", "--scene", "--backend", "--teachers", "--feat-width", "--only", "--from", "--stop-after", "--dino-width", "--batch"):
+for f in ("--project-root", "--scene", "--backend", "--teachers", "--feat-width", "--only", "--from", "--stop-after", "--dino-width", "--batch",
+          "--fmgs-steps", "--fmgs-width", "--fmgs-variant", "--fmgs-table"):
     ap.add_argument(f)
 ap.add_argument("--redo", action="append", default=[])
 a = ap.parse_args()
 print("argv:", json.dumps(sys.argv[1:]), flush=True)
-for s in ("preflight", "cameras", "teachers", "lift", "export"):
+b = a.backend or "lift"
+for s in ("preflight", "cameras", "teachers") + (("lift", "export") if b == "lift" else ("fmgs", "bake")):
     print(f"step {s}", flush=True); time.sleep(float(os.environ.get("E2E_STEP_S", "0.3")))
-server_lib.write_table(Path(a.project_root), a.scene)
+server_lib.write_table(Path(a.project_root), a.scene, b)
 print("Done", flush=True)

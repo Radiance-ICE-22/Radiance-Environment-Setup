@@ -32,3 +32,4 @@ svnet_comm_eval = "eval_nominal"
 # upsample fix). Query worker exits after this many idle seconds.
 semantic_feat_width = 960
 semantic_worker_idle_s = 600
+semantic_fmgs_width = 480       # FMGS feature render width (teacher grids are ~71 cells wide)

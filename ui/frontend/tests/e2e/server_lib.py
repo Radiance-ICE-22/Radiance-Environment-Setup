@@ -29,23 +29,27 @@ def key_of(root: Path, scene: str) -> str:
     return f"{RUN}-{ck.stem}-{int(ck.stat().st_mtime)}"
 
 
-def write_table(root: Path, scene: str):
+def write_table(root: Path, scene: str, backend: str = "lift"):
     n = len(synth.scene())
-    d = root / "SousVide/gsplats/workspace" / scene / "semantics" / RUN / "lift"
+    d = root / "SousVide/gsplats/workspace" / scene / "semantics" / RUN / backend
     d.mkdir(parents=True, exist_ok=True)
     rgb = bytearray()
     for (x, y, z), s, c in synth.scene():      # "PCA": the colour, rotated, so objects stand out
         rgb += bytes([c[1], c[2], c[0]])
     (d / "pca_rgb.u8").write_bytes(bytes(rgb))
-    (d / "index.json").write_text(json.dumps({"n": n, "key": key_of(root, scene), "backend": "lift", "teacher_tag": "clip+dino e2e",
-        "order_sha": "e2e", "created": "2026-10-05T12:00:00", "metrics": {"seen_rows": n - 100, "lift": {"seconds": 181, "passes": 29, "peak_vram_mib": 2400, "render_width": 960, "views": 270}}}))
+    metrics = {"seen_rows": n - 100, "lift": {"seconds": 181, "passes": 29, "peak_vram_mib": 2400, "render_width": 960, "views": 270}}
+    if backend == "fmgs":
+        metrics["fmgs"] = {"steps": 4200, "variant": "faithful", "fallback": {"level": 0, "name": "default"}, "loss_first": 0.31,
+                           "loss_last": 0.12, "peak_vram_mib_device": 6100, "it_per_s": 3.1}
+    (d / "index.json").write_text(json.dumps({"n": n, "key": key_of(root, scene), "backend": backend, "teacher_tag": "clip+dino e2e",
+        "order_sha": "e2e", "created": "2026-10-05T12:00:00", "metrics": metrics}))
     st = root / ".semantic_pipeline_state" / scene / RUN
     st.mkdir(parents=True, exist_ok=True)
-    for s in ("preflight", "cameras", "teachers", "lift", "export"):
+    for s in ("preflight", "cameras", "teachers") + (("lift", "export") if backend == "lift" else ("fmgs", "bake")):
         (st / f"{s}.done").write_text("fp\n2026-10-05T12:00:00\n")
 
 
-def make_project(root: Path, with_table=True):
+def make_project(root: Path, with_table=True, with_fmgs=False):
     e2e = Path(os.environ["E2E_DIR"])
     repo = root / "SousVide"
     for fam in ("captures", "courses", "pilots", "frames", "methods", "nnio"):
@@ -67,6 +71,8 @@ def make_project(root: Path, with_table=True):
     (ws / "transforms.json").write_text("{}"); (ws / "sparse_pc.ply").write_text("ply")
     if with_table:
         write_table(root, "backroom")
+    if with_fmgs:
+        write_table(root, "backroom", "fmgs")
     q = ws / "semantics/queries.json"; q.parent.mkdir(parents=True, exist_ok=True)
     q.write_text(json.dumps({"version": 1, "frame": "course (x, -y, -z), z down", "queries": [
         {"text": "red box", "position": [1.5, -1.0, -0.4], "set": "gate"},

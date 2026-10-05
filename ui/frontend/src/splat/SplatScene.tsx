@@ -23,6 +23,38 @@ export interface SceneProps {
   pins: Annotation[]; showPins: boolean; pinSel: number | null;
   picked: Pick | null; onPick: (p: Pick | null) => void; minOpacity: number; cursor: "pick" | "place";
   keyNav: boolean; navSpeed: number; showCamPath: boolean; focus: V3 | null;
+  link?: CamLink | null; linkId?: string;        // Compare: two views share one camera
+}
+
+/** Two canvases following one camera (splat editor ▸ Compare). Whichever view moves publishes its
+ *  camera position and orbit target; the other copies them. A view that joins takes the current one. */
+export interface CamLink { last: { from: string; p: number[]; t: number[] } | null; subs: Set<(from: string, p: number[], t: number[]) => void> }
+export const makeLink = (): CamLink => ({ last: null, subs: new Set() });
+function LinkCam({ link, id }: { link: CamLink; id: string }) {
+  const { camera, controls, invalidate } = useThree() as unknown as { camera: THREE.PerspectiveCamera; controls: { target: THREE.Vector3; update: () => void; addEventListener: (e: string, f: () => void) => void; removeEventListener: (e: string, f: () => void) => void } | null; invalidate: () => void };
+  useEffect(() => {
+    if (!controls) return;
+    let applying = false;
+    const onChange = () => {
+      if (applying) return;
+      const p = camera.position.toArray(), t = controls.target.toArray();
+      link.last = { from: id, p, t };
+      link.subs.forEach((f) => f(id, p, t));
+    };
+    const apply = (from: string, p: number[], t: number[]) => {
+      if (from === id) return;
+      applying = true;
+      camera.position.fromArray(p); controls.target.fromArray(t); controls.update();
+      applying = false;
+      invalidate();
+    };
+    controls.addEventListener("change", onChange);
+    link.subs.add(apply);
+    if (link.last && link.last.from !== id) apply(link.last.from, link.last.p, link.last.t);   // join at the current view
+    else onChange();                                                                            // or announce ours
+    return () => { controls.removeEventListener("change", onChange); link.subs.delete(apply); };
+  }, [link, id, controls, camera, invalidate]);
+  return null;
 }
 
 /** Click (not drag) → ray through the cursor → the Gaussian the pixel mostly shows. */
@@ -63,9 +95,11 @@ export default function SplatScene(p: SceneProps) {
     <Canvas frameloop="demand" camera={{ up: [0, 0, -1], position: [-6, 6, -5], fov: 50, near: 0.02, far: 400 }}
       style={{ cursor: p.cursor === "place" ? "crosshair" : "default" }} gl={{ preserveDrawingBuffer: true }}>
       <OrbitControls makeDefault enableDamping={false} />
-      <Frame box={frameBox} id={p.data ? `${p.boxId}:splat` : geo ? p.boxId : undefined} />
+      {/* a follower view (Compare) never frames itself: it takes the main view's camera */}
+      <Frame box={frameBox} id={p.link && p.linkId && p.linkId !== "main" ? undefined : p.data ? `${p.boxId}:splat` : geo ? p.boxId : undefined} />
       <KeyNav enabled={p.keyNav} speed={p.navSpeed} box={frameBox} focus={p.focus} />
       <Picker data={p.data} onPick={p.onPick} minOpacity={p.minOpacity} />
+      {p.link && <LinkCam link={p.link} id={p.linkId ?? "main"} />}
       <Grid position={[0, 0, floorZ]} rotation={[Math.PI / 2, 0, 0]} args={[40, 40]} cellSize={0.5} sectionSize={1}
         cellColor="#8a8f98" sectionColor="#6b7079" cellThickness={0.6} sectionThickness={1} fadeDistance={35} infiniteGrid side={THREE.DoubleSide} />
       {p.data && <SplatLayer data={p.data} colors={p.colors} onReady={p.onSplatReady} onError={p.onSplatError} onRecolor={p.onRecolor} />}

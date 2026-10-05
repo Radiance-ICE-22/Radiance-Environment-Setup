@@ -6,17 +6,23 @@ The sibling of figs_pipeline.py and svnet_pipeline.py. It never retrains or modi
 features are attached to the frozen Gaussians of the scene's single active splatfacto run.
 
     source <prefix>/figs_env.sh                                  # REQUIRED (kitchen + caches)
-    ./semantic_pipeline.py --scene backroom                      # everything (Phase 1: lift backend)
+    ./semantic_pipeline.py --scene backroom                      # everything, lift backend
+    ./semantic_pipeline.py --scene backroom --backend fmgs       # FMGS hash-grid field (Phase 4)
     ./semantic_pipeline.py --scene backroom --status
     ./semantic_pipeline.py --scene backroom --from lift --feat-width 480
     ./semantic_pipeline.py --scene backroom --only teachers
 
-Steps (docs/SEMANTICS_PLAN.md, Phase 1):
+Steps (docs/SEMANTICS_PLAN.md, Phases 1 and 4; the first three are shared by both backends):
     preflight  environment pins, CUDA, model weights, the scene's active run, time/disk estimate
     cameras    refined vs raw pose render check (radiance_semantics.cameras; must not regress)
     teachers   CLIP pyramid + DINOv2 per frame → gsplats/workspace/<scene>/semantics/teachers/<tag>/
+  --backend lift (default):
     lift       blend-weighted average of the teacher maps onto every Gaussian (refined poses)
     export     rows in Galley's .splat order → gsplats/workspace/<scene>/semantics/<run>/lift/
+  --backend fmgs:
+    fmgs       train the hash-grid feature field against the frozen Gaussians (radiance_semantics.fmgs;
+               checkpoints + TensorBoard in semantics/<run>/fmgs_train/, resumable)
+    bake       evaluate the field at every Gaussian in .splat order → semantics/<run>/fmgs/
 
 State lives in <PROJECT_ROOT>/.semantic_pipeline_state/<scene>/<run>/ (settings, markers,
 results). Each marker's fingerprint includes the previous step's marker and the checkpoint key
@@ -49,8 +55,10 @@ except ImportError:
              "--prefix <FiGS prefix>, then `source <prefix>/figs_env.sh`")
 
 DEFAULTS = {"backend": "lift", "teachers": ["clip", "dino"], "feat_width": 960, "dino_width": 896,
-            "scales": None, "batch": 256, "device": None, "render_backend": "gsplat", "limit": None}
+            "scales": None, "batch": 256, "device": None, "render_backend": "gsplat", "limit": None,
+            "fmgs_steps": 4200, "fmgs_width": 480, "fmgs_variant": "auto", "fmgs_impl": "tcnn", "fmgs_table": 20}
 LISTS = ("teachers",)
+NOT_STICKY = ("backend",)        # never taken from config.json: a bare run (Galley's Continue) is the lift
 
 
 class Ctx:
@@ -246,16 +254,10 @@ def step_lift(c):
     c.results["lift"] = stats
 
 
-def step_export(c):
-    import numpy as np
+def _ckpt_gaussians(c):
+    """(means, log scales, opacity logits, .splat order) from the active checkpoint."""
     import torch
     from course_tools import splat_order
-    from radiance_semantics.lift import normalise_rows
-    from radiance_semantics.store import write_table
-    raw = c.backend_dir.with_name(c.backend_dir.name + "_raw")
-    meta = json.loads((raw / "lift.json").read_text()) if (raw / "lift.json").exists() else None
-    if meta is None or meta.get("key") != c.a.key:
-        raise StepFailed(f"no lift output for this checkpoint in {raw}: run the lift step")
     ck = torch.load(c.run.checkpoint, map_location="cpu", weights_only=False)
     st = ck.get("pipeline", ck)
 
@@ -263,14 +265,38 @@ def step_export(c):
         return next(v for k, v in st.items() if k.endswith(f"gauss_params.{name}") or k.endswith(f"_model.{name}")
                     ).float().numpy()
     means, scales, opac = p("means"), p("scales"), p("opacities").reshape(-1)
-    order = splat_order(means, scales, opac)                  # exactly the .splat file's records
+    return means, scales, opac, splat_order(means, scales, opac)      # exactly the .splat file's records
+
+
+def _geom(means, scales, opac, order):
+    import numpy as np
+    return np.concatenate([means[order], (1 / (1 + np.exp(-opac[order])))[:, None],
+                           np.exp(scales[order]).max(1, keepdims=True)], 1).astype(np.float32)
+
+
+def _file_sha(p):
+    h = hashlib.sha256()
+    with open(p, "rb") as f:
+        for b in iter(lambda: f.read(1 << 22), b""):
+            h.update(b)
+    return h.hexdigest()[:16]
+
+
+def step_export(c):
+    import numpy as np
+    from radiance_semantics.lift import normalise_rows
+    from radiance_semantics.store import write_table
+    raw = c.backend_dir.with_name(c.backend_dir.name + "_raw")
+    meta = json.loads((raw / "lift.json").read_text()) if (raw / "lift.json").exists() else None
+    if meta is None or meta.get("key") != c.a.key:
+        raise StepFailed(f"no lift output for this checkpoint in {raw}: run the lift step")
+    means, scales, opac, order = _ckpt_gaussians(c)
     clip = normalise_rows(np.load(raw / "clip.npy").astype(np.float32)[order]) if (raw / "clip.npy").exists() else None
     dino = normalise_rows(np.load(raw / "dino.npy").astype(np.float32)[order]) if (raw / "dino.npy").exists() else None
     if clip is None:
         raise StepFailed("the lift produced no CLIP features (teachers without clip?)")
     w = np.load(raw / "weight.npy")[order]
-    geom = np.concatenate([means[order], (1 / (1 + np.exp(-opac[order])))[:, None],
-                           np.exp(scales[order]).max(1, keepdims=True)], 1).astype(np.float32)
+    geom = _geom(means, scales, opac, order)
     ckpt = c.run.checkpoint
     index = write_table(c.backend_dir, clip=clip, dino=dino, weight=w, geom=geom, order=order, meta={
         "scene": c.a.scene, "run": c.run.run, "checkpoint": ckpt.name, "checkpoint_mtime": int(ckpt.stat().st_mtime),
@@ -288,13 +314,117 @@ def step_export(c):
     info(f"record: {rec}")
 
 
+# ── FMGS backend (Phase 4) ─────────────────────────────────────────────────────
+def _fmgs_cfg(c):
+    from radiance_semantics.fmgs.train import TrainConfig
+    return TrainConfig(steps=int(c.a.fmgs_steps), feat_width=int(c.a.fmgs_width), variant=c.a.fmgs_variant,
+                       impl=c.a.fmgs_impl, log2_table=int(c.a.fmgs_table))
+
+
+def step_fmgs(c):
+    from radiance_semantics.fmgs.train import train_run
+    if not (c.teacher_dir / "meta.json").exists():
+        raise StepFailed(f"no teacher features at {c.teacher_dir}: run the teachers step")
+    out = c.run.semantics_dir / c.run.run / "fmgs_train"
+    sha0 = _file_sha(c.run.checkpoint)
+    with VramMonitor() as vm:
+        stats, _ = train_run(c.run, c.teacher_dir, _fmgs_cfg(c), out, c.a.device, c.a.render_backend, log=info,
+                             limit=c.a.limit)
+    sha1 = _file_sha(c.run.checkpoint)
+    stats.update(peak_vram_mib_device=vm.peak, checkpoint_sha_before=sha0, checkpoint_sha_after=sha1,
+                 teacher_tag=c.teacher_settings().tag(), key=c.a.key, dir=str(out))
+    (out / "train.json").write_text(json.dumps(stats, indent=2, default=str) + "\n")
+    fb = stats.get("fallback")
+    ok(f"field trained: {stats['steps']} steps in {stats['seconds'] / 60:.1f} min ({stats['it_per_s']} it/s), loss "
+       f"{stats['loss_first']} → {stats['loss_last']}, peak {stats['peak_vram_mib']} MiB (torch) / {vm.peak} MiB (device); "
+       f"variant {stats['variant']}" + (f", fallback {fb['level']}: {fb['name']}" if fb and fb["level"] else ""))
+    if not stats["gauss_unchanged"] or sha0 != sha1:
+        raise StepFailed("the Gaussians or the checkpoint changed during training — the splat must stay frozen")
+    ok(f"Gaussians unchanged (checksum {stats['gauss_checksum_after']}; checkpoint file {sha1})")
+    if not (stats["loss_last"] < stats["loss_first"]):
+        warn("the loss did not fall — check the TensorBoard curves in " + str(out / "tb"))
+    c.results["fmgs"] = stats
+
+
+def step_bake(c):
+    import numpy as np
+    import torch
+    from radiance_semantics.fmgs.bake import bake
+    from radiance_semantics.fmgs.field import FeatureField
+    from radiance_semantics.store import read_table, write_table
+    tdir = c.run.semantics_dir / c.run.run / "fmgs_train"
+    tj = json.loads((tdir / "train.json").read_text()) if (tdir / "train.json").exists() else None
+    if tj is None or tj.get("key") != c.a.key or not (tdir / "field.pt").exists():
+        raise StepFailed(f"no trained field for this checkpoint in {tdir}: run the fmgs step")
+    dev = c.device
+    field, saved = FeatureField.load(tdir / "field.pt", dev)
+    means, scales, opac, order = _ckpt_gaussians(c)
+    t0 = time.time()
+    clip, dino = bake(field, means[order], device=dev)
+    info(f"field evaluated at {len(order):,} Gaussians in {time.time() - t0:.1f} s")
+    # which Gaussians the training cameras saw: the lift table's weights when it is for this checkpoint,
+    # otherwise the same blend-weight pass the lift runs
+    lift_dir = c.run.backend_dir("lift")
+    w = None
+    if (lift_dir / "index.json").exists():
+        lt = read_table(lift_dir)
+        if lt.index.get("key") == c.a.key and lt.n == len(order):
+            w = np.asarray(lt.weight, np.float32)
+            info("seen / unseen rows from the lift table (same checkpoint)")
+    if w is None:
+        from radiance_semantics.cameras import in_workspace, load_pipeline, train_views
+        from radiance_semantics.lift import blend_weights, gaussians_from_model, views_from_pipeline
+        with in_workspace(c.run):
+            _, pipeline, _, _ = load_pipeline(c.run)
+            cams, files, _ = train_views(pipeline)
+            views = views_from_pipeline(pipeline.model, cams, files)
+            g = gaussians_from_model(pipeline.model)
+            del pipeline
+        w = blend_weights(g, views[:c.a.limit] if c.a.limit else views, int(c.a.fmgs_width), c.a.render_backend)[order]
+        del g
+        torch.cuda.empty_cache() if torch.cuda.is_available() else None
+    clip[w <= 0] = 0
+    dino[w <= 0] = 0
+    ckpt = c.run.checkpoint
+    index = write_table(c.backend_dir, clip=clip, dino=dino, weight=w, geom=_geom(means, scales, opac, order),
+                        order=order, meta={
+        "scene": c.a.scene, "run": c.run.run, "checkpoint": ckpt.name, "checkpoint_mtime": int(ckpt.stat().st_mtime),
+        "key": c.a.key, "backend": "fmgs", "teacher_tag": tj.get("teacher_tag"), "n_total": int(len(means)),
+        "settings": {k: getattr(c.a, k) for k in DEFAULTS if k not in ("device", "limit")},
+        "metrics": {"fmgs": {k: tj.get(k) for k in ("steps", "seconds", "it_per_s", "loss_first", "loss_last",
+                                                     "peak_vram_mib", "peak_vram_mib_device", "variant", "fallback",
+                                                     "params_m", "trainable_gaussians", "gauss_unchanged")},
+                    "lift": {"seconds": tj.get("seconds"), "peak_vram_mib": tj.get("peak_vram_mib_device"),
+                             "render_width": int(c.a.fmgs_width), "views": tj.get("views")},
+                    "seen_rows": int((w > 0).sum())}})
+    shutil.copy2(tdir / "field.pt", c.backend_dir / "field.pt")        # the field answers any xyz (Stage 3)
+    size = sum(f.stat().st_size for f in c.backend_dir.iterdir()) / 2 ** 20
+    ok(f"table: {index['n']:,} rows (.splat order, {index['order_sha']}), {int((w > 0).sum()):,} seen, "
+       f"{size:.0f} MB → {c.backend_dir}")
+    c.results["bake"] = {"rows": index["n"], "seen_rows": int((w > 0).sum()), "mb": round(size, 1),
+                         "order_sha": index["order_sha"], "dir": str(c.backend_dir)}
+    c.run.runs_dir.mkdir(parents=True, exist_ok=True)
+    rec = c.run.runs_dir / f"semantics_p4_{c.a.scene}_{datetime.now():%Y-%m-%d_%H%M}.json"
+    _atomic(rec, json.dumps(c.results, indent=2, default=str) + "\n")
+    info(f"record: {rec}")
+
+
 STEPS = [
     ("preflight", step_preflight, [], "environment, GPU, weights, active run, time and disk estimate"),
     ("cameras", step_cameras, [], "refined vs raw pose render check"),
     ("teachers", step_teachers, ["teachers", "scales", "dino_width"], "CLIP pyramid + DINOv2 per frame (LONG, GPU)"),
     ("lift", step_lift, ["backend", "feat_width", "render_backend", "limit"], "lift teacher features onto the Gaussians (GPU)"),
     ("export", step_export, [], "write the per-Gaussian table in .splat order"),
+    ("fmgs", step_fmgs, ["fmgs_steps", "fmgs_width", "fmgs_variant", "fmgs_impl", "fmgs_table", "render_backend", "limit"],
+     "train the FMGS hash-grid field on the frozen Gaussians (LONG, GPU)"),
+    ("bake", step_bake, [], "evaluate the field at every Gaussian → the fmgs table in .splat order"),
 ]
+BACKEND_STEPS = {"lift": ["preflight", "cameras", "teachers", "lift", "export"],
+                 "fmgs": ["preflight", "cameras", "teachers", "fmgs", "bake"]}
+
+
+def steps_for(backend):
+    return [s for s in STEPS if s[0] in BACKEND_STEPS[backend]]
 _ALWAYS = {"preflight"}
 
 
@@ -318,7 +448,7 @@ def run_step_here(c, name):
         traceback.print_exc()
         if re.search(r"CUDA out of memory|OutOfMemoryError", tb):
             fail("GPU out of memory. Check nvidia-smi for other GPU users (Galley job, ns-viewer); then "
-                 "--feat-width 480 (lift) or --batch 64 (teachers).")
+                 "--feat-width 480 (lift), --batch 64 (teachers), or for fmgs --fmgs-variant blite / --fmgs-table 19.")
         else:
             d = diagnose(tb)
             if d:
@@ -333,7 +463,7 @@ def run_step_here(c, name):
 def run_step_child(c, name):
     import subprocess
     argv = [sys.executable, str(Path(__file__).resolve()), "--project-root", str(c.project_root),
-            "--scene", c.a.scene, "--in-step", name]
+            "--scene", c.a.scene, "--backend", c.a.backend, "--in-step", name]
     env = os.environ.copy()
     env.setdefault("PYTORCH_CUDA_ALLOC_CONF", "max_split_size_mb:128")
     env["PYTHONUNBUFFERED"] = "1"
@@ -349,12 +479,18 @@ def main(argv=None):
                                  formatter_class=argparse.RawDescriptionHelpFormatter, epilog=__doc__)
     ap.add_argument("--scene", required=True)
     ap.add_argument("--project-root", default=None)
-    ap.add_argument("--backend", choices=["lift"], help="feature backend (Phase 4 adds fmgs)")
+    ap.add_argument("--backend", choices=["lift", "fmgs"], help="feature backend (default lift; fmgs = Phase 4)")
     ap.add_argument("--teachers", help="comma-separated: clip,dino (default both)")
     ap.add_argument("--feat-width", type=int, help="lift render width in px (default 960; 480 halves time)")
     ap.add_argument("--dino-width", type=int, help="DINOv2 input width, multiple of 14 (default 896)")
     ap.add_argument("--scales", type=float, nargs="+", help="CLIP pyramid scales (default 7 from 0.05 to 0.5)")
     ap.add_argument("--batch", type=int, help="CLIP crops per forward pass (default 256)")
+    ap.add_argument("--fmgs-steps", type=int, help="FMGS training iterations (default 4200)")
+    ap.add_argument("--fmgs-width", type=int, help="FMGS feature render width in px (default 480; teachers are ~71 cells wide)")
+    ap.add_argument("--fmgs-variant", choices=["auto", "faithful", "blite"],
+                    help="auto = faithful FMGS with the out-of-memory fallback ladder (default)")
+    ap.add_argument("--fmgs-impl", choices=["tcnn", "torch"], help="field implementation (default tcnn)")
+    ap.add_argument("--fmgs-table", type=int, help="log2 of the hash table size (default 20)")
     ap.add_argument("--device", help=argparse.SUPPRESS)               # tests: cpu
     ap.add_argument("--render-backend", choices=["gsplat", "reference"], help=argparse.SUPPRESS)
     ap.add_argument("--limit", type=int, help=argparse.SUPPRESS)      # tests: first N frames/views
@@ -366,15 +502,20 @@ def main(argv=None):
     ap.add_argument("--status", action="store_true")
     ap.add_argument("--in-step", help=argparse.SUPPRESS)
     a = ap.parse_args(argv)
+    if not a.backend:
+        a.backend = "lift"
+    steps = steps_for(a.backend)
 
-    names = [s[0] for s in STEPS]
+    names = [s[0] for s in steps]
+    if a.in_step:
+        names = [s[0] for s in STEPS]
     if a.list_steps:
-        for n, _, keys, d in STEPS:
+        for n, _, keys, d in steps:
             print(f"  {n:<10} {d}" + (f"   {_C['d']}[{','.join(keys)}]{_C['x']}" if keys else ""))
         return 0
     for opt in (a.from_step, a.only, a.stop_after, *a.redo):
         if opt and opt not in names:
-            ap.error(f"unknown step '{opt}'. Options: {', '.join(names)}")
+            ap.error(f"unknown step '{opt}' for --backend {a.backend}. Options: {', '.join(names)}")
     if a.only and (a.from_step or a.stop_after):
         ap.error("--only cannot be combined with --from/--stop-after")
 
@@ -388,12 +529,12 @@ def main(argv=None):
 
     if a.status:
         section(f"Status — {a.scene} {c.run.run}")
-        for n, _, _, d in STEPS:
+        for n, _, _, d in STEPS:                      # both backends
             m = c.state / f"{n}.done"
             when = m.read_text().strip().split("\n")[-1] if m.exists() else ""
             print(f"  {'✔' if m.exists() else '·'} {n:<10} {when:<20} {d}")
         info(f"state: {c.state}")
-        info(f"table: {c.backend_dir if a.backend else c.run.backend_dir('lift')}")
+        info(f"tables: {c.run.backend_dir('lift')} · {c.run.backend_dir('fmgs')}")
         return 0
 
     cfg_path = c.state / "config.json"
@@ -401,7 +542,7 @@ def main(argv=None):
     for k, dflt in DEFAULTS.items():
         v = getattr(a, k)
         if v is None:
-            v = saved.get(k, dflt)
+            v = dflt if k in NOT_STICKY else saved.get(k, dflt)
         elif k in LISTS:
             v = [x.strip() for x in v.split(",") if x.strip()]
         setattr(a, k, v)
@@ -434,7 +575,7 @@ def main(argv=None):
 
     t_all = time.time()
     prev = None
-    for n, fn, keys, desc in STEPS:
+    for n, fn, keys, desc in steps:
         this_prev = prev if n != "preflight" else None
         if n != "preflight":
             prev = n

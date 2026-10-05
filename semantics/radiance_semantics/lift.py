@@ -119,6 +119,24 @@ def lift_views(g, views, maps_for, feat_width=960, backend="gsplat", chunk=GRAD_
     return feats, w, stats
 
 
+def blend_weights(g, views, feat_width=960, backend="gsplat", log=print):
+    """Total alpha-blending weight of every Gaussian over `views` (the lift's denominator; 0 = never
+    seen). The FMGS bake uses it so both tables agree on which Gaussians the cameras saw."""
+    import torch
+    dev = g.means.device
+    weight = torch.zeros(len(g), device=dev)
+    for k, v in enumerate(views):
+        W, H = render_size(v, feat_width)
+        vm, K = viewmat_from_c2w(v.c2w.to(dev).float()), view_K(v, W, H).to(dev)
+        ones = torch.ones(len(g), 1, device=dev, requires_grad=True)
+        img, _ = render_features(g, ones, vm, K, W, H, backend)
+        img.sum().backward()
+        weight += ones.grad[:, 0]
+        del ones, img
+    weight[weight <= EPS] = 0
+    return weight.float().cpu().numpy()
+
+
 def normalise_rows(x):
     """Unit rows; zero rows stay zero."""
     n = np.linalg.norm(x, axis=1, keepdims=True)

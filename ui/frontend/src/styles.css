@@ -431,3 +431,7 @@ table.cands tr.sel td, table.grid tr.sel td { background: var(--sel); }
 table.grid tr.click { cursor: pointer; }
 .bar { height: 8px; background: #E6EBF2; border-radius: 2px; overflow: hidden; }
 .bar > span { display: block; height: 100%; background: #F0A030; }
+.cw-view.split { display: flex; gap: 4px; }
+.cw-view.split > .viewport { flex: 1 1 0; min-width: 0; }
+.viewport .cmp-cands { position: absolute; right: 8px; top: 34px; max-width: 70%; max-height: 40%; overflow: auto;
+  background: rgb(255 255 255 / .94); border: 1px solid var(--line2); font-size: 11px; }
