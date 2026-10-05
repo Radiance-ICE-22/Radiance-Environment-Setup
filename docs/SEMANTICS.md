@@ -11,7 +11,7 @@ built, how to run it, and the numbers measured.
 | Phase | What | State |
 | --- | --- | --- |
 | 0 | Environment and pose check | **DONE.** Gate PASSED on intellisense08, 5 Oct 09:48 (second run; the first found gsplat's 32-channel backward limit). |
-| 1 | Teacher features, lift backend, CLI query | Built and cloud-tested 5 Oct (44 tests; lift → export → query run end to end on a CPU-built splatfacto run). **Gate not yet run** — needs the 5 annotations (§6). |
+| 1 | Teacher features, lift backend, CLI query | First gate 5 Oct (fc7aed2): pipeline PASSED (35 min), queries 3 of 5 (need 4). Fixed: relative threshold (whiteboard), per-chunk upsample (VRAM); red tool chest annotation under review. **Gate to re-run (queries only).** |
 | 2 | Galley backend | Not started |
 | 3 | Splat editor UI | Not started |
 | 4 | FMGS backend (`splatfacto-sem`) | Not started |
@@ -148,3 +148,27 @@ tmux new -d -s sem1 'bash ~/Radiance/Radiance-Environment-Setup/ui/deploy/sem1_g
 
 The gate can run before the annotations: the pipeline completes and the gate reports PENDING; re-run with
 `SKIP_PULL=1` once they are set (finished steps are skipped).
+
+## 7. Phase 1, first gate (intellisense08, 5 Oct 10:57–11:32, fc7aed2)
+
+| Step | Time | Peak VRAM (device) | Result |
+| --- | --- | --- | --- |
+| cameras | 12 s | 1.3 GB | refined 30.64 dB vs raw 25.34 dB (+5.30, 6 views) |
+| teachers | 31 min 29 s | 5.6 GB | 300 frames × 3,529 CLIP crops (7 scales), 6.3 s/frame, 1,338 MB |
+| lift | 3 min 11 s | **7.6 GB** | 531,951 of 532,361 Gaussians seen, 7,830 render passes |
+| export | 10 s | — | 532,361 rows, .splat order 22cd5cc9509bc6e5, 924 MB |
+
+Queries (fixed threshold 0.55; CLIP text tower cold start 5.7 s, then ~0.75 s per query):
+
+| Object | Result | Top candidate | Reading |
+| --- | --- | --- | --- |
+| shop vacuum | HIT 0.035 m | 0.34 × 0.56 × 0.53 m | clean |
+| garden cart | HIT 0.22 m | only 344 Gaussians ≥ 0.55 (max 0.63) | weak but right |
+| green foam mats | HIT 0.34 m, ambiguous | box 2.7 m long | runner-up = black rubber floor mats (flat, z ≈ 0) |
+| red tool chest | MISS 1.30 m | score 1047 vs 8.8; 1.7 × 0.9 × 1.6 m at 1.0 m height, y = 2.82 | annotation at y = 1.53 is at the edge of where the camera walked — likely a depth error when placing it; **to verify** |
+| whiteboard | MISS, right object at rank 2 | 3.2 × 10 m at 2.9 m height; 75,596 Gaussians ≥ 0.55 | every white flat surface (ceiling, walls) passes a fixed 0.55, and connected walls merge |
+
+Changes after this gate:
+- **Relative threshold** (query.py): τ = 0.55 + 0.5 · (peak − 0.55), peak = mean of the top 100 relevancies; candidates with a box diagonal > 4 m are flagged LARGE; the CLI prints the relevancy distribution and τ. `--rel-alpha 0` restores the fixed threshold. Tested on a synthetic wall (rel 0.6) vs object (rel 0.8).
+- **Per-chunk upsampling in the lift**: the full 512-channel CLIP map at 960×540 (~1 GB float32) was upsampled at once; now only the 32 channels being rendered. Same numbers, lower peak — no need to re-run the lift.
+- **Method note:** the five gate queries were used to choose these changes, so they are now a development set. Phase 5's comparison uses a separate, frozen set of ≥ 15 queries per scene annotated before any results are seen.

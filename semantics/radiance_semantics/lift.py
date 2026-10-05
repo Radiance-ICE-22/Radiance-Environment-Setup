@@ -89,19 +89,20 @@ def lift_views(g, views, maps_for, feat_width=960, backend="gsplat", chunk=GRAD_
         del ones, img
 
         for name, grid in maps.items():
-            F2D = upsample(grid, W, H, dev)
-            C = F2D.shape[-1]
+            C = grid.shape[-1]
             if name not in acc:
                 acc[name] = torch.zeros(N, C, device=acc_device)
             for c0 in range(0, C, chunk):
                 c1 = min(C, c0 + chunk)
+                # upsample only this chunk: the whole 512-channel CLIP map at 960x540 is ~1 GB of float32,
+                # which put the lift's peak at 7.6 of 8 GB on backroom (5 Oct)
+                F2D = upsample(grid[..., c0:c1], W, H, dev)
                 f = torch.zeros(N, c1 - c0, device=dev, requires_grad=True)
                 out, _ = render_features(g, f, vm, K, W, H, backend)
-                (out * F2D[..., c0:c1]).sum().backward()
+                (out * F2D).sum().backward()
                 acc[name][:, c0:c1] += f.grad.to(acc_device)
                 n_pass += 1
-                del f, out
-            del F2D
+                del f, out, F2D
         if k == 0 or (k + 1) % 25 == 0 or k == len(views) - 1:
             log(f"  lift {k + 1}/{len(views)} views, {time.time() - t0:.0f} s")
     seen = weight > EPS

@@ -47,14 +47,17 @@ def load_scene(project_root, scene):
 
 def show(res):
     c = res["candidates"]
-    head = f"\"{res['text']}\": {len(c)} candidate(s) from {res['n_selected']:,} Gaussians ≥ {res['threshold']}" \
-           f" (max relevancy {res['rel_max']}), {res['ms']['total']} ms"
+    head = f"\"{res['text']}\": {len(c)} candidate(s) from {res['n_selected']:,} Gaussians ≥ τ {res['tau']}" \
+           f" (peak {res['peak']}, max {res['rel_max']}), {res['ms']['total']} ms"
     (ok if c else warn)(head + ("  — AMBIGUOUS" if res.get("ambiguous") else ""))
+    q = res.get("rel_pct", {})
+    info(f"relevancy p50 {q.get('p50')}  p90 {q.get('p90')}  p99 {q.get('p99')}  p99.9 {q.get('p99.9')}  "
+         f"(τ = {res['threshold']} + {res['rel_alpha']}·(peak − {res['threshold']}))")
     for d in c:
         gap = "—" if d["gap"] is None else f"{d['gap']:+.2f} m {'ok' if d['gap_ok'] else 'TOO CLOSE'}"
         size = np.subtract(d["box"]["hi"], d["box"]["lo"])
         info(f"#{d['rank']} score {d['score']:.3f}  n={d['n']:<6} centroid {d['centroid']}  "
-             f"box {size.round(2).tolist()} m  approach {d['approach']}  gap {gap}")
+             f"box {size.round(2).tolist()} m{' LARGE' if d.get('large') else ''}  approach {d['approach']}  gap {gap}")
 
 
 def main(argv=None):
@@ -63,7 +66,8 @@ def main(argv=None):
     ap.add_argument("--scene", required=True)
     ap.add_argument("--project-root")
     ap.add_argument("--backend", default="lift")
-    ap.add_argument("--threshold", type=float)
+    ap.add_argument("--threshold", type=float, help="relevancy floor (default 0.55)")
+    ap.add_argument("--rel-alpha", type=float, help="τ = floor + alpha·(peak − floor); 0 = fixed floor (default 0.5)")
     ap.add_argument("--standoff", type=float, help="approach distance from the object (m, default 1.0)")
     ap.add_argument("--margin", type=float, help="waypoint box inset from the camera box (m, default 0.5)")
     ap.add_argument("--negatives", help="comma-separated (default: object,things,stuff,texture)")
@@ -95,7 +99,7 @@ def main(argv=None):
         warn(f"table was built for {table.index.get('key')}, the active checkpoint is {run.key}: re-run the "
              "pipeline (results below may not match the splat)")
     s = Settings()
-    for k in ("threshold", "standoff", "margin", "top"):
+    for k in ("threshold", "rel_alpha", "standoff", "margin", "top"):
         if getattr(a, k) is not None:
             setattr(s, k, getattr(a, k))
     if a.negatives:

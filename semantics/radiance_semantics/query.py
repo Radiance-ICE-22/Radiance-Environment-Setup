@@ -4,8 +4,12 @@
 2. Relevancy per Gaussian (LERF): rel_i = min_j softmax(T·[s_q, s_neg_j])_0 with s = cosine
    similarity and temperature T = 10, i.e. min_j sigmoid(T (s_q − s_neg_j)). 0.5 = no
    preference; never-seen Gaussians (weight 0) get 0.
-3. Select Gaussians with rel ≥ threshold and opacity ≥ min_opacity; score = (rel − threshold) ·
-   opacity, so floaters and barely-relevant ones count for little.
+3. Select relative to the query's own peak: τ = threshold + rel_alpha · (peak − threshold), where
+   peak = mean of the top `peak_k` relevancies (robust to a single odd Gaussian). Keep Gaussians with
+   rel ≥ τ and opacity ≥ min_opacity; score = (rel − τ) · opacity. A fixed τ = 0.55 let every white
+   flat surface into "whiteboard" (75 k Gaussians, room-long clusters; backroom, 5 Oct); relative to
+   the peak, only what is close to the query's best match survives. rel_alpha = 0 restores the fixed
+   threshold.
 4. Cluster the selected centres by voxel connected components (26-neighbourhood, `voxel` m),
    so separate instances become separate candidates. Deterministic, scipy only.
 5. Rank clusters by summed score; each gets a weighted centroid, a 5–95 % box, and the margin of
@@ -94,7 +98,10 @@ def voxel_labels(points, voxel=0.1, max_cells=20_000_000):
 
 @dataclass
 class Settings:
-    threshold: float = 0.55
+    threshold: float = 0.55       # floor: below this a Gaussian never counts
+    rel_alpha: float = 0.5        # τ = threshold + rel_alpha · (peak − threshold); 0 = fixed threshold
+    peak_k: int = 100             # peak = mean of the top-k relevancies
+    large_diag: float = 4.0       # m: candidates with a larger box diagonal are flagged "large" (walls, ceilings)
     min_opacity: float = 0.1
     voxel: float = 0.1
     min_gaussians: int = 15
@@ -192,16 +199,22 @@ def run_query(table, scene, text, encoder, s=None):
     rel = relevancy(table.clip, table.weight, E[0], E[1:])
     t_rel = time.time() - t0 - t_enc
     opac = geom[:, 3]
-    sel = (rel >= s.threshold) & (opac >= s.min_opacity)
+    valid = (opac >= s.min_opacity) & (rel > 0)
+    rv = rel[valid]
+    k = min(s.peak_k, len(rv))
+    peak = float(np.partition(rv, len(rv) - k)[len(rv) - k:].mean()) if k else 0.0
+    tau = s.threshold + s.rel_alpha * max(0.0, peak - s.threshold)
+    sel = valid & (rel >= tau)
     pts = geom[sel, :3].astype(np.float64)
-    scores = ((rel[sel] - s.threshold) * opac[sel]).astype(np.float64)
+    scores = ((rel[sel] - tau) * opac[sel]).astype(np.float64)
     cands, vox = cluster_candidates(pts, scores, s)
     res = []
     for r, c in enumerate(cands):
         a, ncam = approach_point(c["centroid"], scene, s)
         g = gap(a, scene, s)
         lo_c, hi_c = to_course(c["box_lo"]), to_course(c["box_hi"])
-        res.append({"rank": r + 1, "score": round(c["score"], 4), "n": c["n"],
+        diag = float(np.linalg.norm(c["box_hi"] - c["box_lo"]))
+        res.append({"rank": r + 1, "score": round(c["score"], 4), "n": c["n"], "large": diag > s.large_diag,
                     "centroid": [round(float(v), 3) for v in to_course(c["centroid"])],
                     "box": {"lo": [round(float(v), 3) for v in np.minimum(lo_c, hi_c)],
                             "hi": [round(float(v), 3) for v in np.maximum(lo_c, hi_c)]},
@@ -213,7 +226,11 @@ def run_query(table, scene, text, encoder, s=None):
         margin = round((res[0]["score"] - res[1]["score"]) / max(res[0]["score"], 1e-12), 3)
     elif len(res) == 1:
         margin = 1.0
-    return {"text": text, "negatives": list(s.negatives), "threshold": s.threshold,
+    qs = np.percentile(rv, [50, 90, 99, 99.9]) if len(rv) else np.zeros(4)
+    return {"text": text, "negatives": list(s.negatives), "threshold": s.threshold, "tau": round(tau, 4),
+            "peak": round(peak, 4), "rel_alpha": s.rel_alpha,
+            "rel_pct": {"p50": round(float(qs[0]), 4), "p90": round(float(qs[1]), 4), "p99": round(float(qs[2]), 4),
+                        "p99.9": round(float(qs[3]), 4)},
             "n_selected": int(sel.sum()), "rel_max": round(float(rel.max()) if len(rel) else 0.0, 4),
             "rel_p99": round(float(np.percentile(rel[rel > 0], 99)) if (rel > 0).any() else 0.0, 4),
             "voxel": vox, "candidates": res, "margin": margin,

@@ -113,6 +113,31 @@ def test_unseen_and_low_opacity_are_ignored():
     assert Q.run_query(tab, Q.Scene(cam_c2w=cams()), "x", FakeEncoder())["candidates"] == []
 
 
+def test_relative_threshold_drops_a_moderately_relevant_wall():
+    """A large wall at relevancy ~0.6 and a small object at ~0.8: with a fixed threshold (alpha 0) the
+    wall's summed score wins; relative to the query's peak (alpha 0.5, τ ≈ 0.675) only the object is
+    left — the "whiteboard vs white walls" case from backroom (5 Oct)."""
+    rng = np.random.default_rng(6)
+    wall = np.column_stack([rng.uniform(-3, 3, 5000), np.full(5000, 2.5), rng.uniform(0, 2.5, 5000)])
+    obj = rng.normal(0, 0.08, (200, 3)) + [0.0, 0.0, 1.0]
+    pts = np.vstack([wall, obj])
+
+    def feat(a):                                           # rel = sigmoid(10·a) with e0 = query, e5 unrelated
+        v = np.zeros(8)
+        v[0], v[5] = a, np.sqrt(1 - a * a)
+        return v
+    clip = np.array([feat(0.0405)] * len(wall) + [feat(0.1386)] * len(obj), np.float32)
+    geom = np.hstack([pts, np.full((len(pts), 1), 0.9), np.full((len(pts), 1), 0.02)]).astype(np.float32)
+    tab = Tab(clip, np.ones(len(pts), np.float32), geom)
+    sc = Q.Scene(cam_c2w=cams())
+    fixed = Q.run_query(tab, sc, "x", FakeEncoder(), Q.Settings(rel_alpha=0.0))
+    assert fixed["candidates"][0]["large"] and fixed["candidates"][0]["n"] > 1000      # the wall wins
+    rel = Q.run_query(tab, sc, "x", FakeEncoder(), Q.Settings(rel_alpha=0.5))
+    assert abs(rel["peak"] - 0.8) < 0.01 and abs(rel["tau"] - 0.675) < 0.01
+    assert len(rel["candidates"]) == 1 and not rel["candidates"][0]["large"]
+    assert np.allclose(rel["candidates"][0]["centroid"], [0.0, 0.0, -1.0], atol=0.05)
+
+
 def test_annotations_init_set_ready(tmp_path):
     p = tmp_path / "semantics" / "queries.json"
     d = A.init(A.load(p), "backroom")
