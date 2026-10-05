@@ -248,7 +248,9 @@ def test_query_relevancy_labels_and_worker_env(client, sem_project, settings):
 def test_worker_errors_map_to_http(client, sem_project):
     r = client.post("/api/scenes/nosemantics/semantics/query", json={"text": "x"})
     assert r.status_code == 404 and r.json()["detail"]["code"] == "no_table"
-    assert client.post("/api/scenes/../semantics/query", json={"text": "x"}).status_code in (400, 404)
+    # an invalid scene name reaches the route (no "..": the client normalises it away, and with a
+    # built frontend the normalised path lands on the static mount → 405)
+    assert client.post("/api/scenes/bad.name/semantics/query", json={"text": "x"}).status_code == 400
     assert client.post("/api/scenes/backroom/semantics/query", json={"text": ""}).status_code == 422
     assert client.post("/api/scenes/backroom/semantics/query", json={"text": "x", "top": 99}).status_code == 422
 

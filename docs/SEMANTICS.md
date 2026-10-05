@@ -12,7 +12,7 @@ built, how to run it, and the numbers measured.
 | --- | --- | --- |
 | 0 | Environment and pose check | **DONE.** Gate PASSED on intellisense08, 5 Oct 09:48 (second run; the first found gsplat's 32-channel backward limit). |
 | 1 | Teacher features, lift backend, CLI query | **DONE.** Gate PASSED 5 Oct 16:12: 5 of 5 queries hit (second run, after the relative threshold and a corrected red tool chest annotation). |
-| 2 | Galley backend | Built and cloud-tested 5 Oct (106 backend tests, 48 semantics tests; real Galley + real worker end to end on a CPU-built table). **Gate not yet run** (`ui/deploy/sem2_gate.sh`). |
+| 2 | Galley backend | API checks PASSED on intellisense08, 5 Oct (§9): cold query 5.9 s, warm ≤ 754 ms, 5 of 5 hits. One backend test was host-dependent (fixed in the test, not the API); **re-run `sem2_gate.sh` to close the gate.** |
 | 3 | Splat editor UI | Not started |
 | 4 | FMGS backend (`splatfacto-sem`) | Not started |
 | 5 | Evaluation and comparison | Not started |
@@ -218,3 +218,23 @@ Notes for later phases:
   around the object) is the fix; nothing to change in Phase 1.
 - The five queries are a development set now (they shaped the threshold). Phase 5 uses a separate frozen
   set of ≥ 15 queries per scene, annotated before results are seen.
+
+## 9. Phase 2 gate (intellisense08, 5 Oct, 6a1cb86)
+
+The API checks ran against the restarted Galley and called it the same way the splat editor will. All passed:
+
+| Check | Result |
+| --- | --- |
+| Status | Fresh lift table for the active run; the semantics job had every step cached and succeeded in seconds. |
+| Cold query (worker stopped first) | 5.9 s, mostly CLIP text tower load plus mapping the 924 MB table. |
+| Warm queries (5 annotated) | 716–754 ms each, mean 737 ms (need < 1 s); **5 of 5 hit**, same as the Phase 1 gate. |
+| Relevancy / pca bytes | 532,361 = rows; pca 3 × rows. |
+| Labels, worker | Labels for row 0 returned; worker running CPU-only, idle exit after 600 s (seen in `semantic_worker.log`). |
+| `.splat` records | `n_written` = table rows, so the heatmap bytes line up with the splat. |
+
+Backend tests: 106 passed and 1 failed, `test_worker_errors_map_to_http`. The test sent
+`/api/scenes/../semantics/query`, and httpx normalises that to `/api/semantics/query`. With a built
+frontend (`ui/frontend/dist`, present on the host but not in the cloud copy), that path falls through to
+the static mount, which answers POST with 405 instead of 404. The fix is in the test, not the API:
+it now sends a scene name the route rejects (`bad.name` → 400). The suite was re-checked with and
+without a `dist` directory.
