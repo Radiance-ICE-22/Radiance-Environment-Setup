@@ -26,3 +26,6 @@ max_data_method = "data_beta"
 # SV-Net (Phase 4): commNet's in-loop evaluation. The notebook uses eval_nominal (10 full-course
 # flights of expert + student every lim_sv epochs); eval_single flies one, ~10x cheaper on dummy.
 svnet_comm_eval = "eval_single"
+# Semantic lift on 4 GB: half the render width of intellisense08 (untested here so far).
+semantic_feat_width = 480
+semantic_worker_idle_s = 600

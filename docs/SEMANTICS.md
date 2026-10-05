@@ -11,8 +11,8 @@ built, how to run it, and the numbers measured.
 | Phase | What | State |
 | --- | --- | --- |
 | 0 | Environment and pose check | **DONE.** Gate PASSED on intellisense08, 5 Oct 09:48 (second run; the first found gsplat's 32-channel backward limit). |
-| 1 | Teacher features, lift backend, CLI query | First gate 5 Oct (fc7aed2): pipeline PASSED (35 min), queries 3 of 5 (need 4). Fixed: relative threshold (whiteboard), per-chunk upsample (VRAM); red tool chest annotation under review. **Gate to re-run (queries only).** |
-| 2 | Galley backend | Not started |
+| 1 | Teacher features, lift backend, CLI query | **DONE.** Gate PASSED 5 Oct 16:12: 5 of 5 queries hit (second run, after the relative threshold and a corrected red tool chest annotation). |
+| 2 | Galley backend | Built and cloud-tested 5 Oct (106 backend tests, 48 semantics tests; real Galley + real worker end to end on a CPU-built table). **Gate not yet run** (`ui/deploy/sem2_gate.sh`). |
 | 3 | Splat editor UI | Not started |
 | 4 | FMGS backend (`splatfacto-sem`) | Not started |
 | 5 | Evaluation and comparison | Not started |
@@ -73,6 +73,24 @@ python figs/semantic_pipeline.py --scene backroom              # teachers domina
 python figs/semantic_query.py --scene backroom "red tool chest"
 python figs/semantic_query.py --scene backroom --eval          # after §6
 ```
+
+## 3c. Phase 2: what was added (Galley backend)
+
+| Path | |
+| --- | --- |
+| `figs/semantic_worker.py` | Long-lived query server in kitchen, JSON lines on stdin/stdout (`ping`, `query`, `labels`, `unload`). CPU only (`CUDA_VISIBLE_DEVICES=""`). Keeps the CLIP text tower and memory-mapped tables loaded; reloads a table when its `index.json` changes; exits after `--idle` s. Library prints go to stderr, so stdout carries only replies. |
+| `ui/backend/galley/semworker.py` | Galley's client: starts the worker through `figs_env.sh` on first use, one request at a time, restarts it after an idle exit or a crash (a crash costs only the request in flight), kills it on a timeout. Log: `<data_dir>/semantic_worker.log`. |
+| `ui/backend/galley/semantics.py` | `SemanticRun` → `semantic_pipeline.py` argv (`feat_width` defaults to the profile's `semantic_feat_width`), status (steps for the active run, every table with stale/fresh by checkpoint key), `queries.json` read/write, relevancy cache. |
+| `ui/backend/galley/app.py` | `POST /api/jobs/semantics`; `/api/scenes/{scene}/semantics` (status), `…/query`, `…/relevancy/{id}`, `…/{backend}/pca`, `…/labels`, `…/queries` (GET/PUT); `/api/semantics/worker` (+ `/stop`). Listed in `ui/README.md`. |
+| `semantics/radiance_semantics/query.py` | `run_query(..., return_relevancy=True)` so the worker sends the heatmap without computing relevancy twice. |
+| `ui/machines/*.toml` | `semantic_feat_width` (intellisense08 960, dummy 480), `semantic_worker_idle_s` 600. |
+| `ui/deploy/sem2_gate.sh` | The Phase 2 gate. |
+
+Design points:
+- **Stale means "built for another checkpoint"**: the table key (run + checkpoint stem + mtime) is the same string as Galley's `.splat` cache key, so a retrain or a promote makes both stale together, and the relevancy/pca bytes of a stale table are never painted on a splat they do not match (the API says `stale` and sends `X-Table-Stale`).
+- **No new course endpoint**: `semantic_goal` with the extra fields (`query`, `backend`, `score`, `extent`, `approach`) already round-trips through `PUT /api/configs/courses/{name}` (tested).
+- **Archive/Promote wait for semantic jobs** like figs and SV-Net jobs (the job carries the scene).
+- In the cloud end-to-end run (50 k rows, stand-in text encoder): cold query 1.4 s, warm 0.19 s. backroom has 532 k rows; Phase 1's CLI measured ~0.72 s warm per query there.
 
 ## 4. Decisions and findings (Phase 0)
 
@@ -172,3 +190,31 @@ Changes after this gate:
 - **Relative threshold** (query.py): τ = 0.55 + 0.5 · (peak − 0.55), peak = mean of the top 100 relevancies; candidates with a box diagonal > 4 m are flagged LARGE; the CLI prints the relevancy distribution and τ. `--rel-alpha 0` restores the fixed threshold. Tested on a synthetic wall (rel 0.6) vs object (rel 0.8).
 - **Per-chunk upsampling in the lift**: the full 512-channel CLIP map at 960×540 (~1 GB float32) was upsampled at once; now only the 32 channels being rendered. Same numbers, lower peak — no need to re-run the lift.
 - **Method note:** the five gate queries were used to choose these changes, so they are now a development set. Phase 5's comparison uses a separate, frozen set of ≥ 15 queries per scene annotated before any results are seen.
+
+## 8. Phase 1, second gate (intellisense08, 5 Oct 16:12) — PASSED, 5 of 5
+
+Pipeline steps were cached; only the queries re-ran (8.4 s, CLIP text cold start 5.5 s, then ~0.72 s per
+query). Annotations corrected by Suhan after checking in the splat: red tool chest (-0.366, 2.6, -0.931),
+whiteboard (-1.8, -8.37, -1.233). The chest correction was checked against the object itself.
+
+| Object | Error | τ (peak) | Selected | Top box (m) | Next best score | Approach gap |
+| --- | --- | --- | --- | --- | --- | --- |
+| red tool chest | 0.346 m | 0.669 (0.789) | 7,326 | 1.23 × 0.61 × 0.86 | only candidate | +0.40 ok |
+| shop vacuum | 0.015 m | 0.589 (0.628) | 1,112 | 0.23 × 0.29 × 0.35 | 0.12 vs 17.4 | +0.20 ok |
+| green foam mats | 0.209 m | 0.634 (0.719) | 1,976 | 0.68 × 0.81 × 0.52 | 2.4 vs 41.6 | −0.12 TOO CLOSE |
+| garden cart | 0.218 m | 0.570 (0.590) | 131 | 0.07 × 0.24 × 0.11 | 0.33 vs 1.55 | +0.20 ok |
+| whiteboard | 0.379 m | 0.623 (0.696) | 1,224 | 0.88 × 1.19 × 0.89 | 0.74 vs 28.9 | +0.26 ok |
+
+What changed between the runs: the relative threshold cut the whiteboard query from 75,596 selected
+Gaussians (10 m wall/ceiling clusters) to 1,224 and put the board first; every query is now unambiguous
+(runner-up ≤ 6% of the top score; mats were ambiguous before). Mean error 0.23 m, max 0.38 m.
+
+Notes for later phases:
+- **Garden cart is weak**: peak relevancy 0.59, only 131 Gaussians, a 7 × 24 × 11 cm cluster — a small part
+  of the cart, not the whole object. Right place, fragile. Candidate for the DINO-assisted cluster growth
+  (L-CD variant, Phase 5) and a natural first test for the FMGS backend.
+- **Approach points** come out at the camera height (z ≈ −0.97, the flat-capture fallback) and the
+  mats' one is too close to clutter (gap −0.12 m). Phase 6's feasibility loop (try other directions
+  around the object) is the fix; nothing to change in Phase 1.
+- The five queries are a development set now (they shaped the threshold). Phase 5 uses a separate frozen
+  set of ≥ 15 queries per scene, annotated before results are seen.

@@ -28,3 +28,7 @@ train_vis = "tensorboard"
 max_data_method = "data_gamma"
 # The notebook's in-loop evaluation; affordable on this card.
 svnet_comm_eval = "eval_nominal"
+# Semantic lift render width (Phase 1 on backroom: 960 px, 3 min, peak 7.6 GB before the per-chunk
+# upsample fix). Query worker exits after this many idle seconds.
+semantic_feat_width = 960
+semantic_worker_idle_s = 600

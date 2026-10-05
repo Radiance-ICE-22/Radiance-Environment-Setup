@@ -189,8 +189,9 @@ def gap(point, scene, s):
     return float(np.atleast_1d(dk)[-1] - s.body_radius)
 
 
-def run_query(table, scene, text, encoder, s=None):
-    """Full query. Returns a JSON-ready dict; positions in the course frame unless noted."""
+def run_query(table, scene, text, encoder, s=None, return_relevancy=False):
+    """Full query. Returns a JSON-ready dict; positions in the course frame unless noted.
+    With return_relevancy, returns (dict, rel) where rel is the per-row relevancy array."""
     s = s or Settings()
     t0 = time.time()
     E = encoder.encode([text] + list(s.negatives))
@@ -227,7 +228,7 @@ def run_query(table, scene, text, encoder, s=None):
     elif len(res) == 1:
         margin = 1.0
     qs = np.percentile(rv, [50, 90, 99, 99.9]) if len(rv) else np.zeros(4)
-    return {"text": text, "negatives": list(s.negatives), "threshold": s.threshold, "tau": round(tau, 4),
+    out = {"text": text, "negatives": list(s.negatives), "threshold": s.threshold, "tau": round(tau, 4),
             "peak": round(peak, 4), "rel_alpha": s.rel_alpha,
             "rel_pct": {"p50": round(float(qs[0]), 4), "p90": round(float(qs[1]), 4), "p99": round(float(qs[2]), 4),
                         "p99.9": round(float(qs[3]), 4)},
@@ -238,6 +239,7 @@ def run_query(table, scene, text, encoder, s=None):
             "frame": "course (x, -y, -z), z down",
             "ms": {"encode": round(t_enc * 1000), "relevancy": round(t_rel * 1000),
                    "total": round((time.time() - t0) * 1000)}}
+    return (out, rel) if return_relevancy else out
 
 
 def score_against(result, position_course, hit_radius=0.75, box_pad=0.3):

@@ -16,11 +16,13 @@ from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel, Field
 
 from . import pipeline as pl
+from . import semantics as sem
 from . import svnet as sv
 from .configs import FAMILIES, ConfigError, ConfigStore
 from .course import Busy, CourseTools, PreviewRequest, ToolError, int_cells
 from .db import DB
 from .jobs import JobRunner
+from .semworker import SemWorker, WorkerError, WorkerRefused
 from .settings import Settings, load
 from .drive import Drive, DriveConfig, ImportReq, TokenReq
 from .videos import MAX_CHUNK, Conflict, NoSpace, TooLarge, UploadStart, VideoError, Videos
@@ -46,15 +48,18 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     tools = CourseTools(s)
     vids = Videos(s)
     drive = Drive(s, vids)
+    worker = SemWorker(s)
+    rel_cache = sem.RelevancyCache()
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         runner.start()
         yield
         await runner.stop()
+        await asyncio.to_thread(worker.stop)
 
     app = FastAPI(title="Galley", version="0.1.0", lifespan=lifespan)
-    app.state.settings, app.state.db, app.state.runner = s, db, runner
+    app.state.settings, app.state.db, app.state.runner, app.state.semworker = s, db, runner, worker
 
     def auth(request: Request):
         if s.token:
@@ -187,6 +192,80 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         data = _cfg(lambda: store.read("courses", name))
         return {"int_cells": int_cells(data)}
 
+    # ── semantic features (docs/SEMANTICS.md) ──────────────────────────────────
+    def gz(request: Request, body: bytes, media: str, cache: str = "no-cache") -> Response:
+        if "gzip" in request.headers.get("accept-encoding", "") and len(body) > 4096:
+            return Response(gzip.compress(body, 5), media_type=media,
+                            headers={"Content-Encoding": "gzip", "Vary": "Accept-Encoding", "Cache-Control": cache})
+        return Response(body, media_type=media, headers={"Cache-Control": cache})
+
+    @app.get("/api/scenes/{scene}/semantics", dependencies=[api])
+    def semantics_status(scene: str):
+        out = _val(lambda: sem.status(s, _scene(scene)))
+        out["busy"] = scene_busy(scene)
+        out["script"] = sem.script(s).exists()
+        return out
+
+    @app.post("/api/scenes/{scene}/semantics/query", dependencies=[api])
+    async def semantics_query(scene: str, req: sem.QueryReq):
+        _scene(scene)
+        r = await asyncio.to_thread(lambda: _sem(lambda: worker.request(
+            "query", scene=scene, backend=req.backend, text=req.text, settings=req.settings(),
+            relevancy=req.relevancy)))
+        out = {"result": r["result"], "table": r["table"], "stale": r["stale"], "worker_ms": r.get("ms"),
+               "relevancy_id": None}
+        if r.get("relevancy_b64"):
+            import base64
+            out["relevancy_id"] = rel_cache.put(scene, base64.b64decode(r["relevancy_b64"]))
+        return out
+
+    @app.get("/api/scenes/{scene}/semantics/relevancy/{rid}", dependencies=[api])
+    def semantics_relevancy(scene: str, rid: str, request: Request):
+        """n bytes, one per .splat record: round(relevancy · 255)."""
+        data = rel_cache.get(_scene(scene), rid)
+        if data is None:
+            raise HTTPException(404, "relevancy expired or unknown: run the query again")
+        return gz(request, data, "application/octet-stream", "private, max-age=3600")
+
+    @app.get("/api/scenes/{scene}/semantics/{backend}/pca", dependencies=[api])
+    def semantics_pca(scene: str, backend: str, request: Request):
+        """n × 3 bytes (RGB of the first 3 principal components), .splat order, active run."""
+        run, key = sem.active_key(s, _scene(scene))
+        if not run:
+            raise HTTPException(404, f"{scene} has no single active model")
+        d = _val(lambda: sem.table_dir(s, scene, run, backend))
+        if not (d / "pca_rgb.u8").is_file():
+            raise HTTPException(404, f"no {backend} table for the active run")
+        ix = json.loads((d / "index.json").read_text())
+        resp = gz(request, (d / "pca_rgb.u8").read_bytes(), "application/octet-stream")
+        resp.headers["X-Table-Key"] = str(ix.get("key"))
+        resp.headers["X-Table-Stale"] = "1" if ix.get("key") != key else "0"
+        return resp
+
+    @app.post("/api/scenes/{scene}/semantics/labels", dependencies=[api])
+    async def semantics_labels(scene: str, req: sem.LabelsReq):
+        """Which of these labels does Gaussian `index` (a .splat record) match best? (picking)"""
+        _scene(scene)
+        r = await asyncio.to_thread(lambda: _sem(lambda: worker.request(
+            "labels", scene=scene, backend=req.backend, index=req.index, labels=req.labels)))
+        return {k: r[k] for k in ("scores", "seen", "position_splat", "table", "stale")}
+
+    @app.get("/api/scenes/{scene}/semantics/queries", dependencies=[api])
+    def semantics_queries(scene: str):
+        return _val(lambda: sem.load_queries(s, _scene(scene)))
+
+    @app.put("/api/scenes/{scene}/semantics/queries", dependencies=[api])
+    def semantics_queries_put(scene: str, data: sem.Annotations):
+        return _val(lambda: sem.save_queries(s, _scene(scene), data))
+
+    @app.get("/api/semantics/worker", dependencies=[api])
+    def semantics_worker():
+        return worker.status()
+
+    @app.post("/api/semantics/worker/stop", dependencies=[api])
+    async def semantics_worker_stop():
+        return {"stopped": await asyncio.to_thread(worker.stop)}
+
     # ── SV-Net cohorts (Phase 4) ───────────────────────────────────────────────
     @app.get("/api/cohorts", dependencies=[api])
     def cohorts():
@@ -310,6 +389,19 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         # the scene column makes Archive/Promote refuse while the cohort flies in that splat
         return {"id": runner.submit("svnet", f"svnet {req.cohort} [{steps}]", argv, req.model_dump(), scene)}
 
+    @app.post("/api/jobs/semantics", dependencies=[api], status_code=201)
+    def submit_semantics(req: sem.SemanticRun):
+        if not sem.script(s).exists():
+            raise HTTPException(400, f"{sem.script(s)} not found (it ships next to figs_pipeline.py)")
+        run, _ = sem.active_key(s, req.scene)
+        if not run:
+            raise HTTPException(400, f"{req.scene} needs exactly one trained model with a checkpoint")
+        argv = sem.build_argv(s, req)
+        steps = req.only or f"{req.from_step or 'start'}..{req.stop_after or 'end'}"
+        # the scene column makes Archive/Promote wait, as for figs and SV-Net jobs
+        return {"id": runner.submit("semantics", f"semantics {req.scene} {req.backend} [{steps}]", argv,
+                                    req.model_dump(), req.scene)}
+
     @app.post("/api/jobs/selftest", dependencies=[api], status_code=201)
     def submit_selftest(req: SelfTest):
         """Harmless job for checking the queue, streaming and cancel end to end."""
@@ -419,6 +511,19 @@ def _tool(fn):
         raise HTTPException(502, str(e))
     except ValueError as e:
         raise HTTPException(400, str(e))
+
+
+def _scene(scene: str) -> str:
+    return _val(lambda: pl.check_scene(scene))
+
+
+def _sem(fn):
+    try:
+        return fn()
+    except WorkerRefused as e:
+        raise HTTPException(404 if e.code in ("no_table", "no_scene") else 400, {"code": e.code, "message": str(e)})
+    except WorkerError as e:
+        raise HTTPException(503, str(e))
 
 
 def _vid(fn):

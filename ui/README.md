@@ -98,6 +98,14 @@ Training forms pre-fill from the machine file's `[defaults]` (`cache_images`, `t
 | GET | `/api/cohorts/{cohort}/video/{sim_<course>_<pilot>_rgb.mp4}` | deployment video |
 | GET | `/api/jobs?cohort=` | jobs of one cohort |
 | POST | `/api/jobs/figs` | queue a `figs_pipeline.py` run: flags, training options, `from_step`/`only`/`stop_after`/`redo` |
+| POST | `/api/jobs/semantics` | queue a `semantic_pipeline.py` run: scene, backend, teachers, `feat_width` (default from the profile's `semantic_feat_width`), step range, `redo` |
+| GET | `/api/scenes/{scene}/semantics` | semantic steps for the active run, feature tables (stale when built for another checkpoint), annotation counts |
+| POST | `/api/scenes/{scene}/semantics/query` | `{text, backend, threshold?, rel_alpha?, standoff?, margin?, negatives?, top?}` → ranked candidates (course frame), approach point and gap, `relevancy_id`; CPU worker, never the GPU |
+| GET | `/api/scenes/{scene}/semantics/relevancy/{id}` | one byte per `.splat` record, round(relevancy·255) (gzip; last 8 queries kept) |
+| GET | `/api/scenes/{scene}/semantics/{backend}/pca` | three bytes per `.splat` record (feature colours); `X-Table-Stale` header |
+| POST | `/api/scenes/{scene}/semantics/labels` | `{index, labels[]}` → which labels a picked Gaussian matches best |
+| GET/PUT | `/api/scenes/{scene}/semantics/queries` | annotations (`queries.json`, course frame) |
+| GET | `/api/semantics/worker`, POST `/api/semantics/worker/stop` | the query worker: pid, idle timeout, restarts, log |
 | POST | `/api/jobs/selftest` | harmless job for testing the queue |
 | GET | `/api/jobs`, `/api/jobs/{id}`, `/api/jobs/{id}/log?after=N` | history and logs |
 | POST | `/api/jobs/{id}/cancel` | SIGTERM to the job's process group, SIGKILL after 10 s |
@@ -107,5 +115,7 @@ Course writes (`PUT /api/configs/courses/…`) are saved from the validated mode
 `fo` cell and `t` is a float, with each `fo` row on one line.
 
 Jobs run one at a time, in order: the GPU is treated as exclusive. Course previews and
-geometry are CPU-only calls that bypass the queue (CUDA hidden), so they work during training. Work started outside the
+geometry are CPU-only calls that bypass the queue (CUDA hidden), so they work during training. So are semantic
+queries: a long-lived worker in the kitchen env (`figs/semantic_worker.py`, log in `<data_dir>/semantic_worker.log`)
+keeps CLIP's text tower and the feature tables loaded and exits after `semantic_worker_idle_s` (default 600 s) idle. Work started outside the
 UI (a shell pipeline run, `ns-viewer`) is invisible to the queue, so avoid it while jobs run.
