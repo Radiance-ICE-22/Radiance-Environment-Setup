@@ -281,7 +281,7 @@ export default function SplatEditor({ scene, q }: { scene: string; q?: string })
     ...(st && !ready ? [{ severity: "warning" as const, where: `${backend} features`, message: String(noTable) }] : []),
     ...(qErr ? [{ severity: "error" as const, where: "query", message: qErr }] : []),
     ...(reply?.stale ? [{ severity: "warning" as const, where: "query", message: "The table was built for another checkpoint, so its relevancy is not painted on this splat. Rebuild the features." }] : []),
-    ...(reply?.result.ambiguous ? [{ severity: "warning" as const, where: `“${reply.result.text}”`, message: `Ambiguous: the runner-up scores ${Math.round((reply.result.margin ?? 0) * 100)}% of the top candidate. Check both, or add a detail to the phrase.` }] : []),
+    ...(reply?.result.ambiguous ? [{ severity: "warning" as const, where: `“${reply.result.text}”`, message: `Ambiguous: the runner-up scores ${Math.round((1 - (reply.result.margin ?? 0)) * 100)}% of the top candidate. Check both, or add a detail to the phrase.` }] : []),
     ...(cand && cand.gap_ok === false ? [{ severity: "warning" as const, where: `candidate #${cand.rank}`, message: `The approach point is ${cand.gap} m from the scenery (drone sphere ${bodyR} m): move it in the course editor or lower the standoff.` }] : []),
     ...(cand?.large ? [{ severity: "info" as const, where: `candidate #${cand.rank}`, message: "Large cluster (box diagonal over 4 m): probably a surface, not an object." }] : []),
     ...(colorMismatch ? [{ severity: "error" as const, where: "colours", message: colorMismatch }] : []),
@@ -347,7 +347,10 @@ export default function SplatEditor({ scene, q }: { scene: string; q?: string })
                   </tr>))}</tbody>
               </table>) : <p className="empty pad">No Gaussian is above the threshold for “{reply.result.text}”. Try other words, or lower Query ▸ Threshold.</p>)
               : <p className="empty pad">{ready ? "Type a phrase above and press Enter." : String(noTable)}</p>}
-            {reply && reply.result.margin !== null && <p className="muted small" style={{ padding: "3px 8px" }}>Runner-up at {Math.round(reply.result.margin * 100)}% of the top score{reply.result.ambiguous ? " — ambiguous" : ""}. Hover a row for its box; select it for the goal and approach point.</p>}
+            {/* margin = (top − runner-up) / top (radiance_semantics.query): 1 = no runner-up; < 0.25 = ambiguous */}
+            {reply && cands.length > 0 && <p className="muted small" style={{ padding: "3px 8px" }}>{cands.length < 2 || reply.result.margin === null
+              ? "Only one cluster above the threshold."
+              : `Runner-up at ${Math.round((1 - reply.result.margin) * 100)}% of the top score${reply.result.ambiguous ? " — ambiguous" : ""}.`} Hover a row for its box; select it for the goal and approach point.</p>}
           </Tile>
           <FeaturesTile st={st} bstate={bstate} semJob={semJob} onBuild={() => setDlg("build")} />
           <Tile title="Annotations" icon="pin" className="flush" meta={`${pins.filter((a) => a.position).length} of ${pins.length} placed${annDirty ? " · unsaved" : ""}`}

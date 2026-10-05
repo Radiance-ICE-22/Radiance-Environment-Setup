@@ -81,7 +81,6 @@ export default function SplatScene(p: SceneProps) {
         <>
           <group position={sel.centroid}>
             <mesh raycast={() => null} renderOrder={6}><octahedronGeometry args={[0.12]} /><meshBasicMaterial color={SC.goal} depthTest={false} transparent /></mesh>
-            <Label text="goal" color="#d8b4fe" bold />
           </group>
           <group position={sel.approach}>
             <mesh raycast={() => null} renderOrder={6}><sphereGeometry args={[0.05, 16, 12]} /><meshBasicMaterial color={SC.approach} depthTest={false} transparent /></mesh>

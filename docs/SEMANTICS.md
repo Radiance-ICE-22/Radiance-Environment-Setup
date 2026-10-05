@@ -13,7 +13,7 @@ built, how to run it, and the numbers measured.
 | 0 | Environment and pose check | **DONE.** Gate PASSED on intellisense08, 5 Oct 09:48 (second run; the first found gsplat's 32-channel backward limit). |
 | 1 | Teacher features, lift backend, CLI query | **DONE.** Gate PASSED 5 Oct 16:12: 5 of 5 queries hit (second run, after the relative threshold and a corrected red tool chest annotation). |
 | 2 | Galley backend | **DONE.** Gate PASSED on intellisense08, 5 Oct 17:24 (second run; the first failed only on a host-dependent test, §9): cold query 5.8 s, warm ≤ 789 ms, 5 of 5 hits. |
-| 3 | Splat editor UI | Built and cloud-tested 5 Oct (§3d): 14 frontend unit tests, 26-step headless-Chromium run against Galley with stand-in tools, renderer checked against drei's. **Gate not yet run** (`ui/deploy/sem3_gate.sh`). |
+| 3 | Splat editor UI | Automated half of the gate PASSED on intellisense08, 5 Oct 19:01 (4e4a5a5, §10): query → course → flight, tracking 8 mm max; browser shows 532 k Gaussians recoloured in 20 ms + 71 ms frame. **Browser half pending** (`sem3_gate.sh --check sem_red_tool_chest`). |
 | 4 | FMGS backend (`splatfacto-sem`) | Not started |
 | 5 | Evaluation and comparison | Not started |
 | 6 | Language → waypoints → SV-Net | Not started |
@@ -292,3 +292,30 @@ Cold query 5.8 s (worker 5.47 s); warm max 789 ms, mean 739 ms. Errors are ident
 gate (§8), so going through Galley and the worker changes nothing in the results. Relevancy max byte 204
 (0.80); labels for row 0: floor 0.255, wall 0.218, ceiling 0.217. Worker restarts 0. `.splat` records =
 table rows = 532,361.
+
+## 10. Phase 3 gate (intellisense08, 5 Oct 19:01, 4e4a5a5) — automated half PASSED
+
+| Check | Result |
+| --- | --- |
+| Backend tests | 107 passed, 1 skipped (the built-frontend test now runs) |
+| `.splat` vs table | 532,361 records, 16.2 MB = 32 × rows: record i is table row i |
+| Query “red tool chest” | 1 candidate, 6.3 s (first query after the restart: CLIP load), τ 0.669, 7,384 Gaussians lit; relevancy bytes = rows |
+| Top candidate | centroid (−0.599, 2.783, −1.109), 0.35 m from the annotation (same as Phase 1) · approach (−0.63, 1.111, −1.109), gap 0.40 m |
+| Course `sem_gate_red_tool_chest` | built exactly as Send to course does for a new course; final keyframe = approach point, yaw 1.552 facing the chest |
+| Flight (job 18) | succeeded in 20 s · course: 2 keyframes, 0 outside · tracking mean 0.003 / max 0.008 m · 33 frames · pixel std 47.9 · no dark frames |
+
+In the browser (Suhan's screenshots): “tool box” resolves to the red tool chest (5,297 Gaussians, score
+114.9, gap 0.45 m) — a paraphrase, not the annotated phrase; worker 729 ms, 823 ms end to end; **recoloured
+in 20 ms + 71 ms for the next frame at 532,361 Gaussians** (gate: about 2 s at 1 M), so the vendored-renderer
+route meets the budget with room to spare.
+
+Notes:
+- The new-course path is short here: the first camera position, clamped into the waypoint box, is only
+  0.2 m from the chest's approach point, so this flight proves the hand-off (goal, final keyframe, yaw,
+  through course/simulate/validate/record) more than it exercises flying. Sending to an existing course (the
+  approach appended to a loop) gives a real flight; Phase 6's feasibility loop chooses better starts.
+- Fixed after the gate (UI text only): the Candidates tile read `margin` as the runner-up's share of the top
+  score. `query.py` defines it as (top − runner-up) / top, 1.0 with a single cluster, ambiguous below 0.25, so a
+  lone candidate showed "runner-up at 100%". It now says "only one cluster" and shows the runner-up as
+  (1 − margin). The cloud stand-in worker had the same misreading, which is why the E2E run missed it.
+  The redundant "goal" label (it overlapped the annotation pin) is gone.

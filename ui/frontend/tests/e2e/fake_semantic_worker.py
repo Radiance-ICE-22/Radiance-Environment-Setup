@@ -52,11 +52,12 @@ def query(req):
                       "centroid_splat": [c[0], -c[1], -c[2]]})
     cands.sort(key=lambda x: -x["score"]); cands = cands[: s.get("top", 5)]
     for r, c in enumerate(cands): c["rank"] = r + 1
-    margin = cands[1]["score"] / cands[0]["score"] if len(cands) > 1 else None
+    # as radiance_semantics.query: (top − runner-up) / top, 1.0 with a single cluster; ambiguous below 0.25
+    margin = round((cands[0]["score"] - cands[1]["score"]) / cands[0]["score"], 3) if len(cands) > 1 else (1.0 if cands else None)
     res = {"text": req["text"], "negatives": s.get("negatives", ["object", "things", "stuff", "texture"]), "threshold": thr, "tau": round(tau, 4),
            "peak": round(peak, 4), "rel_alpha": a, "rel_pct": {"p50": 0.45, "p90": 0.5, "p99": 0.8}, "n_selected": len(sel),
            "rel_max": max(rel), "rel_p99": 0.8, "voxel": 0.1, "candidates": cands, "margin": margin,
-           "ambiguous": margin is not None and margin > 0.6, "frame": "course (x, -y, -z), z down",
+           "ambiguous": margin is not None and margin < 0.25, "frame": "course (x, -y, -z), z down",
            "ms": {"encode": 1, "relevancy": 1, "total": round((time.time() - t0) * 1000)}}
     out = {"ok": True, "ms": res["ms"]["total"], "result": res, "table": {"key": "e2e", "n": len(SC), "backend": "lift"}, "stale": False}
     if req.get("relevancy"): out["relevancy_b64"] = base64.b64encode(bytes(round(r * 255) for r in rel)).decode()
