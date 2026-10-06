@@ -528,8 +528,10 @@ the same wall, the banner row in front of the mural projects onto the TV wall in
 there, and the splat's own depth is full of floaters (picks at 0.4–0.5 m depth; the same logo 1 m apart from two
 views). Most likely SfM fused the two walls (a "doppelganger" failure on repeated structure). Annotating and
 scoring a folded room would be weak evidence, so Phase 5 uses **flightroom** (Stanford's sample: mocap poses,
-metric without SfM, 499 views in every direction; jobs 25–27 build lift, F-CD, F-C). GTN_lab_v1's partial
-query draft and lift table stay on disk. Our own second capture remains open: the intellisense lab footage
+metric without SfM, 499 views in every direction; jobs 25–27 build lift, F-CD, F-C). GTN_lab_v1's workspace,
+model and tables were deleted on 6 Oct at Suhan's request (the source video
+`~/Radiance/video_captures/GTN_lab_v1.MOV` is kept), together with the failed `intellisense_v1` capture (no ArUco
+marker in the footage) and the empty `backroom1` run. Our own second capture remains open: the intellisense lab footage
 (Suhan's Drive, 29 Jul) could be added through Galley's New capture as a third scene.
 
 Galley accepts `backend: fmgs_c` (steps fmgs_c / bake_c) since this change; backend tests 114 passed.
