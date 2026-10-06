@@ -7,6 +7,21 @@ import * as THREE from "three";
 import { Canvas, useThree } from "@react-three/fiber";
 import { GizmoHelper, GizmoViewport, Grid, Line, OrbitControls } from "@react-three/drei";
 import type { Annotation, Candidate, Geometry } from "../api";
+import { annPositions } from "../api";
+
+/** One pin per annotated position (every instance of a class); queries placed at the same spot (synonyms such as
+ *  "clock" and "grandfather clock") share a pin and one label instead of overprinting each other. */
+function pinGroups(pins: Annotation[]) {
+  const m = new Map<string, { key: string; pos: V3; texts: string[]; idx: number[] }>();
+  pins.forEach((a, i) => annPositions(a).forEach((p) => {
+    const key = p.map((v) => Math.round(v * 20)).join(",");          // 5 cm cells
+    const g = m.get(key) ?? { key, pos: p as V3, texts: [], idx: [] };
+    if (!g.texts.includes(a.text)) g.texts.push(a.text);
+    g.idx.push(i);
+    m.set(key, g);
+  }));
+  return [...m.values()];
+}
 import { boxEdges, Frame, KeyNav, Label, V3 } from "../three/common";
 import type { SplatData } from "./format";
 import { SplatLayer } from "./load";
@@ -125,13 +140,15 @@ export default function SplatScene(p: SceneProps) {
           </group>
         </>
       )}
-      {p.showPins && p.pins.map((a, i) => a.position && (
-        <group key={`pin${i}`} position={a.position as V3}>
-          <mesh raycast={() => null} renderOrder={6}><sphereGeometry args={[i === p.pinSel ? 0.06 : 0.04, 14, 10]} /><meshBasicMaterial color={i === p.pinSel ? "#ffffff" : SC.pin} depthTest={false} transparent /></mesh>
-          <Line points={[[0, 0, 0], [0, 0, -0.25]]} color={SC.pin} lineWidth={1.5} depthTest={false} />
-          <group position={[0, 0, -0.25]}><Label text={a.text} color={i === p.pinSel ? "#ffffff" : "#7dd3fc"} /></group>
-        </group>
-      ))}
+      {p.showPins && pinGroups(p.pins).map((g) => {
+        const sel = p.pinSel !== null && g.idx.includes(p.pinSel);
+        return (
+          <group key={g.key} position={g.pos}>
+            <mesh raycast={() => null} renderOrder={6}><sphereGeometry args={[sel ? 0.06 : 0.04, 14, 10]} /><meshBasicMaterial color={sel ? "#ffffff" : SC.pin} depthTest={false} transparent /></mesh>
+            <Line points={[[0, 0, 0], [0, 0, -0.25]]} color={SC.pin} lineWidth={1.5} depthTest={false} />
+            <group position={[0, 0, -0.25]}><Label text={g.texts.join(" / ")} color={sel ? "#ffffff" : "#7dd3fc"} /></group>
+          </group>);
+      })}
       {p.picked && (
         <group position={p.picked.point}>
           <mesh raycast={() => null} renderOrder={7}><sphereGeometry args={[0.025, 12, 8]} /><meshBasicMaterial color={SC.pick} depthTest={false} transparent /></mesh>

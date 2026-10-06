@@ -9,7 +9,7 @@
 // The Semantics ribbon tab (Build, Query, View, Goal, Annotate) drives it.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  active, Annotation, Annotations, api, ApiError, Candidate, courseApi, Geometry, QueryReply, SEM_BACKEND_STEPS, SemBackend,
+  active, Annotation, annPositions, Annotations, api, ApiError, Candidate, courseApi, Geometry, QueryReply, SEM_BACKEND_STEPS, SemBackend,
   semApi, SemanticRun, SemStatus, SemStep, SemTable,
 } from "../api";
 import { usePoll, useShowJob } from "../components";
@@ -39,7 +39,7 @@ export function isHit(c: Candidate | undefined, p: Vec3): { hit: boolean; err: n
   return { hit: inside || err <= 0.75, err };
 }
 type BState = "none" | "running" | "ready" | "stale";
-interface EvalRow { text: string; hit: boolean; err: number | null; ms: number; rank: number | null }
+interface EvalRow { text: string; set: string; negative: boolean; hit: boolean; err: number | null; ms: number; rank: number | null; n: number }
 
 export default function SplatEditor({ scene, q }: { scene: string; q?: string }) {
   const d = useAppData();
@@ -181,12 +181,16 @@ export default function SplatEditor({ scene, q }: { scene: string; q?: string })
     const label = (annLabel || text).trim();
     if (!label) { setAnnMsg({ ok: false, text: "Type the object's name in Annotate ▸ Label first." }); return; }
     const pos = p.point.map((v) => Math.round(v * 1000) / 1000) as Vec3;
+    const prev = pins.find((x) => x.text === label);
+    const replaced = prev && ((prev.instances?.length ?? 0) > 1 || prev.negative);
     setPins((a) => {
       const i = a.findIndex((x) => x.text === label);
-      if (i >= 0) { const c = [...a]; c[i] = { ...c[i], position: pos }; setPinSel(i); return c; }
+      if (i >= 0) {        // a placement is one position: it replaces a multi-instance list or a negative
+        const c = [...a]; const { instances: _i, negative: _n, ...rest } = c[i]; c[i] = { ...rest, position: pos }; setPinSel(i); return c;
+      }
       setPinSel(a.length); return [...a, { text: label, position: pos, set: "extra" }];
     });
-    setAnnMsg({ ok: true, text: `“${label}” placed at ${fmt(pos)} (unsaved).` });
+    setAnnMsg({ ok: true, text: `“${label}” placed at ${fmt(pos)} (unsaved)${replaced ? " — this replaces its instance list / negative flag" : ""}.` });
   };
   const saveAnn = async () => {
     if (!ann) return;
@@ -195,19 +199,24 @@ export default function SplatEditor({ scene, q }: { scene: string; q?: string })
   };
   const [evalRows, setEvalRows] = useState<EvalRow[] | null>(null);
   const [evalBusy, setEvalBusy] = useState(false);
+  /** Query every placed annotation and every negative; scored like radiance_semantics.evaluate (any instance counts). */
   const evaluate = async () => {
-    const todo = pins.filter((a) => a.position);
+    const todo = pins.filter((a) => a.negative || annPositions(a).length);
     setEvalBusy(true); setEvalRows([]);
     const rows: EvalRow[] = [];
     for (const a of todo) {
       const t0 = performance.now();
+      const base = { text: a.text, set: a.set ?? "extra", negative: !!a.negative };
       try {
         const r = await semApi.query(scene, { text: a.text, backend, standoff: qs.standoff, top: qs.top, relevancy: false });
         const c = r.result.candidates;
-        const h = isHit(c[0], a.position as Vec3);
-        const rank = c.findIndex((x) => isHit(x, a.position as Vec3).hit);
-        rows.push({ text: a.text, hit: h.hit, err: h.err, ms: performance.now() - t0, rank: rank >= 0 ? rank + 1 : null });
-      } catch { rows.push({ text: a.text, hit: false, err: null, ms: performance.now() - t0, rank: null }); }
+        const ps = annPositions(a) as Vec3[];
+        const tops = ps.map((p) => isHit(c[0], p));
+        const errs = tops.map((h) => h.err).filter((e): e is number => e !== null);
+        const rank = c.findIndex((x) => ps.some((p) => isHit(x, p).hit));
+        rows.push({ ...base, hit: a.negative ? c.length === 0 : tops.some((h) => h.hit), err: errs.length ? Math.min(...errs) : null,
+          ms: performance.now() - t0, rank: rank >= 0 ? rank + 1 : null, n: c.length });
+      } catch { rows.push({ ...base, hit: false, err: null, ms: performance.now() - t0, rank: null, n: 0 }); }
       setEvalRows([...rows]);
     }
     setEvalBusy(false);
@@ -365,8 +374,8 @@ export default function SplatEditor({ scene, q }: { scene: string; q?: string })
               : `Runner-up at ${Math.round((1 - reply.result.margin) * 100)}% of the top score${reply.result.ambiguous ? " — ambiguous" : ""}.`} Hover a row for its box; select it for the goal and approach point.</p>}
           </Tile>
           <FeaturesTile st={st} bstate={bstate} semJob={semJob} onBuild={() => setDlg("build")} />
-          <Tile title="Annotations" icon="pin" className="flush" meta={`${pins.filter((a) => a.position).length} of ${pins.length} placed${annDirty ? " · unsaved" : ""}`}
-            actions={<>{annDirty && <button onClick={saveAnn}>Save</button>}<button onClick={evaluate} disabled={!!noTable || evalBusy || !pins.some((a) => a.position)}>{evalBusy ? "Running…" : "Query all"}</button></>}>
+          <Tile title="Annotations" icon="pin" className="flush" meta={`${pins.filter((a) => !a.negative && a.position).length} of ${pins.filter((a) => !a.negative).length} placed${pins.some((a) => a.negative) ? ` · ${pins.filter((a) => a.negative).length} absent` : ""}${annDirty ? " · unsaved" : ""}`}
+            actions={<>{annDirty && <button onClick={saveAnn}>Save</button>}<button onClick={evaluate} disabled={!!noTable || evalBusy || !pins.some((a) => a.position || a.negative)}>{evalBusy ? "Running…" : "Query all"}</button></>}>
             <table className="grid">
               <thead><tr><th>object</th><th>position (course)</th>{evalRows && <th>result</th>}<th /></tr></thead>
               <tbody>{pins.map((a, i) => {
@@ -374,15 +383,26 @@ export default function SplatEditor({ scene, q }: { scene: string; q?: string })
                 return (
                   <tr key={i} className={`click ${pinSel === i ? "sel" : ""}`} onClick={() => { setPinSel(i); setPicked(null); }}>
                     <td>{a.text}{a.set && a.set !== "extra" && <span className="muted small"> · {a.set}</span>}</td>
-                    <td className="mono small">{a.position ? fmt(a.position as number[]) : <span className="muted">not placed</span>}</td>
-                    {evalRows && <td className={ev ? (ev.hit ? "ok" : "bad") : "muted"}>{ev ? `${ev.hit ? "hit" : "miss"}${ev.err !== null ? ` ${ev.err.toFixed(2)} m` : ""} · ${Math.round(ev.ms)} ms` : a.position ? "…" : ""}</td>}
+                    <td className="mono small">{a.negative ? <span className="muted">absent (negative)</span>
+                      : a.position ? <>{fmt(a.position as number[])}{(a.instances?.length ?? 0) > 1 && <span className="muted"> +{a.instances!.length - 1} more</span>}</>
+                      : <span className="muted">not placed</span>}</td>
+                    {evalRows && <td className={ev ? (ev.hit ? "ok" : "bad") : "muted"}>{ev
+                      ? ev.negative ? `${ev.hit ? "absent ✓" : `false positive (${ev.n})`} · ${Math.round(ev.ms)} ms`
+                        : `${ev.hit ? "hit" : "miss"}${ev.err !== null ? ` ${ev.err.toFixed(2)} m` : ""} · ${Math.round(ev.ms)} ms`
+                      : a.position || a.negative ? "…" : ""}</td>}
                     <td style={{ whiteSpace: "nowrap" }}><button className="lnk" onClick={(e) => { e.stopPropagation(); setText(a.text); runQuery(a.text); }} disabled={!!noTable}>query</button>{" "}
                       <button className="lnk" onClick={(e) => { e.stopPropagation(); setAnnLabel(a.text); setAnnMode(true); }}>place</button>{" "}
                       <button className="lnk" onClick={(e) => { e.stopPropagation(); setPins((x) => x.filter((_, j) => j !== i)); setPinSel(null); }}>delete</button></td>
                   </tr>);
               })}{!pins.length && <tr><td colSpan={4} className="muted">None yet: Annotate, type the object's name, click it in the splat.</td></tr>}</tbody>
             </table>
-            {evalRows && !evalBusy && evalRows.length > 0 && <p className="small" style={{ padding: "3px 8px" }}><b>{evalRows.filter((r) => r.hit).length} of {evalRows.length} hit</b> (top box + 0.3 m holds the annotation, or centroid within 0.75 m — the gates' rule) · slowest {Math.round(Math.max(...evalRows.map((r) => r.ms)))} ms</p>}
+            {evalRows && !evalBusy && evalRows.length > 0 && <p className="small" style={{ padding: "3px 8px" }}>
+              {[...new Set(evalRows.map((r) => r.set))].map((set) => {
+                const rs = evalRows.filter((r) => r.set === set), pos = rs.filter((r) => !r.negative), neg = rs.filter((r) => r.negative);
+                return <span key={set} style={{ marginRight: 12 }}><b>{set}: {pos.filter((r) => r.hit).length} of {pos.length} hit</b>
+                  {neg.length > 0 && ` · ${neg.filter((r) => r.hit).length} of ${neg.length} negatives clean`}</span>;
+              })}
+              <br /><span className="muted">a hit: the top box + 0.3 m holds an annotated instance, or its centroid is within 0.75 m (the gates' rule) · slowest {Math.round(Math.max(...evalRows.map((r) => r.ms)))} ms</span></p>}
           </Tile>
         </div>
       </div>

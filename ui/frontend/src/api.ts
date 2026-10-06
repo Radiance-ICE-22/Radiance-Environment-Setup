@@ -239,7 +239,14 @@ export interface QueryReq {
   margin?: number; top?: number; relevancy?: boolean;
 }
 export interface LabelsReply { scores: [string, number][]; seen: boolean; position_splat: V3; table: TableInfo; stale: boolean }
-export interface Annotation { text: string; position: V3 | null; set?: string; [k: string]: unknown }
+export interface Annotation {
+  text: string; position: V3 | null; set?: string;
+  instances?: V3[];        // several objects of the class (Phase 5): a hit on any instance counts
+  negative?: boolean;      // the object is NOT in the scene (Phase 5): any candidate is a false positive
+  [k: string]: unknown;
+}
+/** Every annotated position of a query (one unless it lists instances). */
+export const annPositions = (a: Annotation): V3[] => (a.instances?.length ? a.instances : a.position ? [a.position] : []);
 export interface Annotations { version?: number; frame?: string; queries: Annotation[]; updated?: string; [k: string]: unknown }
 export interface WorkerStatus { running: boolean; pid: number | null; started: number | null; last_used: number | null; idle_s: number; restarts: number; script: string; log: string }
 
