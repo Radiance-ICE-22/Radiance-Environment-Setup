@@ -175,3 +175,18 @@ def test_splat_order_matches_the_previous_inline_selection():
     old = idx[np.argsort(-importance)][:1000]
     assert np.array_equal(ct.splat_order(means, scales, opac, 0.05, 1000), old)
     assert 7 not in ct.splat_order(means, scales, opac)
+
+
+def test_pose_outliers_are_dropped_from_the_camera_box():
+    """GTN_lab_v1: 3 of 600 cameras registered 100–219 m away from an 11 × 8 m lab."""
+    rng = np.random.default_rng(0)
+    P = rng.uniform([-5, -4, 0], [5, 4, 1.5], (200, 3))
+    assert Q.pose_inliers(P).all()                                  # a clean capture keeps every camera
+    P[[3, 50]] = [[168.0, 120.0, -60.0], [-150.0, 2.0, 1.0]]
+    keep = Q.pose_inliers(P)
+    assert (~keep).sum() == 2 and not keep[3] and not keep[50]
+    c2w = np.tile(np.eye(4), (len(P), 1, 1))
+    c2w[:, :3, 3] = P
+    sc = Q.Scene(cam_c2w=c2w)
+    lo, hi = sc.camera_box(0.5)
+    assert sc.dropped_cameras == 2 and hi[0] < 5 and lo[0] > -5

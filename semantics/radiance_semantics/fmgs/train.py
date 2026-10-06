@@ -382,7 +382,7 @@ def train_run(run, teacher_dir, cfg, out, device=None, render_backend="gsplat", 
         _, pipeline, _, step = load_pipeline(run)
         model = pipeline.model
         cams, files, _ = train_views(pipeline)
-        views = views_from_pipeline(model, cams, files)
+        views = views_from_pipeline(model, cams, files, log=log)
         if limit:
             views = views[:limit]
         g = gaussians_from_model(model)

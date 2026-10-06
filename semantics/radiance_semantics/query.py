@@ -116,11 +116,29 @@ class Settings:
     negatives: list = field(default_factory=lambda: list(NEGATIVES))
 
 
+def pose_inliers(P, k=4.0):
+    """Mask of camera positions [m, 3] that are not SfM registration outliers: a camera more than
+    k × the 90th-percentile distance from the median camera is dropped. GTN_lab_v1 (4 Oct) has 3 of
+    600 cameras registered 100–219 m away in an 11 × 8 m lab; they blew the camera box up to ±168 m
+    and would project garbage features. A capture without such outliers keeps every camera."""
+    P = np.asarray(P, dtype=float)
+    if len(P) < 5:
+        return np.ones(len(P), bool)
+    d = np.linalg.norm(P - np.median(P, 0), axis=1)
+    return d <= k * max(np.percentile(d, 90), 1e-6)
+
+
 @dataclass
 class Scene:
-    """What a query needs besides the table. All splat frame."""
+    """What a query needs besides the table. All splat frame. Camera-pose outliers are dropped."""
     cam_c2w: np.ndarray           # [m, 3, 4] or [m, 4, 4] training camera-to-world (OpenGL)
     sparse_xyz: np.ndarray = None # [p, 3] SfM points for the gap check (None → no gap check)
+
+    def __post_init__(self):
+        c = np.asarray(self.cam_c2w, dtype=float)
+        keep = pose_inliers(c[:, :3, 3])
+        self.dropped_cameras = int((~keep).sum())
+        self.cam_c2w = c[keep]
 
     def camera_box(self, margin):
         """Waypoint box: the camera box inset by `margin`. On an axis the cameras spanned less than

@@ -377,7 +377,7 @@ def step_bake(c):
         with in_workspace(c.run):
             _, pipeline, _, _ = load_pipeline(c.run)
             cams, files, _ = train_views(pipeline)
-            views = views_from_pipeline(pipeline.model, cams, files)
+            views = views_from_pipeline(pipeline.model, cams, files, log=info)
             g = gaussians_from_model(pipeline.model)
             del pipeline
         w = blend_weights(g, views[:c.a.limit] if c.a.limit else views, int(c.a.fmgs_width), c.a.render_backend)[order]

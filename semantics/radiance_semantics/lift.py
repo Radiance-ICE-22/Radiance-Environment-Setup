@@ -143,10 +143,12 @@ def normalise_rows(x):
     return np.where(n > EPS, x / np.maximum(n, EPS), 0.0).astype(np.float32)
 
 
-def views_from_pipeline(model, cameras, files):
-    """View list for every training camera, with refined poses."""
+def views_from_pipeline(model, cameras, files, log=None):
+    """View list for every training camera, with refined poses; SfM pose outliers are dropped
+    (query.pose_inliers — none on backroom, 3 of 600 on GTN_lab_v1)."""
     from pathlib import Path
     from .cameras import optimized_c2w
+    from .query import pose_inliers
     out = []
     for i in range(len(cameras)):
         c = cameras[i:i + 1]
@@ -154,7 +156,11 @@ def views_from_pipeline(model, cameras, files):
                         fx=float(c.fx.reshape(-1)[0]), fy=float(c.fy.reshape(-1)[0]),
                         cx=float(c.cx.reshape(-1)[0]), cy=float(c.cy.reshape(-1)[0]),
                         width=int(c.width.reshape(-1)[0]), height=int(c.height.reshape(-1)[0])))
-    return out
+    keep = pose_inliers(np.array([v.c2w[:3, 3].cpu().numpy() for v in out]))
+    if log and not keep.all():
+        log(f"  dropped {int((~keep).sum())} training camera(s) as SfM pose outliers: "
+            + ", ".join(v.stem for v, k in zip(out, keep) if not k))
+    return [v for v, k in zip(out, keep) if k]
 
 
 def gaussians_from_model(model):
@@ -176,7 +182,7 @@ def lift_run(run, teacher_dir, feat_width=960, backend="gsplat", log=print, acc_
         _, pipeline, _, step = load_pipeline(run)
         model = pipeline.model
         cams, files, _ = train_views(pipeline)
-        views = views_from_pipeline(model, cams, files)
+        views = views_from_pipeline(model, cams, files, log=log)
         if limit:
             views = views[:limit]
         g = gaussians_from_model(model)
