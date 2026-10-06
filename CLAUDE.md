@@ -43,9 +43,11 @@ checkpoint unchanged, dev queries FMGS 4/5 (garden cart misses) vs lift 5/5. Wha
   → expandable segments, tcnn OOM recognised, a failed step retried once, shorter tensor lifetimes.
 - Then NaN at step 11: CLIP gradients underflowed in tcnn's fp16, and pixel alignment's normalize of ~0
   vectors overflowed. → GradScaler when a part is tcnn, 1e-3 norm floor in pixel alignment.
-- Semantics tests (68) run on the host with pytest from a scratch `--target` dir on `PYTHONPATH`; the gate
-  itself still skips them (pytest not in kitchen; ask Suhan before adding it).
+- pytest 9.1.1 (+ iniconfig, pluggy) added to kitchen on 6 Oct with `--no-deps` and the constraints file
+  (frozen copy: `~/Radiance/kitchen_constraints_2026-10-06.txt`); torch re-checked. Gates now run the 68 semantics tests.
 - Still to do by hand: View ▸ Compare in the browser on the new FMGS table.
+- Planned by Suhan (6 Oct): a separate branch that extends nerfstudio to handle semantics (the
+  `ns-train` route the plan first had). `main` keeps the standalone trainer until that branch is ready.
 
 Next: Phase 5 (capture and train GTN_lab_v1 through Galley's New capture — marker DICT_4X4 id 0,
 printed 0.18 m or 0.34 m; annotate ≥ 15 queries per scene **before** looking at results; the four variants;
@@ -85,7 +87,7 @@ semantic artefacts in `gsplats/workspace/<scene>/semantics/`; run records in `So
   1.0.0, tinycudann 2.0 (built for `TCNN_CUDA_ARCHITECTURES=75`), numpy 1.x, timm 0.6.7, open_clip 2.24.0,
   huggingface_hub < 1. **Never `pip install` into kitchen without `--no-deps` and the constraints file**
   (`radiance_semantics.env_check`), and re-check torch afterwards. Ask Suhan before adding anything to
-  kitchen (including pytest) and before any `sudo`.
+  kitchen and before any `sudo`.
 
 **GPU**
 - One GPU job at a time. Before any GPU work: `nvidia-smi` and
@@ -127,7 +129,7 @@ cd ~/Radiance/Radiance-Environment-Setup && source ui/deploy/host.sh   # FIGS_RO
 
 # tests
 (cd ui/backend && .venv/bin/python -m pytest -q)                       # Galley backend
-(cd semantics && CUDA_VISIBLE_DEVICES= python -m pytest -q tests)      # needs pytest in kitchen (ask first)
+(cd semantics && CUDA_VISIBLE_DEVICES= python -m pytest -q tests)      # 68 tests, CPU
 
 # Phase 4 pieces
 (cd semantics && python -m radiance_semantics.fmgs.diag)               # tcnn probes + the field impl auto picks

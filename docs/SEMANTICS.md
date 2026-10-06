@@ -436,7 +436,7 @@ log is kept as `~/Radiance/sem4_gate_run2.log`. The fixes are in §3e.
 | Check | Result |
 | --- | --- |
 | Galley backend tests | 113 passed, 1 skipped |
-| Semantics tests | *skipped by the gate* (pytest is not in kitchen). Run by hand before the gate: 68 passed on CPU |
+| Semantics tests | *skipped by the gate* (pytest was not in kitchen yet). Run by hand before the gate: 68 passed on CPU. pytest was added to kitchen after the gate (6 Oct), so later gates run them |
 | Field probes | 24 × 8 grid still fails to launch on sm_75; impl auto → tcnn/tcnn, split 2 (285 ms, 4.7 GB at 262k points) |
 | Smoke, 200 steps | loss 3.42 → 2.70, Gaussians unchanged, 91 s |
 | Full run (Galley job 22) | succeeded in 32.0 min; **4,200 steps in 31.4 min (2.23 it/s)**, loss 3.51 → 1.60 |
