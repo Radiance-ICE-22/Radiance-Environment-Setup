@@ -159,6 +159,8 @@ export interface Preview {
   stats: { v_max: number; v_mean: number; a_max: number; length_m: number; nonfinite_inputs: number };
   inputs: { names: string[]; lower: number[]; upper: number[]; u: number[][]; max_use: (number | null)[];
     violations: Record<string, [number, number][]> };
+  /** Timing sanity (course_tools ≥ 6 Oct): squeezed legs, and an expert re-time that could not move the guess. */
+  timing?: { fast_segments: string[]; retime_stalled: boolean; over_limits: boolean };
   clearance: { threshold: number; k: number; d: number[]; min: number; at_t: number; at_pos: V3;
     body_radius?: number; min_centre?: number;   // d/min are gaps to the drone's sphere when body_radius > 0
     below: [number, number][]; n_points: number; nearest_min: number; nearest_at_t: number; note: string } | null;
@@ -172,7 +174,7 @@ export const courseApi = {
   geometry: (scene: string, margin = 0.5) =>
     req<Geometry>("GET", `/scenes/${encodeURIComponent(scene)}/geometry?margin=${margin}`),
   preview: (r: PreviewRequest) => req<Preview>("POST", "/courses/preview", r),
-  lint: (name: string) => req<{ int_cells: string[] }>("GET", `/courses/${encodeURIComponent(name)}/lint`),
+  lint: (name: string) => req<{ int_cells: string[]; fast_segments?: string[] }>("GET", `/courses/${encodeURIComponent(name)}/lint`),
   /** Export (first time) and describe the scene's browser splat. */
   splat: (scene: string, build = true) => req<SplatMeta>("POST", `/scenes/${encodeURIComponent(scene)}/splat?build=${build}`),
 };

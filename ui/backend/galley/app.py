@@ -19,7 +19,7 @@ from . import pipeline as pl
 from . import semantics as sem
 from . import svnet as sv
 from .configs import FAMILIES, ConfigError, ConfigStore
-from .course import Busy, CourseTools, PreviewRequest, ToolError, int_cells
+from .course import Busy, CourseTools, PreviewRequest, ToolError, fast_segments, int_cells
 from .db import DB
 from .jobs import JobRunner
 from .semworker import SemWorker, WorkerError, WorkerRefused
@@ -190,7 +190,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.get("/api/courses/{name}/lint", dependencies=[api])
     def course_lint(name: str):
         data = _cfg(lambda: store.read("courses", name))
-        return {"int_cells": int_cells(data)}
+        return {"int_cells": int_cells(data), "fast_segments": fast_segments(data)}
 
     # ── semantic features (docs/SEMANTICS.md) ──────────────────────────────────
     def gz(request: Request, body: bytes, media: str, cache: str = "no-cache") -> Response:

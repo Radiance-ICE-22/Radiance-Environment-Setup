@@ -145,6 +145,33 @@ class CourseTools:
             self._splat_lock.release()
 
 
+def fast_segments(course: dict, max_speed: float = 5.0, max_ratio: float = 3.0) -> list[str]:
+    """Same check as figs_pipeline.course_fast_segments: keyframe times far too short for their
+    distance, a starting guess the expert's time optimisation cannot recover from."""
+    kf = (course.get("waypoints") or {}).get("keyframes") or {}
+    names = list(kf)
+
+    def pos(k):
+        return [(row[0] if isinstance(row, list) else row) for row in k.get("fo", [])[:3]]
+
+    segs = []
+    for a, b in zip(names, names[1:]):
+        pa, pb = pos(kf[a]), pos(kf[b])
+        d = sum((x - y) ** 2 for x, y in zip(pa, pb) if x is not None and y is not None) ** 0.5
+        segs.append((a, b, d, float(kf[b]["t"]) - float(kf[a]["t"])))
+    total_t = sum(dt for *_, dt in segs if dt > 0)
+    mean = sum(d for _, _, d, dt in segs if dt > 0) / total_t if total_t > 0 else 0.0
+    out = []
+    for a, b, d, dt in segs:
+        if dt <= 0:
+            out.append(f"{a}→{b}: t does not increase ({dt:+.3f} s)")
+            continue
+        v = d / dt
+        if v > max_speed or (v > 2.5 and mean > 0 and v > max_ratio * mean):
+            out.append(f"{a}→{b}: {d:.2f} m in {dt:.3f} s = {v:.1f} m/s (course mean {mean:.1f} m/s)")
+    return out
+
+
 def int_cells(course: dict) -> list[str]:
     """Same check as figs_pipeline.course_int_cells: fo cells saved as JSON integers,
     which FiGS's KF_to_TpFO silently replaces with the previous cell's value."""

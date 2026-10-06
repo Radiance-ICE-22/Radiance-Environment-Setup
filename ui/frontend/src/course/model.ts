@@ -118,7 +118,26 @@ export function nextName(c: Course, base = "k"): string {
   return `${base}${n}`;
 }
 
-/** New pass-through keyframe between i and i+1 (position fixed, derivatives free). */
+const dist3 = (p: Vec3, q: Vec3) => Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]);
+
+/** The course's mean speed (m/s) over its keyframes' straight-line legs; null with no positive duration. */
+export function meanSpeed(c: Course): number | null {
+  let d = 0, t = 0;
+  for (let i = 0; i + 1 < c.kfs.length; i++) {
+    const dt = c.kfs[i + 1].t - c.kfs[i].t;
+    if (dt > 0) { d += dist3(displayPos(c, i), displayPos(c, i + 1)); t += dt; }
+  }
+  return t > 0 && d > 0 ? d / t : null;
+}
+
+/**
+ * New pass-through keyframe between i and i+1 (position fixed, derivatives free). It INSERTS time
+ * rather than splitting the interval: each new leg gets distance / speed (the course's mean speed,
+ * clamped to 0.5–2 m/s; 0.8 m/s when there is none), at least 0.5 s, and later keyframes shift
+ * when the old interval is too short. Halving the interval instead (the old rule) squeezed a 3 s
+ * course into segments of 0.375 s for 4 m — a starting guess the expert's time optimisation
+ * cannot recover from (6 Oct).
+ */
 export function insertAfter(c: Course, i: number, at?: Vec3): Course {
   const j = Math.min(i, c.kfs.length - 2);          // never after the last keyframe
   const a = c.kfs[j], b = c.kfs[j + 1];
@@ -126,11 +145,44 @@ export function insertAfter(c: Course, i: number, at?: Vec3): Course {
   const p = at ?? (pa.map((v, ax) => (v + pb[ax]) / 2) as Vec3);
   const yawA = a.fo[3][0], yawB = b.fo[3][0];
   const yaw = yawA !== null && yawB !== null ? (yawA + yawB) / 2 : yawA ?? yawB ?? 0;
-  const kf: KF = { name: nextName(c), t: round((a.t + b.t) / 2, 3),
+  const v = Math.min(2, Math.max(0.5, meanSpeed(c) ?? 0.8));
+  const dA = Math.max(0.5, dist3(pa, p) / v), dB = Math.max(0.5, dist3(p, pb) / v);
+  const old = b.t - a.t;
+  const shift = Math.max(0, dA + dB - old);
+  const t = shift > 0 ? a.t + dA : a.t + (old * dA) / (dA + dB);
+  const kf: KF = { name: nextName(c), t: round(t, 3),
     fo: [...p.map((v) => [round(v, 3), null, null, null]), [round(yaw, 3), null, null, null]] };
-  const kfs = [...c.kfs];
+  const kfs = c.kfs.map((k, n) => (n > j && shift > 0 ? { ...k, t: round(k.t + shift, 3) } : k));
   kfs.splice(j + 1, 0, kf);
   return { ...c, kfs };
+}
+
+/**
+ * Same rule as figs_pipeline.course_fast_segments: legs whose keyframe times are far too short for
+ * their distance (> 5 m/s, or > 3 × the course's mean speed and > 2.5 m/s), or whose time does not
+ * increase. Positions use the axes both keyframes fix, as the pipeline does.
+ */
+export function fastSegments(c: Course, maxSpeed = 5, maxRatio = 3): string[] {
+  const segs: { a: string; b: string; d: number; dt: number }[] = [];
+  for (let i = 0; i + 1 < c.kfs.length; i++) {
+    const A = c.kfs[i], B = c.kfs[i + 1];
+    let s = 0;
+    for (let ax = 0; ax < 3; ax++) {
+      const x = A.fo[ax]?.[0] ?? null, y = B.fo[ax]?.[0] ?? null;
+      if (x !== null && y !== null) s += (x - y) ** 2;
+    }
+    segs.push({ a: A.name, b: B.name, d: Math.sqrt(s), dt: B.t - A.t });
+  }
+  const tt = segs.reduce((n, g) => n + (g.dt > 0 ? g.dt : 0), 0);
+  const mean = tt > 0 ? segs.reduce((n, g) => n + (g.dt > 0 ? g.d : 0), 0) / tt : 0;
+  const out: string[] = [];
+  for (const g of segs) {
+    if (g.dt <= 0) { out.push(`${g.a}→${g.b}: t does not increase (${g.dt >= 0 ? "+" : ""}${g.dt.toFixed(3)} s)`); continue; }
+    const sp = g.d / g.dt;
+    if (sp > maxSpeed || (sp > 2.5 && mean > 0 && sp > maxRatio * mean))
+      out.push(`${g.a}→${g.b}: ${g.d.toFixed(2)} m in ${g.dt.toFixed(3)} s = ${sp.toFixed(1)} m/s (course mean ${mean.toFixed(1)} m/s)`);
+  }
+  return out;
 }
 
 /**

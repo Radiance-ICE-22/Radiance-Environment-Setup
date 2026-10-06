@@ -870,6 +870,44 @@ def course_int_cells(keyframes):
             if isinstance(v, int) and not isinstance(v, bool)]
 
 
+SEG_MAX_SPEED = 5.0      # m/s: a starting guess faster than this is not a sensible course timing
+SEG_MAX_RATIO = 3.0      # × the course's mean speed
+
+
+def course_fast_segments(keyframes, max_speed=SEG_MAX_SPEED, max_ratio=SEG_MAX_RATIO):
+    """Segments whose keyframe times are far too short for their distance.
+
+    The `t` values are only the starting guess for the expert's time optimisation (MinTimeSnap,
+    SLSQP on the raw durations). Snap cost grows like 1/dt^7, so with a badly squeezed guess the
+    problem is so badly scaled that SLSQP stops at the guess and still reports success (found
+    6 Oct: a segment of 4.1 m in 0.375 s gave a 33 m/s, 528 %-thrust trajectory that would fly
+    as is). Straight-line distance between consecutive keyframes over their time difference,
+    using the axes both keyframes fix; flagged above max_speed m/s, or above max_ratio × the
+    course's mean speed (and > 2.5 m/s), or when the time does not increase. Returns readable
+    strings (empty = fine)."""
+    names = list(keyframes)
+
+    def pos(k):
+        return [(row[0] if isinstance(row, list) else row) for row in k["fo"][:3]]
+
+    segs = []
+    for a, b in zip(names, names[1:]):
+        pa, pb = pos(keyframes[a]), pos(keyframes[b])
+        d = sum((x - y) ** 2 for x, y in zip(pa, pb) if x is not None and y is not None) ** 0.5
+        segs.append((a, b, d, float(keyframes[b]["t"]) - float(keyframes[a]["t"])))
+    total_t = sum(dt for *_, dt in segs if dt > 0)
+    mean = sum(d for _, _, d, dt in segs if dt > 0) / total_t if total_t > 0 else 0.0
+    out = []
+    for a, b, d, dt in segs:
+        if dt <= 0:
+            out.append(f"{a}→{b}: t does not increase ({dt:+.3f} s)")
+            continue
+        v = d / dt
+        if v > max_speed or (v > 2.5 and mean > 0 and v > max_ratio * mean):
+            out.append(f"{a}→{b}: {d:.2f} m in {dt:.3f} s = {v:.1f} m/s (course mean {mean:.1f} m/s)")
+    return out
+
+
 def course_digest(repo, course):
     """Content hash of configs/courses/<course>.json, so editing a course (same name)
     invalidates the `course` and `simulate` steps instead of silently reusing them."""
@@ -931,6 +969,13 @@ def step_course(c):
             f"{', …' if len(bad) > 6 else ''}). FiGS reads an integer cell as the previous "
             "cell's value, so the flight would be wrong without any error. Write them as "
             "floats (0.0, not 0), or re-save the course from Galley's course editor.")
+    fast = course_fast_segments(kf)
+    if fast:
+        warn(f"{len(fast)} segment(s) have keyframe times far too short for their distance: " + "; ".join(fast[:4])
+             + ". The expert's time optimisation cannot recover from such a starting guess (it stops at it and "
+             "reports success), so the flight would follow these times. Space the keyframes' t values out "
+             "(about 1 s per metre), or use Galley's Re-time and write the solved times into the keyframes.")
+    c.results["course_fast_segments"] = fast
     outside = 0
     print(f"  {'keyframe':<8} {'t':>6}  {'course':<24} {'splat':<24} in?")
     for name, k in kf.items():

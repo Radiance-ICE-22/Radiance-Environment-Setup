@@ -113,7 +113,7 @@ def test_saved_course_cells_are_floats(client, settings):
     saved = json.loads(text)
     fo = saved["waypoints"]["keyframes"]["a"]["fo"]
     assert fo[0] == [0.4, 0.0] and all(isinstance(v, float) for row in fo for v in row)
-    assert client.get("/api/courses/edited/lint").json() == {"int_cells": []}
+    assert client.get("/api/courses/edited/lint").json()["int_cells"] == []
     mirrored = settings.overlay / "configs" / "courses" / "edited.json"
     assert mirrored.read_text() == text
 
@@ -122,7 +122,34 @@ def test_lint_finds_integer_cells(client, settings):
     p = settings.configs_dir / "courses" / "handmade.json"
     p.write_text('{"waypoints": {"Nco": 6, "keyframes": {"a": {"t": 0, "fo": [[0.4, 0], [0.0], [-1.0], [0.0]]},'
                  ' "b": {"t": 1.0, "fo": [[1.0], [0.0], [-1.0], [0]]}}}, "forces": null}')
-    assert client.get("/api/courses/handmade/lint").json() == {"int_cells": ["a.fo[0][1]", "b.fo[3][0]"]}
+    assert client.get("/api/courses/handmade/lint").json() == {"int_cells": ["a.fo[0][1]", "b.fo[3][0]"], "fast_segments": []}
+
+
+SQUEEZED = {"waypoints": {"Nco": 6, "keyframes": {
+    "start": {"t": 0.0, "fo": [[-0.025, 0.0], [-6.715, 0.0], [-1.211, 0.0], [0.163, 0.0]]},
+    "k3": {"t": 2.25, "fo": [[0.836], [-4.752], [-1.519], [1.631]]},
+    "k4": {"t": 2.625, "fo": [[1.368], [-0.67], [-1.465], [1.967]]},
+    "goal": {"t": 3.0, "fo": [[-0.63, 0.0], [1.111, 0.0], [-1.109, 0.0], [1.552, 0.0]]}}}, "forces": None}
+
+
+def test_lint_flags_keyframe_times_too_short_for_the_distance(client, settings):
+    """6 Oct: Add halved the intervals of a 3 s course; the expert's SLSQP then stopped at the guess."""
+    import sys
+    from galley.course import fast_segments
+    (settings.configs_dir / "courses" / "squeezed.json").write_text(json.dumps(SQUEEZED))
+    fast = client.get("/api/courses/squeezed/lint").json()["fast_segments"]
+    assert len(fast) == 2 and fast[0].startswith("k3→k4: 4.12 m in 0.375 s = 11.0 m/s")
+    spaced = json.loads(json.dumps(SQUEEZED))
+    for n, t in (("k3", 1.5), ("k4", 3.35), ("goal", 5.5)):
+        spaced["waypoints"]["keyframes"][n]["t"] = t
+    assert fast_segments(spaced) == []
+    back = json.loads(json.dumps(SQUEEZED)); back["waypoints"]["keyframes"]["k4"]["t"] = 2.0
+    assert any("does not increase" in f for f in fast_segments(back))
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "figs"))   # the pipeline's copy agrees
+    from figs_pipeline import course_fast_segments
+    for c in (SQUEEZED, spaced, back):
+        assert course_fast_segments(c["waypoints"]["keyframes"]) == fast_segments(c)
 
 
 def test_course_file_layout_and_goal(client, settings):

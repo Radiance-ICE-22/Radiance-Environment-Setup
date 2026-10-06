@@ -14,7 +14,7 @@ import Scene3D, { Tool, ViewOpts } from "../course/Scene3D";
 import { useSplat } from "../splat/load";
 import { useDrone } from "../course/Drone";
 import {
-  AXES, blankLoop, Cell, emptyAxes, Course, CourseFile, displayPos, fromFile, insertAfter, inside, MAX_ORDERS, ORDERS,
+  AXES, blankLoop, Cell, emptyAxes, Course, CourseFile, displayPos, fastSegments, fromFile, insertAfter, inside, MAX_ORDERS, ORDERS,
   pos0, problems, round, SemanticGoal, toFile, Vec3, withGoalAt,
 } from "../course/model";
 
@@ -300,7 +300,13 @@ export default function CoursePage({ scene, name }: { scene?: string; name?: str
     "file.save": { run: () => save(), disabled: noCourse || (!dirty && saveName === name && "Saved.") },
     "course.saveas": { run: saveAs, disabled: noCourse },
     "edit.undo": { run: undo, disabled: !hist.current.length && "Nothing to undo." },
-    "course.lint": name ? { run: () => courseApi.lint(name).then((l) => { setIntCells(l.int_cells); setMsg({ ok: !l.int_cells.length, text: l.int_cells.length ? `${l.int_cells.length} integer cell(s): ${l.int_cells.slice(0, 6).join(", ")}. Saving writes floats.` : "No integer cells." }); }) } : { disabled: "Save the course first." },
+    "course.lint": name ? { run: () => courseApi.lint(name).then((l) => {
+      setIntCells(l.int_cells);
+      const fast = l.fast_segments ?? [];
+      const parts = [l.int_cells.length ? `${l.int_cells.length} integer cell(s): ${l.int_cells.slice(0, 6).join(", ")}. Saving writes floats.` : "No integer cells.",
+        fast.length ? `${fast.length} leg(s) with far too little time in the saved file: ${fast.slice(0, 3).join("; ")}.` : "Keyframe times are plausible."];
+      setMsg({ ok: !l.int_cells.length && !fast.length, text: parts.join(" ") });
+    }) } : { disabled: "Save the course first." },
     "tool.move": { checked: tool === "move", run: () => setTool("move"), disabled: noCourse },
     "tool.yaw": { checked: tool === "yaw", run: () => setTool("yaw"), disabled: noCourse },
     "tool.add": { checked: tool === "add", run: () => setTool("add"), disabled: noCourse },
@@ -356,6 +362,8 @@ export default function CoursePage({ scene, name }: { scene?: string; name?: str
     ...probs.map((p) => ({ severity: "error" as const, where: p.kf !== undefined && course ? `keyframe ${course.kfs[p.kf]?.name}` : "course", message: p.msg })),
     ...(intCells.length ? [{ severity: "warning" as const, where: `${name}.json`, message: `${intCells.length} integer cell(s) (${intCells.slice(0, 4).join(", ")}${intCells.length > 4 ? ", …" : ""}): FiGS reads an integer as the previous cell's value. Saving from this editor writes floats.` }] : []),
     ...(course && box ? course.kfs.filter((k) => !inside(pos0(k), box)).map((k) => ({ severity: "warning" as const, where: `keyframe ${k.name}`, message: "Outside the captured volume: the splat renders mush there." })) : []),
+    ...(course ? fastSegments(course).map((f) => ({ severity: "warning" as const, where: `timing ${f.split(":")[0]}`, message: `${f.slice(f.indexOf(":") + 2)}: far too little time for the distance. The expert's re-time cannot recover from such a starting guess (it stops at it), so this would fly as previewed. Give the leg about 1 s per metre in the t column.` })) : []),
+    ...(pv && !stale && pv.timing?.retime_stalled ? [{ severity: "error" as const, where: "re-time", message: "The expert's time optimisation returned the file's times unchanged while the path breaks the input limits: it could not move from this starting guess. Space the keyframes' t values out (about 1 s per metre), then Re-time again." }] : []),
     ...(pv && !stale && pv.clearance && pv.clearance.min < pv.clearance.threshold ? [{ severity: "warning" as const, where: `t = ${pv.clearance.at_t} s`, message: `${(pv.clearance.body_radius ?? 0) > 0 ? "Gap" : "Clearance"} ${pv.clearance.min} m, under ${pv.clearance.threshold} m (${pv.clearance.below.map(([a, b]) => `${a}–${b} s`).join(", ")}).` }] : []),
     ...(pv && !stale ? Object.entries(pv.inputs.violations).map(([k, iv]) => ({ severity: "warning" as const, where: `input ${k}`, message: `Beyond ${pv.pilot}'s bounds at ${iv.map(([a, b]) => `${a}–${b} s`).join(", ")}: the MPC will saturate. Move the keyframes around it apart, or use an expert copy with a smaller kT.` })) : []),
     ...(pv && !stale && pv.inside && pv.inside.outside_frac > 0 ? [{ severity: "warning" as const, where: "path", message: `${Math.round(pv.inside.outside_frac * 100)}% of the path is outside the captured volume.` }] : []),
@@ -622,7 +630,8 @@ function Kpis({ pv }: { pv: Preview }) {
   const viol = Object.keys(u.violations).length > 0;
   return (
     <div className="kpis" style={{ flexWrap: "nowrap", overflowX: "auto" }}>
-      <Kpi v={`${pv.duration_solved} s`} l={pv.mode === "expert" ? `duration (file ${pv.duration_file})` : "duration"} />
+      <Kpi v={`${pv.duration_solved} s`} l={pv.mode === "expert" ? (pv.timing?.retime_stalled ? "re-time stalled: times unchanged" : `duration (file ${pv.duration_file})`) : "duration"}
+        bad={!!pv.timing?.retime_stalled} />
       <Kpi v={`${pv.stats.length_m} m`} l="path length" />
       <Kpi v={`${pv.stats.v_max} m/s`} l={`max speed (mean ${pv.stats.v_mean})`} />
       <Kpi v={`${pv.stats.a_max} m/s²`} l="max accel" />

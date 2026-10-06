@@ -558,6 +558,16 @@ Prototype it on the new PC as soon as Ubuntu is installed.
   previous cell's value (or crashes on the first cell), with no error. The old Configs page
   could write these (JSON.stringify turns 0.0 into 0); saves are now written as floats, the
   `course` step refuses integer cells, and `GET /api/courses/{name}/lint` finds them.
+- **A squeezed starting guess flies as is (6 Oct).** The expert's time optimisation (FiGS `MinTimeSnap`,
+  SLSQP on the raw segment durations) cannot recover from keyframe times far too short for their distance:
+  snap cost grows like 1/dt⁷, the problem is badly scaled, and SLSQP stops at the guess after a few
+  iterations *reporting success* (`sem_gate_red_tool_chest` with two added keyframes: 0.375 s for 4.1 m →
+  "re-timed" times unchanged, 33 m/s, 528 % thrust; the same course with t = 0 / 1.5 / 3.35 / 5.5 re-times to
+  5.48 s, 2.5 m/s, 44 % thrust). The old *Add* caused it by halving the interval. Now: *Add* inserts time
+  (distance ÷ the course's mean speed, clamped 0.5–2 m/s, ≥ 0.5 s per leg, later keyframes shifted);
+  the editor's Problems list, Lint and the `course` step flag legs over 5 m/s (or over 3 × the course mean
+  and 2.5 m/s) — `figs_pipeline.course_fast_segments`, mirrored in `galley/course.py` and `course/model.ts`;
+  and a Re-time that returns the file's times while breaking input limits is reported as stalled.
 - **Course `t` values are a starting guess.** Viper's `kT` makes `MinTimeSnap` re-optimise the
   segment durations (SLSQP, snap cost + kT × total time), so stretching the `t` values has
   limited effect on the flown timing, despite the pipeline's "stretch the t values" hint. To

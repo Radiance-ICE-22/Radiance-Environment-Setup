@@ -45,7 +45,7 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from figs_pipeline import course_inside, course_int_cells, splat_to_course  # noqa: E402
+from figs_pipeline import course_fast_segments, course_inside, course_int_cells, splat_to_course  # noqa: E402
 
 
 def emit(obj, code=0):
@@ -323,6 +323,11 @@ def cmd_preview(a):
     }
 
     Tkf = np.asarray(mts.Tkf, dtype=float)
+    # Timing sanity (6 Oct): with a badly squeezed starting guess, the expert's SLSQP stops at the
+    # guess and reports success, so "re-timed" times equal the file's while the path breaks limits.
+    over_limits = bool(inputs["violations"]) or any(u is not None and u > 1.0 for u in inputs["max_use"])
+    stalled = (a.mode == "expert" and len(t_file) > 1 and bool(np.allclose(Tkf - Tkf[0], t_file - t_file[0], atol=1e-6))
+               and over_limits)
     # position each keyframe actually gets (free cells resolved by the solver)
     kidx = [int(np.argmin(np.abs(Tsd - tk))) for tk in Tkf]
     out = {
@@ -340,6 +345,8 @@ def cmd_preview(a):
                   "length_m": round(float(np.linalg.norm(np.diff(pos, axis=0), axis=1).sum()), 2),
                   "nonfinite_inputs": int((~finite).sum())},
         "inputs": inputs,
+        "timing": {"fast_segments": course_fast_segments(course["waypoints"]["keyframes"]),
+                   "retime_stalled": stalled, "over_limits": over_limits},
         "clearance": None, "inside": None,
     }
 
