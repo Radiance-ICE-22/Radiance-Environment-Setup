@@ -176,10 +176,23 @@ def status(s: Settings, scene: str) -> dict:
         })
     tables.sort(key=lambda t: (not t["active_run"], t["run"], t["backend"]))
     ann = load_queries(s, scene)
+    evals = []                       # Phase 5: radiance_semantics.evaluate output for the active run
+    for p in sorted((root / run / "eval").glob("*.json")) if (run and root.is_dir()) else []:
+        if p.name.startswith("sweep_"):
+            continue
+        d = _json(p, {})
+        if not d.get("metrics"):
+            continue
+        evals.append({"variant": d.get("variant"), "backend": d.get("backend"), "set": d.get("set"),
+                      "stale": d.get("key") != key, "evaluated": d.get("evaluated"), "metrics": d["metrics"],
+                      "failed": [{"text": r["text"], "failure": r.get("failure"), "error": r.get("error"),
+                                  "top": (r.get("top") or {}).get("centroid")}
+                                 for r in d.get("records", []) if not r.get("negative") and not r.get("hit")]})
     return {"scene": scene, "run": run, "key": key, "steps": steps,
             "config": _json(st / "config.json", {}) if st else {},
             "results": _json(st / "results.json", {}) if st else {},
             "tables": tables,
+            "eval": evals,
             "ready": [t["backend"] for t in tables if t["active_run"] and not t["stale"]],
             "queries": {"total": len(ann["queries"]),
                         "annotated": sum(q.get("position") is not None for q in ann["queries"])}}

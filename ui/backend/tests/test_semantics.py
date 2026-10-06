@@ -169,6 +169,23 @@ def test_status_fresh_stale_and_other_runs(settings, sem_project):
     assert st["tables"][0]["stale"] is True and st["ready"] == []
 
 
+def test_status_lists_phase5_evaluations(settings, sem_project):
+    """evaluate.py writes semantics/<run>/eval/<variant>.json; status shows metrics and the failed queries."""
+    import json
+    key = current_key(sem_project)
+    d = sem.semantics_dir(settings, "backroom") / RUN / "eval"
+    d.mkdir(parents=True)
+    rec = [{"text": "chair", "negative": False, "hit": False, "error": 3.1, "failure": "wrong object", "top": {"centroid": [1, 2, 3]}},
+           {"text": "bin", "negative": False, "hit": True, "error": 0.1},
+           {"text": "sofa", "negative": True, "n_candidates": 0}]
+    (d / "L-C.json").write_text(json.dumps({"variant": "L-C", "backend": "lift", "set": "phase5", "key": key,
+                                            "metrics": {"hit_rate": 0.5, "n_pos": 2}, "records": rec}))
+    (d / "sweep_L-C.json").write_text("[]")
+    ev = sem.status(settings, "backroom")["eval"]
+    assert len(ev) == 1 and ev[0]["variant"] == "L-C" and ev[0]["stale"] is False and ev[0]["metrics"]["hit_rate"] == 0.5
+    assert ev[0]["failed"] == [{"text": "chair", "failure": "wrong object", "error": 3.1, "top": [1, 2, 3]}]
+
+
 def test_active_key_matches_splat_cache_key(settings, sem_project):
     """The table key and CourseTools.splat's cache key must be the same string."""
     run, key = sem.active_key(settings, "backroom")

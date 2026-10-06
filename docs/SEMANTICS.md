@@ -603,5 +603,26 @@ Caveats: 29 positive and 6 negative queries over two scenes, one training seed p
 placed by Claude from photos (dev-set check 0.09–0.42 m from Suhan's placements; flightroom positions
 reprojection-checked); GTN_lab_v1 excluded (folded reconstruction, §12).
 
-Still open in Phase 5: the sensitivity sweeps on the best variant (threshold, feature width, cluster voxel),
-the Galley Semantics-tile metrics table, and the browser check of View ▸ Compare.
+**Sensitivity of the lift (L-C) to the query settings** (`evaluate --sweep L-C`, one setting at a time around
+the defaults; `docs/phase5_results/sweep_L-C.csv`; reported only, the defaults stay as fixed on the dev set):
+
+| Setting | backroom hits · neg FP | flightroom hits · neg FP |
+| --- | --- | --- |
+| floor 0.50 / 0.525 / **0.55** / 0.575 / 0.60 | 9·2/3, 9·1/3, **8·1/3**, 7·1/3, 7·1/3 | 12·2/3, 11·1/3, **10·1/3**, 10·0/3, 9·0/3 |
+| rel_alpha 0 / 0.25 / **0.5** / 0.75 | 8 each; ambiguous 0.23 → 0.15 → **0.08** → 0 | 10 each; median error 0.18 → 0.20 → **0.22** → 0.25 m |
+| voxel 0.05 / **0.1** / 0.2 / 0.3 m | 8 each | 10, **10**, 10, 11 |
+
+- The **relevancy floor is the one setting that matters**: lowering it to 0.50 finds 1–2 more objects per scene
+  but doubles the false positives on absent objects (2 of 3); raising it to 0.575 removes flightroom's false
+  positive at no cost there but loses one backroom hit. 0.55 sits at the balance point on both scenes.
+- rel_alpha trades ambiguity (higher = fewer runner-up clusters) against localisation (higher = tighter
+  selection, slightly larger error); hits do not change. The cluster voxel hardly matters (0.05–0.3 m).
+- Not swept: the lift's feature width (480 vs 960 px) — it needs re-lifts on the GPU written to a separate
+  table (`--feat-width` overwrites the lift table today).
+
+Galley: `GET /api/scenes/<scene>/semantics` now returns `eval` (each variant's metrics and its failed queries,
+stale flag by checkpoint key). The Semantics-tile table on the Scene page needs a frontend rebuild, and Node is
+not installed on intellisense08 (ask Suhan, or build on dummy).
+
+Still open in Phase 5: the feature-width sweep, the Semantics-tile table (frontend), and the browser check of
+View ▸ Compare.

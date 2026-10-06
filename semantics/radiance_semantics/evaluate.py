@@ -196,6 +196,38 @@ def run_variants(project_root, scene, variants, set_name="phase5", log=print):
     return summary
 
 
+SWEEPS = {"threshold": [0.50, 0.525, 0.55, 0.575, 0.60],
+          "rel_alpha": [0.0, 0.25, 0.5, 0.75],
+          "voxel": [0.05, 0.1, 0.2, 0.3]}
+
+
+def sweep(project_root, scene, variant="L-C", set_name="phase5", sweeps=None, log=print):
+    """Sensitivity of one variant to the query settings, one parameter at a time around the defaults.
+    Reported as sensitivity only: the defaults were fixed on the development set and stay fixed."""
+    from .annotations import load, path_for
+    from .paths import find_scene_run
+    from .query import TextEncoder
+    from .store import read_table
+    run = find_scene_run(project_root, scene)
+    queries = [q for q in load(path_for(run))["queries"]
+               if q.get("set") == set_name and (q.get("negative") or q.get("position") is not None)]
+    backend, over = VARIANTS[variant]
+    table, sc, enc = read_table(run.backend_dir(backend)), load_scene(run.scene_dir), TextEncoder()
+    base = replace(Settings(), **over)
+    rows = []
+    for param, values in (sweeps or SWEEPS).items():
+        for val in values:
+            m = aggregate(evaluate(table, sc, queries, enc, replace(base, **{param: val}), log=lambda _: None))
+            rows.append({"scene": scene, "variant": variant, "param": param, "value": val,
+                         "default": getattr(base, param) == val, **{k: m[k] for k in (
+                             "hit_rate", "hits", "n_pos", "error_median_m", "ambiguous_rate", "neg_fp_rate")}})
+            log(f"  {variant} {param}={val}{' (default)' if rows[-1]['default'] else ''}: hits {m['hits']}/{m['n_pos']}, "
+                f"median {m['error_median_m']} m, neg FP {m['neg_fp_rate']}, ambiguous {m['ambiguous_rate']}")
+    out = run.semantics_dir / run.run / "eval" / f"sweep_{variant}.json"
+    out.write_text(json.dumps(rows, indent=2) + "\n")
+    return rows
+
+
 COLUMNS = [("scene", "Scene"), ("variant", "Variant"), ("hit_rate", "Top-1 hit"), ("error_median_m", "Err. med. (m)"),
            ("error_p90_m", "Err. p90 (m)"), ("ambiguous_rate", "Ambig."), ("feasible_rate", "Feasible"),
            ("neg_fp_rate", "Neg. FP"), ("neg_auroc", "Neg. AUROC"), ("build_min", "Build (min)"),
@@ -254,10 +286,14 @@ def main(argv=None):
     ap.add_argument("--variants", nargs="+", default=list(VARIANTS), choices=list(VARIANTS))
     ap.add_argument("--set", default="phase5", help="query set in queries.json (default phase5)")
     ap.add_argument("--report", metavar="DIR", help="write variants.csv and variants.tex from the eval files")
+    ap.add_argument("--sweep", metavar="VARIANT", choices=list(VARIANTS),
+                    help="sensitivity of VARIANT to threshold / rel_alpha / voxel (with --scene)")
     ap.add_argument("--scenes", nargs="+", help="scenes for --report")
     a = ap.parse_args(argv)
     root = resolve_project_root(a.project_root)
-    if a.scene:
+    if a.scene and a.sweep:
+        sweep(root, a.scene, a.sweep, a.set)
+    elif a.scene:
         run_variants(root, a.scene, a.variants, a.set)
     if a.report:
         rows = report_rows(root, a.scenes or ([a.scene] if a.scene else []), a.variants)
@@ -266,6 +302,18 @@ def main(argv=None):
         write_csv(rows, out / "variants.csv")
         write_latex(rows, out / "variants.tex")
         print(f"  {len(rows)} rows → {out / 'variants.csv'}, {out / 'variants.tex'}")
+    if a.report and a.sweep:
+        import csv
+        rows = []
+        for sc_ in a.scenes or [a.scene]:
+            from .paths import find_scene_run
+            r = find_scene_run(root, sc_)
+            p = r.semantics_dir / r.run / "eval" / f"sweep_{a.sweep}.json"
+            rows += json.loads(p.read_text()) if p.exists() else []
+        with open(Path(a.report) / f"sweep_{a.sweep}.csv", "w", newline="") as f:
+            w = csv.DictWriter(f, fieldnames=list(rows[0]) if rows else ["scene"])
+            w.writeheader(); w.writerows(rows)
+        print(f"  {len(rows)} sweep rows → {Path(a.report) / f'sweep_{a.sweep}.csv'}")
     if not (a.scene or a.report):
         ap.error("give --scene and/or --report")
     return 0
