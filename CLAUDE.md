@@ -33,7 +33,7 @@ Read only the sections you need; they are long.
 | P2 Galley backend + CPU query worker | DONE (warm query ~0.74 s, cold 5.8 s) |
 | P3 splat editor `#/splat/<scene>` | DONE (query → Send to course → flight) |
 | P4 FMGS backend | DONE — gate PASSED 6 Oct 13:31 (run 3, 7344e7a) |
-| P5 evaluation (L-C, L-CD, F-C, F-CD × backroom, GTN_lab_v1) | Not started |
+| **P5 evaluation (L-C, L-CD, F-C, F-CD × backroom, GTN_lab_v1)** | **In progress — `docs/SEMANTICS.md` §12** (variants + evaluator built; query sets drafted; GPU runs queued) |
 | P6 instruction → semantic-course → SV-Net cohorts | Not started (experiment waits on SV-Net flying) |
 
 **Phase 4 gate, run 3** (6 Oct, intellisense08, `7344e7a`) — PASSED; details in `docs/SEMANTICS.md` §3e and §11.

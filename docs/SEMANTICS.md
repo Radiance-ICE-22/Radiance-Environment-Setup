@@ -465,3 +465,57 @@ Notes:
   queries must not shape FMGS's settings.
 - Not checked yet: View ▸ Compare in the browser (lift | FMGS) on the new table.
 
+
+## 12. Phase 5: decisions and progress (6 Oct, in progress)
+
+**Decisions (Suhan, 6 Oct):**
+- Second scene: GTN_lab_v1, diagnosed first rather than recaptured (below).
+- **L-CD** = lift table + DINO at query time: relevancy diffused over a spatial 16-NN graph whose edges are the
+  clipped DINO cosine (α 0.5, 2 iterations), and a candidate split in two where its DINO rows form two groups
+  (spherical 2-means, mean directions with cosine < 0.5, each ≥ 15 Gaussians). No retraining.
+- **F-C** = FMGS with the DINO loss **and** pixel alignment off (w_dino = w_pa = 0), so F-C vs F-CD isolates
+  everything DINO contributes. `semantic_pipeline.py --backend fmgs_c` (steps `fmgs_c`, `bake_c`; table
+  `semantics/<run>/fmgs_c/`, no DINO rows; only the 16 CLIP chunks are rendered).
+- **Query sets**: drafted and placed by Claude from the training photos (Suhan reviews). The five Phase 1 queries
+  stay out (development set).
+
+**GTN_lab_v1 is metric.** Its run record looked wrong (camera path 1,309 m, splat bounds ±168 m). Checked on the
+41 frames where marker 0 is the only marker: splat distance / marker (PnP) distance over 733 camera pairs has
+median **1.003** (IQR 0.988–1.015). The scale is right; **3 of 600 cameras** (frames 292, 297, 538) were registered
+100–219 m away by SfM. Without them the camera volume is 11.3 × 8.4 × 1.9 m. `query.pose_inliers` (a camera
+> 4 × the p90 distance from the median camera) now drops such cameras from the query's camera box and approach
+directions and from the training views of lift / FMGS / blend weights (dea2e41). backroom and flightroom lose
+none. The GTN splat itself is weaker: training views render at 18.1 dB PSNR (backroom 31.7 dB) — HDR/HLG footage
+without tone mapping, many washed-out frames.
+
+**Annotating from photos (`annotations.py locate`).** Pick the object's pixel in a training photo; the SfM sparse
+points projecting within 40 px give the nearest depth cluster (20th-percentile depth ± 0.25 m), which is
+unprojected through that frame's pose (CPU only, no semantic features involved). Validated against Suhan's dev
+annotations: shop vacuum 0.09 m, garden cart 0.37 m, red tool chest 0.42 m (one pick lands on the visible face;
+picks from 2+ sides are averaged). Each GTN point is also reprojected into other photos to check it lands on
+the object: thin panels (banners) and far walls leak to the background there, so those objects wait for
+splat-depth picks (dense) once the GPU is free.
+
+Draft sets (`semantics/queries.json`, set `phase5`; frozen copies go into the repo when complete):
+- backroom, 16: recycling bin + "blue trash can" (synonym, one instance seen from 4 sides); office chair +
+  "swivel chair" (3 instances); grandfather clock + "clock"; children's road play mat; camera tripod; purple foam
+  mat; white bucket; glass door cabinet; hose reel (ceiling); moving box; negatives bicycle, sofa, ceiling fan.
+  Dropped as unreliable ground truth: window (no SfM points on glass), stools and a red panel (depth leaks).
+- GTN_lab_v1, 9 so far: television + "wall-mounted screen", GTN logo, green bean bag, round table, flower
+  planter (2 instances so far); negatives red tool chest, shop vacuum (backroom objects), bicycle. To place:
+  ceiling fans, air conditioner, lectern, backpack, the Success / Visualize / MindSET banners, wall mural.
+
+**Evaluator (`radiance_semantics/evaluate.py`, 8bb8b87).** Per variant and query: top candidate vs every annotated
+instance (hit by the gate rule on any instance; error to the nearest), failures sorted into no candidate / bad
+position (missed, top centroid ≤ 1.5 m from an instance) / wrong object. Negatives: false-positive rate at the
+fixed floor (any candidate) and, because the relative threshold always keeps the best match, a threshold-free
+AUROC of peak relevancy, positives vs negatives. Build time, VRAM and table size from the table's index;
+`--report DIR` writes `variants.csv` and `variants.tex`. 77 semantics tests pass.
+
+Check on the dev set (not the evaluation): L-C reproduces the Phase 1 gate exactly (5/5, same errors); L-CD 5/5,
++90 ms per query, 10 s once per table for the DINO graph. The lifted DINO rows of neighbouring Gaussians are
+very alike (mean edge weight 0.945), so diffusion has little contrast to work with — a finding to report, not
+a setting to tune.
+
+GPU queue (one job at a time): GTN_lab_v1 lift (job 23, running) → splat-depth picks for GTN → backroom F-C →
+GTN F-CD → GTN F-C → evaluate both scenes → report.
