@@ -538,3 +538,10 @@ flightroom annotation: sparse-point picks are consistent for objects on solid su
 + water bottle + floor lamp + water jug within 0.7 m; MSL poster and garden cart from two views within 0.15 m)
 but leak to the background on thin ones (monitor, tripods, armchair, ladders), so those wait for splat-depth
 picks after the GPU queue (flightroom's mocap-posed splat should not have GTN's floaters).
+
+**Host crash, 6 Oct 17:47.** intellisense08 reset during flightroom F-CD (job 26, step ~3950 of 4200, healthy at
+2.74 it/s, 7.9 GB device): no clean shutdown (`last`: "crash"), back up at 17:47:52; nothing in the readable
+logs (kern.log needs the adm group). Galley marked jobs 26 and 27 interrupted on restart. Training state was
+safe: job 28 resumed from `step-003000.pt` and job 29 re-queued F-C. A sudden reset without any kernel message
+under steady GPU load points at power (PSU/GPU power trip or mains) rather than the job; GPU telemetry is now
+logged every 5 s to `~/Radiance/gpu_telemetry.csv` (tmux session `gpumon`) in case it repeats.

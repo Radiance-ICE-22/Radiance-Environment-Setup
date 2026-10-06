@@ -133,6 +133,48 @@ def locate(tf, xyz, stem, u, v, radius=20.0, band=0.25):
     return R @ pcam + t, int(len(sel))
 
 
+def locate_depth(run, picks, width=960, window=2, log=print):
+    """Like locate, but from the frozen splat's own rendered depth (dense, so thin panels and far walls
+    work): each (stem, u, v) is read from the expected depth (camera-space z of the Gaussians, alpha-
+    normalised) rendered from that photo's REFINED pose, median over a (2·window+1)² patch with alpha ≥ 0.5,
+    and unprojected. GPU. Returns [(xyz splat frame, depth m)]."""
+    import torch
+    from .cameras import in_workspace, load_pipeline, train_views
+    from .lift import gaussians_from_model, render_size, view_K, views_from_pipeline
+    from .render import render_features, viewmat_from_c2w
+    with in_workspace(run):
+        _, pipeline, _, _ = load_pipeline(run)
+        cams, files, _ = train_views(pipeline)
+        views = {v.stem: v for v in views_from_pipeline(pipeline.model, cams, files)}
+        g = gaussians_from_model(pipeline.model)
+        del pipeline
+    dev = g.means.device
+    out = []
+    for stem, u, v in picks:
+        if stem not in views:
+            raise KeyError(f"{stem} is not a training view (held out, or dropped as a pose outlier)")
+        vw = views[stem]
+        W, H = render_size(vw, width)
+        vm, K = viewmat_from_c2w(vw.c2w.to(dev).float()), view_K(vw, W, H).to(dev)
+        z = (g.means @ vm[:3, :3].T + vm[:3, 3])[:, 2:3]
+        with torch.no_grad():
+            img, alpha = render_features(g, z.contiguous(), vm, K, W, H)
+        depth = (img / alpha.clamp_min(1e-6))[..., 0].cpu().numpy()
+        a = alpha[..., 0].cpu().numpy()
+        su, sv = W / vw.width, H / vw.height                          # photo pixels → render pixels
+        x, y = int(round(u * su)), int(round(v * sv))
+        ys, xs = slice(max(0, y - window), y + window + 1), slice(max(0, x - window), x + window + 1)
+        dz = depth[ys, xs][a[ys, xs] >= 0.5]
+        if len(dz) == 0:
+            raise ValueError(f"{stem} ({u:.0f}, {v:.0f}): nothing rendered there")
+        zz = float(np.median(dz))
+        fx, fy, cx, cy = vw.fx, vw.fy, vw.cx, vw.cy
+        pc = np.array([(u - cx) / fx * zz, -(v - cy) / fy * zz, -zz])
+        c2w = vw.c2w.cpu().numpy()
+        out.append((c2w[:3, :3] @ pc + c2w[:3, 3], zz))
+    return out
+
+
 def ready(data, set_name=None):
     """(annotated, missing) queries, optionally only one set."""
     qs = [q for q in data["queries"] if set_name is None or q.get("set") == set_name]
@@ -154,6 +196,7 @@ def main(argv=None):
     lp = sub.add_parser("locate", help="3D position (course frame) from (frame, u, v) picks in training photos")
     lp.add_argument("picks", nargs="+", help="frame_stem u v [frame_stem u v …] (pixels of the full-size photo)")
     lp.add_argument("--radius", type=float, default=20.0)
+    lp.add_argument("--depth", action="store_true", help="use the splat's rendered depth (GPU) instead of the SfM points")
     sub.add_parser("list")
     a = ap.parse_args(argv)
 
@@ -174,8 +217,12 @@ def main(argv=None):
             print("  ✗ picks come in threes: frame_stem u v", file=sys.stderr)
             return 1
         pts = []
-        for i in range(0, len(a.picks), 3):
-            stem, u, v = a.picks[i], float(a.picks[i + 1]), float(a.picks[i + 2])
+        triples = [(a.picks[i], float(a.picks[i + 1]), float(a.picks[i + 2])) for i in range(0, len(a.picks), 3)]
+        if a.depth:
+            for (stem, u, v), (P, z) in zip(triples, locate_depth(run, triples)):
+                pts.append(P)
+                print(f"   {stem} ({u:.0f}, {v:.0f}): course {np.round(to_course(P), 3).tolist()}  (splat depth {z:.2f} m)")
+        for stem, u, v in ([] if a.depth else triples):
             P, n = locate(tf, xyz, stem, u, v, a.radius)
             pts.append(P)
             print(f"   {stem} ({u:.0f}, {v:.0f}): course {np.round(to_course(P), 3).tolist()}  ({n} points)")
