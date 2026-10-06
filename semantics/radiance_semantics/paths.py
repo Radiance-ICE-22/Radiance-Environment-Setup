@@ -119,10 +119,13 @@ class SceneRun:
     def teachers_dir(self, tag):
         return self.semantics_dir / "teachers" / tag
 
-    def backend_dir(self, backend):
+    def backend_dir(self, backend, suffix=""):
+        """semantics/<run>/<backend><suffix>; a suffix (e.g. _w480) names a variant table for a sweep."""
         if backend not in ("lift", "fmgs", "fmgs_c"):
             raise SemanticsError(f"unknown backend {backend!r} (lift, fmgs or fmgs_c)")
-        return self.semantics_dir / self.run / backend
+        if suffix and not re.fullmatch(r"_[a-z0-9]{1,16}", suffix):
+            raise SemanticsError(f"invalid table suffix {suffix!r} (_ then up to 16 lower-case letters/digits)")
+        return self.semantics_dir / self.run / f"{backend}{suffix}"
 
     @property
     def state_dir(self):

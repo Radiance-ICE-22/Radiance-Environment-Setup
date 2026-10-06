@@ -68,6 +68,8 @@ class Ctx:
         self.project_root = resolve_project_root(a.project_root).resolve()
         self.run = find_scene_run(self.project_root, a.scene)
         self.state = self.run.state_dir
+        if getattr(a, "table_suffix", None):          # a variant table (sweeps): own state, the main table untouched
+            self.state = self.state / f"table{a.table_suffix}"
         self.state.mkdir(parents=True, exist_ok=True)
         self.results = {"scene": a.scene, "run": self.run.run}
         self.reload_results()
@@ -124,7 +126,7 @@ class Ctx:
 
     @property
     def backend_dir(self):
-        return self.run.backend_dir(self.a.backend)
+        return self.run.backend_dir(self.a.backend, getattr(self.a, "table_suffix", None) or "")
 
     @property
     def device(self):
@@ -475,6 +477,8 @@ def run_step_child(c, name):
     import subprocess
     argv = [sys.executable, str(Path(__file__).resolve()), "--project-root", str(c.project_root),
             "--scene", c.a.scene, "--backend", c.a.backend, "--in-step", name]
+    if getattr(c.a, "table_suffix", None):
+        argv += ["--table-suffix", c.a.table_suffix]
     env = os.environ.copy()
     env.setdefault("PYTORCH_CUDA_ALLOC_CONF", "max_split_size_mb:128")
     env["PYTHONUNBUFFERED"] = "1"
@@ -509,6 +513,9 @@ def main(argv=None):
     ap.add_argument("--limit", type=int, help=argparse.SUPPRESS)      # tests: first N frames/views
     ap.add_argument("--redo", action="append", default=[], metavar="STEP")
     ap.add_argument("--from", dest="from_step", metavar="STEP")
+    ap.add_argument("--table-suffix", metavar="SUFFIX",
+                    help="write a variant table semantics/<run>/<backend><SUFFIX> (e.g. _w480 for a feature-width sweep) "
+                         "with its own step state; the main table and its settings stay untouched")
     ap.add_argument("--only", metavar="STEP")
     ap.add_argument("--stop-after", metavar="STEP")
     ap.add_argument("--list-steps", action="store_true")

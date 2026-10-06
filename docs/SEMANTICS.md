@@ -617,12 +617,23 @@ the defaults; `docs/phase5_results/sweep_L-C.csv`; reported only, the defaults s
   positive at no cost there but loses one backroom hit. 0.55 sits at the balance point on both scenes.
 - rel_alpha trades ambiguity (higher = fewer runner-up clusters) against localisation (higher = tighter
   selection, slightly larger error); hits do not change. The cluster voxel hardly matters (0.05–0.3 m).
-- Not swept: the lift's feature width (480 vs 960 px) — it needs re-lifts on the GPU written to a separate
-  table (`--feat-width` overwrites the lift table today).
+- **Feature width (the lift's render width), 6 Oct 19:55–20:15**: re-lifted at 480 and 720 px into variant
+  tables (`semantic_pipeline.py --table-suffix _w480`, own step state; the 960 px table untouched) and evaluated
+  as `L-C@480` etc. (rows in `variants.csv`):
+
+  | Scene | Width | L-C hits | Median error | Lift time | Peak VRAM |
+  | --- | --- | --- | --- | --- | --- |
+  | backroom | 480 / 720 / 960 | 8 / 8 / 8 of 13 | 0.19 / 0.19 / 0.19 m | 1.5 / 2.0 / 3.0 min | 3.4 / 2.5 / 7.4 GB |
+  | flightroom | 480 / 720 / 960 | 10 / 10 / 10 of 16 | 0.23 / 0.22 / 0.22 m | 1.9 / 2.9 / 4.4 min | 1.8 / 3.1 / 2.4 GB |
+
+  Width does not matter: the same queries hit, errors move by ≤ 0.02 m, L-CD behaves the same. Expected — the
+  teacher grids are only ~71 × 40 (CLIP) and 64 × 36 (DINO) cells, so a 480 px render already oversamples them
+  ~7×. 480 px halves the lift time and, on backroom, needs under half the VRAM. (Peak VRAM is not monotonic in
+  width because the lift's accumulation buffers are sized by a budget, not by the render.)
 
 Galley: `GET /api/scenes/<scene>/semantics` now returns `eval` (each variant's metrics and its failed queries,
-stale flag by checkpoint key). The Semantics-tile table on the Scene page needs a frontend rebuild, and Node is
-not installed on intellisense08 (ask Suhan, or build on dummy).
+stale flag by checkpoint key). The Scene page's table was added and built afterwards (9de0182).
 
-Still open in Phase 5: the feature-width sweep, the Semantics-tile table (frontend), and the browser check of
-View ▸ Compare.
+Galley's Scene page shows these results (Semantics tile ▸ Evaluation; misses link into the splat editor), built
+with Node 22.23.3 under `~/Radiance/tools/node` (9de0182). Still open in Phase 5: the browser check of
+View ▸ Compare (and of the new Evaluation table).

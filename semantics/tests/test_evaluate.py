@@ -76,3 +76,12 @@ def test_build_cost_of_a_resumed_fmgs_run(tmp_path):
     (tmp_path / "clip.f16").write_bytes(b"\0" * 2 ** 20)
     c = E.build_cost(T)
     assert c["build_min"] == 35.0 and c["peak_vram_gb"] == 7.5 and c["table_mb"] == 1.0
+
+
+def test_parse_variant():
+    assert E.parse_variant("L-C") == ("lift", {}, "")
+    assert E.parse_variant("L-CD@480") == ("lift", {"dino_diffuse": True, "dino_split": True}, "_w480")
+    import pytest
+    for bad in ("X", "L-C@wide"):
+        with pytest.raises(ValueError):
+            E.parse_variant(bad)

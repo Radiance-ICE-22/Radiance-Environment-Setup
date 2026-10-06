@@ -283,12 +283,12 @@ query set that stays fixed.
 
 - [x] Run every query through `query.py` with fixed settings, and write `semantics/<run>/eval/<variant>.json` per query: top candidate, error, hit, margin, approach gap. — *radiance_semantics/evaluate.py*
 - [x] Aggregate per variant: grounding error (median and 90th percentile, m), top-1 hit rate, ambiguity rate, negative-query false-positive rate, feasible approach rate, build time, peak VRAM, artefact size, query latency. — *SEMANTICS.md §13*
-- [~] Sweeps on the best variant: relevancy threshold, `feat_res`, cluster voxel size. — *threshold, rel_alpha, voxel done (SEMANTICS.md §13); feat_res pending (GPU re-lift)*
+- [x] Sweeps on the best variant: relevancy threshold, `feat_res`, cluster voxel size. — *threshold, rel_alpha, voxel, feature width (SEMANTICS.md §13)*
 - [x] `semantic_pipeline.py --report` writes a CSV and a LaTeX table, ready for `fyp_report.tex`. — *as `python -m radiance_semantics.evaluate --report DIR`; docs/phase5_results/*
 
 **Galley**
 
-- [ ] Scene page Semantics tile: a metrics table per variant with links into the splat editor at each failed query.
+- [x] Scene page Semantics tile: a metrics table per variant with links into the splat editor at each failed query. — *9de0182*
 
 ### Tests
 

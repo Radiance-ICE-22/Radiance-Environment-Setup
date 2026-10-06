@@ -40,6 +40,15 @@ VARIANTS = {
     "F-C": ("fmgs_c", {}),
     "F-CD": ("fmgs", {}),
 }
+def parse_variant(v):
+    """"L-C" → ("lift", {}, ""); "L-C@480" → the same variant on the lift_w480 table (feature-width sweep)."""
+    name, _, width = v.partition("@")
+    if name not in VARIANTS or (width and not width.isdigit()):
+        raise ValueError(f"unknown variant {v!r} ({', '.join(VARIANTS)}, optionally @<feature width>)")
+    backend, over = VARIANTS[name]
+    return backend, over, f"_w{width}" if width else ""
+
+
 NEAR = 1.5          # m: a miss whose top centroid is this close to an instance is "bad position"
 
 
@@ -172,8 +181,8 @@ def run_variants(project_root, scene, variants, set_name="phase5", log=print):
         tmeta = json.loads(tdirs[-1].read_text())
     summary = {}
     for v in variants:
-        backend, over = VARIANTS[v]
-        bdir = run.backend_dir(backend)
+        backend, over, suffix = parse_variant(v)
+        bdir = run.backend_dir(backend, suffix)
         if not (bdir / "index.json").exists():
             log(f"  {v}: no {backend} table at {bdir} — skipped")
             continue
@@ -283,7 +292,7 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--project-root")
     ap.add_argument("--scene", help="evaluate this scene's variants")
-    ap.add_argument("--variants", nargs="+", default=list(VARIANTS), choices=list(VARIANTS))
+    ap.add_argument("--variants", nargs="+", default=list(VARIANTS), help="L-C L-CD F-C F-CD, optionally @<width> (e.g. L-C@480)")
     ap.add_argument("--set", default="phase5", help="query set in queries.json (default phase5)")
     ap.add_argument("--report", metavar="DIR", help="write variants.csv and variants.tex from the eval files")
     ap.add_argument("--sweep", metavar="VARIANT", choices=list(VARIANTS),
