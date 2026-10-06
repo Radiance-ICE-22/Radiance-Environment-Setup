@@ -129,6 +129,16 @@ def test_fmgs_argv(settings):
     assert "--fmgs-width" not in sem.build_argv(settings, sem.SemanticRun(scene="backroom"))
 
 
+def test_fmgs_c_argv(settings):
+    """Phase 5 F-C: FMGS on CLIP alone, its own steps."""
+    settings.defaults.update(semantic_fmgs_width=480)
+    argv = sem.build_argv(settings, sem.SemanticRun(scene="backroom", backend="fmgs_c", redo=["fmgs_c"]))
+    val = lambda f: argv[argv.index(f) + 1]                                            # noqa: E731
+    assert val("--backend") == "fmgs_c" and val("--redo") == "fmgs_c" and val("--fmgs-width") == "480"
+    with pytest.raises(ValueError):
+        sem.SemanticRun(scene="backroom", backend="fmgs_c", from_step="fmgs")         # F-CD's step, not F-C's
+
+
 @pytest.mark.parametrize("bad", [{"scene": "../x"}, {"scene": "b", "teachers": ["dino"]},
                                  {"scene": "b", "only": "lift", "from_step": "teachers"},
                                  {"scene": "b", "from_step": "export", "stop_after": "teachers"},
@@ -180,7 +190,7 @@ def test_job_through_queue_and_archive_waits(client, sem_project):
     log = " ".join(x["line"] for x in client.get(f"/api/jobs/{j['id']}/log").json())
     assert '"--feat-width", "480"' in log and '"--backend", "lift"' in log
     st = client.get("/api/scenes/backroom/semantics").json()
-    assert [x["done"] for x in st["steps"]] == [False, True, True, True, True, False, False] and st["config"]["feat_width"] == "480"
+    assert [x["done"] for x in st["steps"]] == [False, True, True, True, True, False, False, False, False] and st["config"]["feat_width"] == "480"
     assert st["busy"] is False and st["script"] is True
     assert client.post("/api/jobs/semantics", json={"scene": "backroom1"}).status_code == 400   # no model
     assert client.post("/api/jobs/semantics", json={"scene": "../etc"}).status_code == 422

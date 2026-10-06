@@ -519,3 +519,22 @@ a setting to tune.
 
 GPU queue (one job at a time): GTN_lab_v1 lift (job 23, running) → splat-depth picks for GTN → backroom F-C →
 GTN F-CD → GTN F-C → evaluate both scenes → report.
+
+**GTN_lab_v1 is folded; second scene is flightroom (Suhan, 6 Oct 16:20).** GTN_lab_v1's lift was built (job 23:
+537 of 540 views after the 3 outliers, 714,736 of 714,979 Gaussians seen, peak 3.8 GB, 70 min), but its
+geometry is not one consistent room: 395 of 600 cameras face within ±45° of +x (backroom and flightroom spread
+over all directions), photos of the slatted TV wall and of the mural wall (each with a GTN logo) register onto
+the same wall, the banner row in front of the mural projects onto the TV wall in photos where nothing stands
+there, and the splat's own depth is full of floaters (picks at 0.4–0.5 m depth; the same logo 1 m apart from two
+views). Most likely SfM fused the two walls (a "doppelganger" failure on repeated structure). Annotating and
+scoring a folded room would be weak evidence, so Phase 5 uses **flightroom** (Stanford's sample: mocap poses,
+metric without SfM, 499 views in every direction; jobs 25–27 build lift, F-CD, F-C). GTN_lab_v1's partial
+query draft and lift table stay on disk. Our own second capture remains open: the intellisense lab footage
+(Suhan's Drive, 29 Jul) could be added through Galley's New capture as a third scene.
+
+Galley accepts `backend: fmgs_c` (steps fmgs_c / bake_c) since this change; backend tests 114 passed.
+
+flightroom annotation: sparse-point picks are consistent for objects on solid supports (round table + red cup
++ water bottle + floor lamp + water jug within 0.7 m; MSL poster and garden cart from two views within 0.15 m)
+but leak to the background on thin ones (monitor, tripods, armchair, ladders), so those wait for splat-depth
+picks after the GPU queue (flightroom's mocap-posed splat should not have GTN's floaters).

@@ -25,11 +25,12 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from .pipeline import check_scene, trained_models
 from .settings import Settings
 
-STEPS = ["preflight", "cameras", "teachers", "lift", "export", "fmgs", "bake"]
-SemStep = Literal["preflight", "cameras", "teachers", "lift", "export", "fmgs", "bake"]
+STEPS = ["preflight", "cameras", "teachers", "lift", "export", "fmgs", "bake", "fmgs_c", "bake_c"]
+SemStep = Literal["preflight", "cameras", "teachers", "lift", "export", "fmgs", "bake", "fmgs_c", "bake_c"]
 BACKEND_STEPS = {"lift": ["preflight", "cameras", "teachers", "lift", "export"],
-                 "fmgs": ["preflight", "cameras", "teachers", "fmgs", "bake"]}
-BACKENDS = ("lift", "fmgs")
+                 "fmgs": ["preflight", "cameras", "teachers", "fmgs", "bake"],
+                 "fmgs_c": ["preflight", "cameras", "teachers", "fmgs_c", "bake_c"]}   # Phase 5 F-C: FMGS on CLIP alone
+BACKENDS = ("lift", "fmgs", "fmgs_c")
 RUN_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.\-]{0,63}$")
 
 
@@ -37,7 +38,7 @@ class SemanticRun(BaseModel):
     """One invocation of semantic_pipeline.py. Unset fields fall back to the scene's saved settings,
     then the machine profile's defaults (semantic_feat_width for the lift), then the script's defaults."""
     scene: str
-    backend: Literal["lift", "fmgs"] = "lift"
+    backend: Literal["lift", "fmgs", "fmgs_c"] = "lift"
     teachers: list[Literal["clip", "dino"]] = Field(default_factory=list, max_length=2)
     feat_width: Optional[int] = Field(None, ge=64, le=1920)
     dino_width: Optional[int] = Field(None, ge=224, le=1792)
@@ -91,7 +92,7 @@ def build_argv(s: Settings, r: SemanticRun) -> list[str]:
     argv = [s.python, str(script(s)), "--project-root", str(s.project_root), "--scene", r.scene,
             "--backend", r.backend]
     fw = r.feat_width or (s.defaults.get("semantic_feat_width") if r.backend == "lift" else None)
-    fmw = r.fmgs_width or (s.defaults.get("semantic_fmgs_width") if r.backend == "fmgs" else None)
+    fmw = r.fmgs_width or (s.defaults.get("semantic_fmgs_width") if r.backend in ("fmgs", "fmgs_c") else None)
     flags = {"--teachers": ",".join(r.teachers) if r.teachers else None, "--feat-width": fw,
              "--dino-width": r.dino_width, "--batch": r.batch,
              "--fmgs-steps": r.fmgs_steps, "--fmgs-width": fmw, "--fmgs-variant": r.fmgs_variant,
@@ -171,7 +172,7 @@ def status(s: Settings, scene: str) -> dict:
                      for k in ("seconds", "passes", "peak_vram_mib", "render_width", "views")},
             "fmgs": ({k: ix.get("metrics", {}).get("fmgs", {}).get(k)
                       for k in ("steps", "variant", "fallback", "loss_first", "loss_last", "peak_vram_mib_device", "it_per_s")}
-                     if backend == "fmgs" else None),
+                     if backend in ("fmgs", "fmgs_c") else None),
         })
     tables.sort(key=lambda t: (not t["active_run"], t["run"], t["backend"]))
     ann = load_queries(s, scene)
