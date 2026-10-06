@@ -212,30 +212,30 @@ further changes. nerfstudio and SousVide are not edited.
 
 **Plugin registration: `radiance_semantics/fmgs/config.py`**
 
-- [ ] A `MethodSpecification` named `splatfacto-sem`, registered in `semantics/pyproject.toml` under `[project.entry-points."nerfstudio.method_configs"]`. It should appear in `ns-train --help` after `pip install -e`.
-- [ ] Trainer: 4,200 iterations, TensorBoard logging (Galley's `tfevents.py` already reads it), a checkpoint every 1,000 steps.
-- [ ] The dataparser arguments are copied from the `train` command in `figs_pipeline.py` (orientation and centre `none`, no auto-scale), so frames match the splat exactly.
+- [-] A `MethodSpecification` named `splatfacto-sem`, registered in `semantics/pyproject.toml` under `[project.entry-points."nerfstudio.method_configs"]`. It should appear in `ns-train --help` after `pip install -e`. — *superseded: standalone trainer `fmgs/train.py` instead of an `ns-train` plugin (Suhan, 5 Oct)*
+- [x] Trainer: 4,200 iterations, TensorBoard logging (Galley's `tfevents.py` already reads it), a checkpoint every 1,000 steps. (in `fmgs/train.py`)
+- [-] The dataparser arguments are copied from the `train` command in `figs_pipeline.py` (orientation and centre `none`, no auto-scale), so frames match the splat exactly. — *superseded: standalone trainer `fmgs/train.py` instead of an `ns-train` plugin (Suhan, 5 Oct)*
 
 **Model: `fmgs/model.py` — `SemanticSplatfactoModel(SplatfactoModel)`**
 
-- [ ] Config field `splat_ckpt`: in `populate_modules`, copy `gauss_params.*` and the trained camera-optimizer parameters from the checkpoint, then set `requires_grad=False` on all of them.
-- [ ] Override `get_training_callbacks` to drop densify, prune and opacity reset. Override `get_param_groups` to return only `feature_field`.
-- [ ] Pick the trainable subset once: about 40% of Gaussians by opacity, then per view by projected radius from the rasterizer's output, as FMGS does.
-- [ ] `FeatureField` (`fmgs/field.py`): tiny-cuda-nn hash grid (24 levels, resolution 16→512, table 2^20, 8 features per level) on centres normalised by the scene's 1st–99th percentile box, then two tiny-cuda-nn MLP heads: CLIP 512 and DINO 384.
-- [ ] `get_outputs`: evaluate the field only for visible selected Gaussians, rasterize the features with gsplat at `--feat-res` in 32-channel chunks (28 per step for 512 + 384 — the backward limit makes B-lite below more attractive), and return the `clip` and `dino` maps next to the (frozen) RGB.
-- [ ] Losses (`fmgs/losses.py`): 0.2 · CLIP Huber (δ 1.25) against the pyramid grid, 0.8 · DINO L2, and 0.01 · pixel alignment (dot-product consistency between a pixel and its neighbours across the CLIP and DINO spaces).
-- [ ] Learning rates: start from LERF's hash-grid settings and record what was used.
+- [x] Config field `splat_ckpt`: in `populate_modules`, copy `gauss_params.*` and the trained camera-optimizer parameters from the checkpoint, then set `requires_grad=False` on all of them. — standalone equivalent: the Gaussians are loaded detached and never reach the optimizer; checksum before/after
+- [x] Override `get_training_callbacks` to drop densify, prune and opacity reset. Override `get_param_groups` to return only `feature_field`. — standalone equivalent: no densify/prune/reset exists; the optimizer holds only the field
+- [x] Pick the trainable subset once: about 40% of Gaussians by opacity, then per view by projected radius from the rasterizer's output, as FMGS does. — per view by frustum (centre projects into the image ± 10 %), not projected radius
+- [x] `FeatureField` (`fmgs/field.py`): tiny-cuda-nn hash grid (24 levels, resolution 16→512, table 2^20, 8 features per level) on centres normalised by the scene's 1st–99th percentile box, then two tiny-cuda-nn MLP heads: CLIP 512 and DINO 384. — on sm_75 the 24 levels are two tcnn grids of 12 (split 2; a reported deviation, SEMANTICS.md §3e)
+- [x] `get_outputs`: evaluate the field only for visible selected Gaussians, rasterize the features with gsplat at `--feat-res` in 32-channel chunks (28 per step for 512 + 384 — the backward limit makes B-lite below more attractive), and return the `clip` and `dino` maps next to the (frozen) RGB. — in `_step` (480×270, 28 chunks)
+- [x] Losses (`fmgs/losses.py`): 0.2 · CLIP Huber (δ 1.25) against the pyramid grid, 0.8 · DINO L2, and 0.01 · pixel alignment (dot-product consistency between a pixel and its neighbours across the CLIP and DINO spaces). — with dynamic loss scaling and a 1e-3 norm floor in pixel alignment (fp16, SEMANTICS.md §3e)
+- [x] Learning rates: start from LERF's hash-grid settings and record what was used. — Adam 1e-2 → 1e-3, eps 1e-15
 
 **Data: `fmgs/datamanager.py` — `SemanticDataManager`**
 
-- [ ] Subclass the full-image data manager splatfacto uses, and add each image's teacher grids from the Phase 1 cache (held on CPU, moved per batch).
+- [-] Subclass the full-image data manager splatfacto uses, and add each image's teacher grids from the Phase 1 cache (held on CPU, moved per batch). — *superseded: standalone trainer `fmgs/train.py` instead of an `ns-train` plugin (Suhan, 5 Oct)*
 
 **Pipeline steps in `semantic_pipeline.py`**
 
-- [ ] `fmgs`: `ns-train splatfacto-sem --pipeline.model.splat-ckpt <ckpt> --output-dir semantics/<run>/fmgs/train …`, in a child process with the VRAM monitor.
-- [ ] `bake`: load the field, evaluate it at every Gaussian in `splat_order` in batches, write `clip.f16`, `dino.f16`, `pca_rgb.u8`, `index.json` and `field.pt` (the field also answers arbitrary xyz, for Stage 3 voxels).
+- [x] `fmgs`: `ns-train splatfacto-sem --pipeline.model.splat-ckpt <ckpt> --output-dir semantics/<run>/fmgs/train …`, in a child process with the VRAM monitor. — runs `fmgs/train.py` in a child process with the VRAM monitor
+- [x] `bake`: load the field, evaluate it at every Gaussian in `splat_order` in batches, write `clip.f16`, `dino.f16`, `pca_rgb.u8`, `index.json` and `field.pt` (the field also answers arbitrary xyz, for Stage 3 voxels).
 
-**If 8 GB is not enough** (try in this order, and log which one was needed)
+**If 8 GB is not enough** (try in this order, and log which one was needed) — *gate run 3 (6 Oct): only 1 (480×270, the default) was needed; 2^20 table, faithful, no fallback*
 
 1. Feature resolution 480×270 instead of 960×540.
 2. Hash table 2^19.
@@ -248,11 +248,11 @@ further changes. nerfstudio and SousVide are not edited.
 - Cloud (CPU): losses against hand-computed values, coordinate normalisation, callback and parameter-group filtering on a mocked model, entry point import.
 - Host: `ui/deploy/sem4_gate.sh` — a 200-step smoke run (loss falls, Gaussians unchanged by checksum), then the full run, then `bake`.
 
-### Gate
+### Gate — PASSED 6 Oct 13:31 (intellisense08, 7344e7a; SEMANTICS.md §11)
 
-- Full training finishes on intellisense08 with peak VRAM under 8 GB, using the defaults or a logged fallback.
-- The checksum of `gauss_params` is identical before and after training, which proves the splat was not modified.
-- The FMGS table loads in the splat editor, and the Phase 1 queries run on it.
+- [x] Full training finishes on intellisense08 with peak VRAM under 8 GB, using the defaults or a logged fallback.
+- [x] The checksum of `gauss_params` is identical before and after training, which proves the splat was not modified.
+- [x] The FMGS table loads in the splat editor, and the Phase 1 queries run on it. *(Queries run through Galley: 4 of 5 hit. Compare view in the browser not yet checked.)*
 
 ## Phase 5 — Evaluation and comparison
 

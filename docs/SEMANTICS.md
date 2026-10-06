@@ -14,7 +14,7 @@ built, how to run it, and the numbers measured.
 | 1 | Teacher features, lift backend, CLI query | **DONE.** Gate PASSED 5 Oct 16:12: 5 of 5 queries hit (second run, after the relative threshold and a corrected red tool chest annotation). |
 | 2 | Galley backend | **DONE.** Gate PASSED on intellisense08, 5 Oct 17:24 (second run; the first failed only on a host-dependent test, §9): cold query 5.8 s, warm ≤ 789 ms, 5 of 5 hits. |
 | 3 | Splat editor UI | **DONE.** Gate PASSED on intellisense08, 5 Oct: automated half 19:01 (query → course → flight, tracking max 8 mm) and browser half 19:21 (whiteboard sent from the editor, 3-keyframe course flown, tracking max 73 mm); 532 k Gaussians recoloured in 20 ms + 71 ms frame (§10). |
-| 4 | FMGS backend | Built and cloud-tested 5 Oct (§3e): standalone trainer (decided 5 Oct, not an `ns-train` plugin), 12 new semantics tests incl. real CPU training runs, the pipeline's fmgs → bake run end to end on a CPU splatfacto run, editor Compare (12-step browser run). **Gate not yet run** (`ui/deploy/sem4_gate.sh`). |
+| 4 | FMGS backend | **DONE.** Gate PASSED on intellisense08, 6 Oct 13:31 (run 3, 7344e7a, §11): 4,200 steps in 31.4 min, default config (2^20, faithful, 480×270, tcnn split 2), no fallback; peak 5.5 GB PyTorch / 7.95 GB device; Gaussians and checkpoint unchanged; the dev queries hit 4 of 5 on FMGS vs 5 of 5 on the lift. Runs 1–2 failed on tcnn launch limits and then memory, and a NaN came out with the OOM fix (§3e). Standalone trainer (§3e), editor Compare. |
 | 5 | Evaluation and comparison | Not started |
 | 6 | Language → waypoints → SV-Net | Not started |
 
@@ -175,6 +175,55 @@ that the second grid's base resolution is an integer (tcnn's `base_resolution` i
 98 → 512 instead of one ladder 16 → 512 (every level within 1 %). The PyTorch twin computes the same split
 grid. `resolve()` tries the configured grid, then split 2, 3, 4, 6, then PyTorch; the choice (split in
 `field.pt`'s cfg and `train.json`) is recorded and is a reported deviation from FMGS.
+
+**Gate run 2 (70d2178, 5 Oct 21:55) failed** in the smoke run and in the queue (job 21):
+`tiny-cuda-nn/gpu_memory.h:563 cuMemCreate(...) failed: CUDA_ERROR_OUT_OF_MEMORY` in tcnn's backward.
+Diagnosed on intellisense08 on 6 Oct (Claude Code on the host) with a one-step profile at 480 × 270, split 2,
+2^20, over the views with the most trainable Gaussians in frustum (of 212,944 trainable: median 66,563 per
+view, p90 120,550, max 140,374):
+
+| Stage (worst view, 140k Gaussians) | PyTorch live | Device in use |
+| --- | --- | --- |
+| field + Adam state, persistent (2^20) | 2.2 GB | |
+| + teachers upsampled, field forward, 28 render chunks, losses | 5.9 GB peak | 7.3–7.9 GB |
+| tcnn backward needs its own `cuMemCreate` | | **OOM** |
+| after `torch.cuda.empty_cache()` | 2.6 GB | 4.0 GB |
+
+So the live tensors fit; what failed was the split between two allocators. PyTorch's caching allocator kept
+1–3 GB of free but fragmented blocks reserved, which tiny-cuda-nn's own arena cannot use. Without
+expandable segments even a 2^19 table failed on its first step. On top of that, the OOM ladder in `train()`
+caught only `torch.cuda.OutOfMemoryError`, and tcnn raises a plain `RuntimeError`, so the ladder never ran.
+
+Fixes (7344e7a):
+- `train()` switches PyTorch's allocator to **expandable segments**.
+- tcnn's `RuntimeError` counts as out of memory (`is_oom`). A step that runs out is **retried once** with
+  the cache emptied and the same random state. A second failure goes down the ladder (which now works for
+  tcnn's error too; seen in a debug run).
+- Shorter tensor lifetimes: the fp32 head outputs and the un-normalised render are dropped once used
+  (−1 GB at 140k). The losses no longer keep full-map products for backward: `masked_mean` sums the
+  channels first, and pixel alignment normalises only the sampled pixels (same values and gradients to
+  1e-14, checked on CPU and GPU).
+
+**Then the loss went NaN at step 11.** The default 2^20 config fits once the OOM is fixed, and that exposed a
+second, older bug. tiny-cuda-nn gets the gradient of its fp16 outputs already cast to fp16; its own ×128
+loss scale comes after the cast. The CLIP Huber term is ~4 orders below the DINO term (0.0008 vs 4–5), so
+its gradients (~1e-8) underflowed: only 1–2 % of the CLIP-output gradient was nonzero, and the CLIP head
+hardly learned (CLIP loss flat at 0.0008). Pixel alignment then normalised those ~0 CLIP vectors. The
+gradient of x/‖x‖ is ~1/‖x‖, which made per-Gaussian gradients of 2.25e4, and ×128 overflowed fp16 in the
+CLIP head's backward (`torch.autograd.detect_anomaly` points at tcnn's `_module_functionBackward`).
+Fixes (same commit):
+- **Dynamic loss scaling** (`torch.cuda.amp.GradScaler`, initial 2^10, growth every 200 steps) whenever a
+  field part is tcnn. Adam's update does not depend on the scale. Steps whose gradients overflow are
+  skipped and counted (`overflow_skipped_steps` and `loss_scale` in `train.json`).
+- Pixel alignment normalises the CLIP vectors with a **floor of 1e-3 on the norm**. The teacher vectors
+  have norm 1, so this only matters while the render is still ~0. A numerical guard, not a change to the
+  term; recorded here as part of our reading of it.
+
+Smoke after the fixes (200 steps, backroom, default config, no fallback): loss 3.43 → 2.70, CLIP 0.0020 →
+0.0001, 2.2 it/s, PyTorch peak 5.5 GB, device 7.95 GB including the desktop's 0.4 GB (with expandable
+segments PyTorch keeps its high-water mark reserved), loss scale 2048, 0 skipped steps, 0 retries, Gaussian
+checksum unchanged. The semantics tests ran on the host for the first time: 68 passed on CPU (pytest from
+a scratch `--target` directory on `PYTHONPATH`, nothing added to kitchen).
 
 ## 4. Decisions and findings (Phase 0)
 
@@ -378,3 +427,41 @@ the course editor (job 20), checked with `sem3_gate.sh --check sem_whiteboard`:
 With the automated half and the browser recolour figure above, every Phase 3 gate item is met:
 query → pick → Send to course → Save and fly passes course, simulate and validate and ends at the approach
 point, and recolouring is far under the 2 s budget (no need for further loader work).
+
+## 11. Phase 4 gate, run 3 (intellisense08, 6 Oct 12:55–13:31, 7344e7a) — PASSED
+
+Run by Claude Code on the host (`SKIP_PULL=1 ui/deploy/sem4_gate.sh`, tmux). Log: `~/sem4_gate.log`; run 2's
+log is kept as `~/Radiance/sem4_gate_run2.log`. The fixes are in §3e.
+
+| Check | Result |
+| --- | --- |
+| Galley backend tests | 113 passed, 1 skipped |
+| Semantics tests | *skipped by the gate* (pytest is not in kitchen). Run by hand before the gate: 68 passed on CPU |
+| Field probes | 24 × 8 grid still fails to launch on sm_75; impl auto → tcnn/tcnn, split 2 (285 ms, 4.7 GB at 262k points) |
+| Smoke, 200 steps | loss 3.42 → 2.70, Gaussians unchanged, 91 s |
+| Full run (Galley job 22) | succeeded in 32.0 min; **4,200 steps in 31.4 min (2.23 it/s)**, loss 3.51 → 1.60 |
+| Config | **default, no fallback**: 2^20 table, faithful (28 chunks), 480 × 270, 113.5 M parameters, 212,944 trainable Gaussians |
+| Peak VRAM | **5,480 MiB PyTorch / 7,954 MiB device** (incl. ~0.4 GB desktop and PyTorch's reserved high-water mark) < 8,192 |
+| fp16 | final loss scale 2048; 15 of 4,200 steps skipped on overflow (GradScaler growth probes every 200 steps); 0 out-of-memory retries |
+| Gaussians | checksum d03b7b5bac0bd434 → d03b7b5bac0bd434; checkpoint file SHA 581ff4a1e53bb8e7 → 581ff4a1e53bb8e7 |
+| Table | fresh, 532,361 rows = `.splat` records, 1,356.5 MB |
+
+Development queries (the five Phase 1 annotations; they shaped the lift's threshold, so this is a first look,
+not the Phase 5 result):
+
+| Query | Lift | FMGS |
+| --- | --- | --- |
+| red tool chest | HIT 0.35 m, 802 ms | HIT 0.48 m, 791 ms |
+| shop vacuum | HIT 0.01 m, 742 ms | HIT 0.10 m, 752 ms |
+| green foam mats | HIT 0.21 m, 723 ms | HIT 0.18 m, 775 ms |
+| garden cart | HIT 0.22 m, 738 ms | **MISS**, 730 ms |
+| whiteboard | HIT 0.38 m, 731 ms | HIT 0.32 m, 813 ms |
+
+Notes:
+- The CLIP loss term flattens at ~1e-4 by step ~250 while DINO keeps falling (4.39 → ~2.0). The CLIP Huber
+  term is tiny at this weighting (unit-length 512-d teacher vectors), so DINO drives most of the training.
+  That fits FMGS's 0.2 / 0.8 weights, but it is worth checking in Phase 5 whether the CLIP channel of the
+  FMGS table is as sharp as the lift's (the garden cart miss is a place to start). Not tuned here: the dev
+  queries must not shape FMGS's settings.
+- Not checked yet: View ▸ Compare in the browser (lift | FMGS) on the new table.
+

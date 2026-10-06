@@ -32,47 +32,22 @@ Read only the sections you need; they are long.
 | P1 teachers + lift + CLI query | DONE, 5/5 on backroom |
 | P2 Galley backend + CPU query worker | DONE (warm query ~0.74 s, cold 5.8 s) |
 | P3 splat editor `#/splat/<scene>` | DONE (query → Send to course → flight) |
-| **P4 FMGS backend** | **Built; gate failing — current task** |
+| P4 FMGS backend | DONE — gate PASSED 6 Oct 13:31 (run 3, 7344e7a) |
 | P5 evaluation (L-C, L-CD, F-C, F-CD × backroom, GTN_lab_v1) | Not started |
 | P6 instruction → semantic-course → SV-Net cohorts | Not started (experiment waits on SV-Net flying) |
 
-**Phase 4 gate, run 2** (`ui/deploy/sem4_gate.sh`, repo at `70d2178`, intellisense08, 5 Oct 21:55):
+**Phase 4 gate, run 3** (6 Oct, intellisense08, `7344e7a`) — PASSED; details in `docs/SEMANTICS.md` §3e and §11.
+Default config, no fallback: 4,200 steps in 31.4 min, peak 5.5 GB PyTorch / 7.95 GB device, Gaussians and
+checkpoint unchanged, dev queries FMGS 4/5 (garden cart misses) vs lift 5/5. What it took:
+- OOM: PyTorch's cache starved tiny-cuda-nn's own allocator, and the ladder missed tcnn's `RuntimeError`.
+  → expandable segments, tcnn OOM recognised, a failed step retried once, shorter tensor lifetimes.
+- Then NaN at step 11: CLIP gradients underflowed in tcnn's fp16, and pixel alignment's normalize of ~0
+  vectors overflowed. → GradScaler when a part is tcnn, 1e-3 norm floor in pixel alignment.
+- Semantics tests (68) run on the host with pytest from a scratch `--target` dir on `PYTHONPATH`; the gate
+  itself still skips them (pytest not in kitchen; ask Suhan before adding it).
+- Still to do by hand: View ▸ Compare in the browser on the new FMGS table.
 
-- PASS — Galley backend tests (113 passed, 1 skipped). Semantics tests were *skipped*: pytest is not in `kitchen`.
-- PASS — field probes (`python -m radiance_semantics.fmgs.diag`): the 24 × 8 (192-dim) tcnn hash grid still
-  fails on sm_75 with "invalid configuration argument"; `impl auto` picks **tcnn/tcnn, split 2**
-  (two 12-level grids); the trainer's field at 262,144 points: 283 ms, peak 4717 MiB (fp32).
-- **FAIL — 200-step smoke run**: `RuntimeError: …tiny-cuda-nn/gpu_memory.h:563 cuMemCreate(...) failed:
-  CUDA_ERROR_OUT_OF_MEMORY`, raised in tcnn's backward from `losses["loss"].backward()` in
-  `semantics/radiance_semantics/fmgs/train.py` (`_train_once`).
-- **FAIL — full run through Galley's queue** (job 21, backroom, backend fmgs): same error after 0.3 min.
-  Resume command it printed: `semantic_pipeline.py --scene backroom --from fmgs`.
-
-The full log is in Suhan's laptop copy (`D:\Projects\FYP\logs\sem4_gate.log`) and on the host at
-`~/sem4_gate.log`.
-
-### Next task: get the Phase 4 gate to pass
-
-1. **Find where the memory goes before changing anything.** Things to check (these are guesses, not
-   established facts):
-   - The OOM ladder in `train()` only catches `torch.cuda.OutOfMemoryError`. tiny-cuda-nn raises a plain
-     `RuntimeError` whose message contains `CUDA_ERROR_OUT_OF_MEMORY`, so the ladder (2^19 table → half the
-     visible Gaussians → B-lite) **never ran**. Treat both as OOM, and make sure tcnn's memory is released
-     before the retry (tcnn keeps its own `cuMemCreate` arena outside PyTorch's caching allocator, so
-     `torch.cuda.empty_cache()` alone may not free it).
-   - tcnn's arena and PyTorch's cache compete for the same 8 GB. Measure: peak after field forward, after the
-     28 gsplat render chunks, after the losses, after backward (`torch.cuda.max_memory_allocated` plus
-     `nvidia-smi` for what PyTorch doesn't see). A small one-step profiling flag or script is fine.
-   - Check what else holds the GPU (`nvidia-smi`): the desktop session (~100 MiB), any leftover process from
-     the smoke run, Galley jobs. The query worker is meant to be CPU-only (`CUDA_VISIBLE_DEVICES=""`).
-   - Keep the fix inside the plan's fallback order (`docs/SEMANTICS_PLAN.md`, Phase 4 "If 8 GB is not
-     enough"), and record which level was needed. B-lite departs from FMGS and must be labelled as a variant.
-2. Re-run the smoke run alone (fast loop), then the whole gate in tmux (commands below, ~40–60 min).
-3. Record the outcome in `docs/SEMANTICS.md` (§1 status row, §3e, and a new section for the Phase 4 gate with
-   date, commit, peak VRAM, time, fallback used, checksums, and the FMGS vs lift query results), and tick
-   `docs/SEMANTICS_PLAN.md`.
-
-After Phase 4: Phase 5 (capture and train GTN_lab_v1 through Galley's New capture — marker DICT_4X4 id 0,
+Next: Phase 5 (capture and train GTN_lab_v1 through Galley's New capture — marker DICT_4X4 id 0,
 printed 0.18 m or 0.34 m; annotate ≥ 15 queries per scene **before** looking at results; the four variants;
 CSV + LaTeX table for `fyp_report.tex`). Phase 6 parts that don't need SV-Net (parser, `semantic-course`,
 feasibility loop). Separate open thread: the SV-Net student (Maverick, cohort `p4_smoke`) does not fly the
