@@ -1,0 +1,235 @@
+{
+  "version": 1,
+  "frame": "course (x, -y, -z), z down",
+  "queries": [
+    {
+      "text": "armchair",
+      "set": "phase5",
+      "position": [
+        3.073,
+        0.704,
+        -0.483
+      ],
+      "note": "grey upholstered armchair by the whiteboard; splat depth 0136 + 0374 (0.6 m), reprojection-checked in 0034, 0204",
+      "updated": "2026-10-06T18:55:54",
+      "author": "claude (photo picks, splat depth)"
+    },
+    {
+      "text": "upholstered chair",
+      "set": "phase5",
+      "position": [
+        3.073,
+        0.704,
+        -0.483
+      ],
+      "note": "synonym of armchair",
+      "updated": "2026-10-06T18:55:54",
+      "author": "claude (photo picks, splat depth)"
+    },
+    {
+      "text": "whiteboard",
+      "set": "phase5",
+      "position": [
+        2.669,
+        0.023,
+        -0.904
+      ],
+      "note": "on an easel; 0136; reprojection-checked in 0204 (its back is the white panel in 0034)",
+      "updated": "2026-10-06T18:55:54",
+      "author": "claude (photo picks, splat depth)"
+    },
+    {
+      "text": "computer monitor",
+      "set": "phase5",
+      "position": [
+        3.305,
+        -0.259,
+        -0.919
+      ],
+      "note": "on the white round table; 0034; reprojection-checked",
+      "updated": "2026-10-06T18:55:54",
+      "author": "claude (photo picks, splat depth)"
+    },
+    {
+      "text": "keyboard",
+      "set": "phase5",
+      "position": [
+        3.225,
+        -0.049,
+        -0.702
+      ],
+      "note": "small; on the white round table; 0034",
+      "updated": "2026-10-06T18:55:54",
+      "author": "claude (photo picks, splat depth)"
+    },
+    {
+      "text": "floor lamp",
+      "set": "phase5",
+      "position": [
+        0.07,
+        -2.21,
+        -1.658
+      ],
+      "note": "torchiere by the wall; 0102 (shade); reprojection-checked in 0034",
+      "updated": "2026-10-06T18:55:54",
+      "author": "claude (photo picks, splat depth)"
+    },
+    {
+      "text": "red cup",
+      "set": "phase5",
+      "position": [
+        -0.176,
+        -1.541,
+        -0.793
+      ],
+      "note": "small; 0102 + 0170, spread 0.01 m",
+      "updated": "2026-10-06T18:55:54",
+      "author": "claude (photo picks, splat depth)"
+    },
+    {
+      "text": "water bottle",
+      "set": "phase5",
+      "position": [
+        -0.045,
+        -1.59,
+        -0.798
+      ],
+      "note": "small; 0102 + 0170, spread 0.03 m",
+      "updated": "2026-10-06T18:55:54",
+      "author": "claude (photo picks, splat depth)"
+    },
+    {
+      "text": "water jug",
+      "set": "phase5",
+      "position": [
+        0.32,
+        -2.032,
+        -0.302
+      ],
+      "note": "5-gallon jug on the floor; 0034 + 0102, spread 0.13 m",
+      "updated": "2026-10-06T18:55:54",
+      "author": "claude (photo picks, splat depth)"
+    },
+    {
+      "text": "round table",
+      "set": "phase5",
+      "instances": [
+        [
+          3.141,
+          -0.175,
+          -0.671
+        ],
+        [
+          -0.049,
+          -1.553,
+          -0.761
+        ]
+      ],
+      "position": [
+        3.141,
+        -0.175,
+        -0.671
+      ],
+      "note": "2 instances: white (0034), wooden (0102 + 0170)",
+      "updated": "2026-10-06T18:55:54",
+      "author": "claude (photo picks, splat depth)"
+    },
+    {
+      "text": "drone gate",
+      "set": "phase5",
+      "position": [
+        -5.072,
+        -0.486,
+        -0.017
+      ],
+      "note": "PVC frame on the floor; 0238",
+      "updated": "2026-10-06T18:55:54",
+      "author": "claude (photo picks, splat depth)"
+    },
+    {
+      "text": "PVC pipe frame",
+      "set": "phase5",
+      "position": [
+        -5.072,
+        -0.486,
+        -0.017
+      ],
+      "note": "synonym of drone gate (what it is made of)",
+      "updated": "2026-10-06T18:55:54",
+      "author": "claude (photo picks, splat depth)"
+    },
+    {
+      "text": "poster",
+      "set": "phase5",
+      "position": [
+        -5.028,
+        -2.74,
+        -0.975
+      ],
+      "note": "MSL poster on a stand; 0238 + 0306, spread 0.08 m",
+      "updated": "2026-10-06T18:55:54",
+      "author": "claude (photo picks, splat depth)"
+    },
+    {
+      "text": "garden cart",
+      "set": "phase5",
+      "position": [
+        -6.464,
+        -2.391,
+        -0.426
+      ],
+      "note": "black Gorilla cart; 0238 + 0306, spread 0.26 m (also a backroom dev phrase)",
+      "updated": "2026-10-06T18:55:54",
+      "author": "claude (photo picks, splat depth)"
+    },
+    {
+      "text": "wheelbarrow",
+      "set": "phase5",
+      "position": [
+        -6.464,
+        -2.391,
+        -0.426
+      ],
+      "note": "synonym of garden cart",
+      "updated": "2026-10-06T18:55:54",
+      "author": "claude (photo picks, splat depth)"
+    },
+    {
+      "text": "cardboard box",
+      "set": "phase5",
+      "position": [
+        -6.503,
+        -2.523,
+        -1.101
+      ],
+      "note": "tall box standing in the cart; 0306",
+      "updated": "2026-10-06T18:55:54",
+      "author": "claude (photo picks, splat depth)"
+    },
+    {
+      "text": "red tool chest",
+      "position": null,
+      "negative": true,
+      "set": "phase5",
+      "note": "negative: backroom object"
+    },
+    {
+      "text": "recycling bin",
+      "position": null,
+      "negative": true,
+      "set": "phase5",
+      "note": "negative: backroom object"
+    },
+    {
+      "text": "bicycle",
+      "position": null,
+      "negative": true,
+      "set": "phase5",
+      "note": "negative: not in the scene"
+    }
+  ],
+  "phase5": {
+    "status": "frozen 2026-10-06",
+    "method": "splat-depth picks in training photos (annotations.py locate --depth), each checked by reprojection into other photos; ladders, tripods, foam pillars and stools left out (see-through or too many instances to annotate completely)"
+  }
+}
