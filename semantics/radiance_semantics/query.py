@@ -114,6 +114,13 @@ class Settings:
     view_cos: float = 0.82        # camera counts as "looking at" the target within ~35°
     ambiguous_margin: float = 0.25
     negatives: list = field(default_factory=lambda: list(NEGATIVES))
+    # DINO at query time (the L-CD variant, Phase 5); both off = the CLIP-only query (L-C, F-C, F-CD)
+    dino_diffuse: bool = False    # smooth relevancy over the spatial kNN graph, edges weighted by DINO similarity
+    diffuse_k: int = 16
+    diffuse_alpha: float = 0.5    # rel ← (1 − α)·rel + α·(DINO-weighted neighbour mean), diffuse_iters times
+    diffuse_iters: int = 2
+    dino_split: bool = False      # split a candidate whose DINO features form two clearly different groups
+    split_cos: float = 0.5        # split when the two groups' mean DINO directions have cosine below this
 
 
 def pose_inliers(P, k=4.0):
@@ -159,20 +166,91 @@ class Scene:
         return self._tree
 
 
-def cluster_candidates(points, scores, s):
-    """Ranked clusters: list of dicts (splat frame), best first, at most s.top."""
+def _cluster(points, w):
+    c = (points * w[:, None]).sum(0) / max(w.sum(), 1e-12)
+    lo, hi = np.percentile(points, [5, 95], axis=0)
+    return {"score": float(w.sum()), "centroid": c, "box_lo": lo, "box_hi": hi, "n": int(len(points))}
+
+
+def dino_split(dino, min_n, split_cos, iters=10):
+    """Two-group split of a cluster's unit DINO rows [m, D] (spherical 2-means, deterministic start:
+    the row farthest from the mean, then the row farthest from that). Returns a boolean mask of the
+    second group, or None when the groups are too small or their mean directions too similar."""
+    X = np.asarray(dino, np.float32)
+    if len(X) < 2 * min_n:
+        return None
+    mean = X.mean(0)
+    a = X[np.argmin(X @ mean)]
+    b = X[np.argmin(X @ a)]
+    C = np.stack([a, b])
+    for _ in range(iters):
+        g = (X @ C.T).argmax(1).astype(bool)
+        if g.all() or not g.any():
+            return None
+        C = np.stack([X[~g].mean(0), X[g].mean(0)])
+        C /= np.maximum(np.linalg.norm(C, axis=1, keepdims=True), 1e-9)
+    if min(g.sum(), (~g).sum()) < min_n or float(C[0] @ C[1]) >= split_cos:
+        return None
+    return g
+
+
+def cluster_candidates(points, scores, s, dino=None):
+    """Ranked clusters: list of dicts (splat frame), best first, at most s.top. With s.dino_split and
+    the selected rows' DINO features, a cluster whose DINO features form two clearly different groups
+    becomes two candidates (two objects touching in space, e.g. a box on a table)."""
     labels, k, vox = voxel_labels(points, s.voxel)
     out = []
     for lab in range(1, k + 1):
         m = labels == lab
         if m.sum() < s.min_gaussians:
             continue
-        w = scores[m]
-        c = (points[m] * w[:, None]).sum(0) / max(w.sum(), 1e-12)
-        lo, hi = np.percentile(points[m], [5, 95], axis=0)
-        out.append({"score": float(w.sum()), "centroid": c, "box_lo": lo, "box_hi": hi, "n": int(m.sum())})
+        g = dino_split(dino[m], s.min_gaussians, s.split_cos) if (s.dino_split and dino is not None) else None
+        if g is None:
+            out.append(_cluster(points[m], scores[m]))
+        else:
+            P, W = points[m], scores[m]
+            out += [_cluster(P[~g], W[~g]), _cluster(P[g], W[g])]
     out.sort(key=lambda d: -d["score"])
     return out[:s.top], vox
+
+
+def dino_graph(table, k):
+    """(idx [n, k] int32, w [n, k] float32) for the table: each row's k nearest Gaussians in space and
+    the clipped cosine similarity of their DINO rows (0 for unseen rows). Static per table, so it is
+    built once per process and cached on the table object (~5 s for 532k rows)."""
+    cached = getattr(table, "_dino_graph", None)
+    if cached is not None and cached[0].shape[1] == k:
+        return cached
+    if table.dino is None:
+        raise ValueError("this table has no DINO rows: the L-CD query needs a lift or FMGS table with dino.f16")
+    from scipy.spatial import cKDTree
+    xyz = np.asarray(table.geom, np.float32)[:, :3]
+    _, idx = cKDTree(xyz).query(xyz, k=k + 1, workers=-1)
+    idx = idx[:, 1:].astype(np.int32)                          # drop self
+    D = table.dino
+    seen = np.asarray(table.weight) > 0
+    w = np.zeros(idx.shape, np.float32)
+    for i in range(0, len(idx), 65536):
+        a = np.asarray(D[i:i + 65536], np.float32)
+        b = np.asarray(D[idx[i:i + 65536].ravel()], np.float32).reshape(len(a), k, -1)
+        w[i:i + 65536] = np.clip(np.einsum("nd,nkd->nk", a, b), 0, 1)
+    w *= seen[:, None] & seen[idx]
+    try:
+        object.__setattr__(table, "_dino_graph", (idx, w))
+    except Exception:                                              # noqa: BLE001  (an immutable table: no cache)
+        pass
+    return idx, w
+
+
+def diffuse(rel, idx, w, alpha, iters):
+    """rel ← (1 − α)·rel + α·(Σ_j w_ij rel_j / Σ_j w_ij), iters times; rows without DINO neighbours keep rel."""
+    r = np.asarray(rel, np.float32).copy()
+    ws = w.sum(1)
+    has = ws > 1e-6
+    for _ in range(iters):
+        nb = (w * r[idx]).sum(1) / np.maximum(ws, 1e-6)
+        r = np.where(has & (r > 0), (1 - alpha) * r + alpha * nb, r)
+    return r
 
 
 def approach_point(centroid, scene, s):
@@ -216,6 +294,9 @@ def run_query(table, scene, text, encoder, s=None, return_relevancy=False):
     t_enc = time.time() - t0
     geom = np.asarray(table.geom, dtype=np.float32)
     rel = relevancy(table.clip, table.weight, E[0], E[1:])
+    if s.dino_diffuse:
+        idx, w = dino_graph(table, s.diffuse_k)
+        rel = diffuse(rel, idx, w, s.diffuse_alpha, s.diffuse_iters)
     t_rel = time.time() - t0 - t_enc
     opac = geom[:, 3]
     valid = (opac >= s.min_opacity) & (rel > 0)
@@ -226,7 +307,8 @@ def run_query(table, scene, text, encoder, s=None, return_relevancy=False):
     sel = valid & (rel >= tau)
     pts = geom[sel, :3].astype(np.float64)
     scores = ((rel[sel] - tau) * opac[sel]).astype(np.float64)
-    cands, vox = cluster_candidates(pts, scores, s)
+    dsel = np.asarray(table.dino[np.flatnonzero(sel)], np.float32) if (s.dino_split and table.dino is not None) else None
+    cands, vox = cluster_candidates(pts, scores, s, dsel)
     res = []
     for r, c in enumerate(cands):
         a, ncam = approach_point(c["centroid"], scene, s)

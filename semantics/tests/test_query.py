@@ -190,3 +190,24 @@ def test_pose_outliers_are_dropped_from_the_camera_box():
     sc = Q.Scene(cam_c2w=c2w)
     lo, hi = sc.camera_box(0.5)
     assert sc.dropped_cameras == 2 and hi[0] < 5 and lo[0] > -5
+
+
+def test_dino_split_separates_two_touching_objects():
+    rng = np.random.default_rng(1)
+    a, b = np.eye(8)[0], np.eye(8)[1]
+    X = np.concatenate([a + 0.05 * rng.standard_normal((40, 8)), b + 0.05 * rng.standard_normal((30, 8))])
+    X /= np.linalg.norm(X, axis=1, keepdims=True)
+    g = Q.dino_split(X, 15, 0.5)
+    assert g is not None and sorted([g.sum(), (~g).sum()]) == [30, 40] and len(set(g[:40])) == 1
+    same = a + 0.05 * rng.standard_normal((70, 8))
+    assert Q.dino_split(same / np.linalg.norm(same, axis=1, keepdims=True), 15, 0.5) is None   # one object: no split
+    assert Q.dino_split(X[:20], 15, 0.5) is None                                              # too few rows
+
+
+def test_diffusion_spreads_relevancy_within_dino_similar_neighbours_only():
+    rel = np.array([0.9, 0.5, 0.5, 0.0], np.float32)
+    idx = np.array([[1, 2], [0, 2], [0, 1], [0, 1]], np.int32)
+    w = np.array([[1.0, 0.0], [1.0, 0.0], [0.0, 0.0], [1.0, 1.0]], np.float32)   # 1 is like 0; 2 is unlike both
+    r = Q.diffuse(rel, idx, w, 0.5, 1)
+    assert r[1] > 0.5 and np.isclose(r[2], 0.5) and r[3] == 0.0                  # unseen rows (rel 0) stay 0
+    assert np.isclose(r[0], 0.5 * 0.9 + 0.5 * 0.5)

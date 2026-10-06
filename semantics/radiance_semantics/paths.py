@@ -120,8 +120,8 @@ class SceneRun:
         return self.semantics_dir / "teachers" / tag
 
     def backend_dir(self, backend):
-        if backend not in ("lift", "fmgs"):
-            raise SemanticsError(f"unknown backend {backend!r} (lift or fmgs)")
+        if backend not in ("lift", "fmgs", "fmgs_c"):
+            raise SemanticsError(f"unknown backend {backend!r} (lift, fmgs or fmgs_c)")
         return self.semantics_dir / self.run / backend
 
     @property

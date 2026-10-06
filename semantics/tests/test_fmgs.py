@@ -311,3 +311,11 @@ def test_blend_weights_match_the_lift():
     w = L.blend_weights(g, views, 24, "reference", log=lambda m: None)
     _, w_lift, _ = L.lift_views(g, views, lambda s: {"clip": maps[s]["clip"]}, 24, "reference", log=lambda m: None)
     assert np.allclose(w, w_lift, rtol=1e-5, atol=1e-7)
+
+
+def test_clip_only_variant_trains_without_dino(tmp_path):
+    """Phase 5 F-C: DINO loss and pixel alignment off — only CLIP is rendered and the loss still falls."""
+    g, views, maps = scene_and_teachers()
+    stats, _ = T.train(g, views, lambda s: maps[s], cfg(w_dino=0.0, w_pa=0.0), tmp_path, "cpu", "reference",
+                       log=lambda m: None)
+    assert stats["loss_last"] < stats["loss_first"] and stats["gauss_unchanged"]

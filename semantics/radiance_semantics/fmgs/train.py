@@ -162,7 +162,7 @@ def _step(field, cfg, g, sub, v, teachers, render_backend, gen, dev):
     gs = Gaussians(g.means[sel], g.quats[sel], g.scales[sel], g.opacities[sel])
     maps = teachers.get(v.stem)
     tgt = {k: upsample(t.to(dev), W, H, dev) for k, t in maps.items()}
-    has_dino = "dino" in tgt
+    has_dino = "dino" in tgt and (cfg.w_dino > 0 or cfg.w_pa > 0)     # F-C (both 0) renders CLIP alone
     if cfg.variant == "blite":
         enc = field.encode(gs.means)
         img, alpha = render_features(gs, enc, vm, K, W, H, render_backend)

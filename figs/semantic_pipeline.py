@@ -317,15 +317,20 @@ def step_export(c):
 # ── FMGS backend (Phase 4) ─────────────────────────────────────────────────────
 def _fmgs_cfg(c):
     from radiance_semantics.fmgs.train import TrainConfig
+    no_dino = {"w_dino": 0.0, "w_pa": 0.0} if c.a.backend == "fmgs_c" else {}   # F-C: CLIP alone (Phase 5)
     return TrainConfig(steps=int(c.a.fmgs_steps), feat_width=int(c.a.fmgs_width), variant=c.a.fmgs_variant,
-                       impl=c.a.fmgs_impl, log2_table=int(c.a.fmgs_table))
+                       impl=c.a.fmgs_impl, log2_table=int(c.a.fmgs_table), **no_dino)
+
+
+def _fmgs_train_dir(c):
+    return c.run.semantics_dir / c.run.run / f"{c.a.backend}_train"          # fmgs_train | fmgs_c_train
 
 
 def step_fmgs(c):
     from radiance_semantics.fmgs.train import train_run
     if not (c.teacher_dir / "meta.json").exists():
         raise StepFailed(f"no teacher features at {c.teacher_dir}: run the teachers step")
-    out = c.run.semantics_dir / c.run.run / "fmgs_train"
+    out = _fmgs_train_dir(c)
     sha0 = _file_sha(c.run.checkpoint)
     with VramMonitor() as vm:
         stats, _ = train_run(c.run, c.teacher_dir, _fmgs_cfg(c), out, c.a.device, c.a.render_backend, log=info,
@@ -343,7 +348,7 @@ def step_fmgs(c):
     ok(f"Gaussians unchanged (checksum {stats['gauss_checksum_after']}; checkpoint file {sha1})")
     if not (stats["loss_last"] < stats["loss_first"]):
         warn("the loss did not fall — check the TensorBoard curves in " + str(out / "tb"))
-    c.results["fmgs"] = stats
+    c.results[c.a.backend] = stats
 
 
 def step_bake(c):
@@ -352,7 +357,7 @@ def step_bake(c):
     from radiance_semantics.fmgs.bake import bake
     from radiance_semantics.fmgs.field import FeatureField
     from radiance_semantics.store import read_table, write_table
-    tdir = c.run.semantics_dir / c.run.run / "fmgs_train"
+    tdir = _fmgs_train_dir(c)
     tj = json.loads((tdir / "train.json").read_text()) if (tdir / "train.json").exists() else None
     if tj is None or tj.get("key") != c.a.key or not (tdir / "field.pt").exists():
         raise StepFailed(f"no trained field for this checkpoint in {tdir}: run the fmgs step")
@@ -385,11 +390,13 @@ def step_bake(c):
         torch.cuda.empty_cache() if torch.cuda.is_available() else None
     clip[w <= 0] = 0
     dino[w <= 0] = 0
+    if c.a.backend == "fmgs_c":
+        dino = None                  # F-C never trained its DINO head: no DINO rows in its table
     ckpt = c.run.checkpoint
     index = write_table(c.backend_dir, clip=clip, dino=dino, weight=w, geom=_geom(means, scales, opac, order),
                         order=order, meta={
         "scene": c.a.scene, "run": c.run.run, "checkpoint": ckpt.name, "checkpoint_mtime": int(ckpt.stat().st_mtime),
-        "key": c.a.key, "backend": "fmgs", "teacher_tag": tj.get("teacher_tag"), "n_total": int(len(means)),
+        "key": c.a.key, "backend": c.a.backend, "teacher_tag": tj.get("teacher_tag"), "n_total": int(len(means)),
         "settings": {k: getattr(c.a, k) for k in DEFAULTS if k not in ("device", "limit")},
         "metrics": {"fmgs": {k: tj.get(k) for k in ("steps", "seconds", "it_per_s", "loss_first", "loss_last",
                                                      "peak_vram_mib", "peak_vram_mib_device", "variant", "fallback",
@@ -401,7 +408,7 @@ def step_bake(c):
     size = sum(f.stat().st_size for f in c.backend_dir.iterdir()) / 2 ** 20
     ok(f"table: {index['n']:,} rows (.splat order, {index['order_sha']}), {int((w > 0).sum()):,} seen, "
        f"{size:.0f} MB → {c.backend_dir}")
-    c.results["bake"] = {"rows": index["n"], "seen_rows": int((w > 0).sum()), "mb": round(size, 1),
+    c.results["bake" if c.a.backend == "fmgs" else "bake_c"] = {"rows": index["n"], "seen_rows": int((w > 0).sum()), "mb": round(size, 1),
                          "order_sha": index["order_sha"], "dir": str(c.backend_dir)}
     c.run.runs_dir.mkdir(parents=True, exist_ok=True)
     rec = c.run.runs_dir / f"semantics_p4_{c.a.scene}_{datetime.now():%Y-%m-%d_%H%M}.json"
@@ -418,9 +425,13 @@ STEPS = [
     ("fmgs", step_fmgs, ["fmgs_steps", "fmgs_width", "fmgs_variant", "fmgs_impl", "fmgs_table", "render_backend", "limit"],
      "train the FMGS hash-grid field on the frozen Gaussians (LONG, GPU)"),
     ("bake", step_bake, [], "evaluate the field at every Gaussian → the fmgs table in .splat order"),
+    ("fmgs_c", step_fmgs, ["fmgs_steps", "fmgs_width", "fmgs_variant", "fmgs_impl", "fmgs_table", "render_backend", "limit"],
+     "train FMGS on CLIP alone — DINO loss and pixel alignment off (Phase 5 variant F-C; LONG, GPU)"),
+    ("bake_c", step_bake, [], "evaluate the F-C field at every Gaussian → the fmgs_c table"),
 ]
 BACKEND_STEPS = {"lift": ["preflight", "cameras", "teachers", "lift", "export"],
-                 "fmgs": ["preflight", "cameras", "teachers", "fmgs", "bake"]}
+                 "fmgs": ["preflight", "cameras", "teachers", "fmgs", "bake"],
+                 "fmgs_c": ["preflight", "cameras", "teachers", "fmgs_c", "bake_c"]}
 
 
 def steps_for(backend):
@@ -479,7 +490,8 @@ def main(argv=None):
                                  formatter_class=argparse.RawDescriptionHelpFormatter, epilog=__doc__)
     ap.add_argument("--scene", required=True)
     ap.add_argument("--project-root", default=None)
-    ap.add_argument("--backend", choices=["lift", "fmgs"], help="feature backend (default lift; fmgs = Phase 4)")
+    ap.add_argument("--backend", choices=["lift", "fmgs", "fmgs_c"],
+                    help="feature backend (default lift; fmgs = Phase 4; fmgs_c = FMGS on CLIP alone, Phase 5 F-C)")
     ap.add_argument("--teachers", help="comma-separated: clip,dino (default both)")
     ap.add_argument("--feat-width", type=int, help="lift render width in px (default 960; 480 halves time)")
     ap.add_argument("--dino-width", type=int, help="DINOv2 input width, multiple of 14 (default 896)")
