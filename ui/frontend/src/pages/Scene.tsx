@@ -1,7 +1,7 @@
 // Scene & Splat document: pipeline steps, reconstruction, training, models, last flight.
 // The Capture & Splat tab drives it: Reconstruct (SfM, Train + options), Models, Steps.
-import { useEffect, useState } from "react";
-import { active, api, ApiError, ArchivedModel, FigsRun, flightUrl, Model, semApi, Step, STEPS } from "../api";
+import { Fragment, useEffect, useState } from "react";
+import { active, api, ApiError, ArchivedModel, FigsRun, flightUrl, Model, SemEval, semApi, Step, STEPS } from "../api";
 import { BarChart, LineChart } from "../charts";
 import { Select, TrainOptions, useMachineTrainDefaults, usePoll, useSubmit } from "../components";
 import { Problem, ToProblems, ToProperties, useCommands, useUi } from "../shell/core";
@@ -239,7 +239,7 @@ function SemanticsTile({ scene }: { scene: string }) {
   const job = d.jobs.find((j) => j.kind === "semantics" && j.scene === scene && active(j.status));
   const st = usePoll(() => semApi.status(scene), job ? 5000 : 30000, [scene, job?.id, job?.status]);
   const s = st.data;
-  const row = (b: "lift" | "fmgs") => {
+  const row = (b: "lift" | "fmgs" | "fmgs_c") => {
     const t = s?.tables.find((x) => x.active_run && x.backend === b);
     const state = job && ((job.params?.backend as string | undefined) ?? "lift") === b ? "running" : t ? (t.stale ? "stale" : "ready") : "not built";
     return (
@@ -251,12 +251,50 @@ function SemanticsTile({ scene }: { scene: string }) {
     <Tile title="Semantics" icon="semantic" meta={s?.run ?? undefined} actions={<a className="small" href={`#/splat/${scene}`}>open the splat editor</a>}>
       {s ? (
         <>
-          <table className="kv"><tbody>{row("lift")}{row("fmgs")}</tbody></table>
+          <table className="kv"><tbody>{row("lift")}{row("fmgs")}{s.tables.some((t) => t.backend === "fmgs_c") && row("fmgs_c")}</tbody></table>
+          {!!s.eval?.length && <EvalTable scene={scene} evals={s.eval} />}
           <p className="muted small" style={{ marginTop: 4 }}>Steps: {s.steps.filter((x) => x.done).map((x) => x.step).join(", ") || "none"}
             {s.results?.teachers?.seconds ? ` · teachers ${Math.round(s.results.teachers.seconds / 60)} min` : ""} · {s.queries.annotated} of {s.queries.total} annotated queries</p>
           <p className="muted small">Ask the splat in words (“red tool chest”), see the matches light up, and send the result to a course as its goal.</p>
         </>) : <p className="muted">{st.err ?? "Loading…"}</p>}
     </Tile>
+  );
+}
+
+const pct = (v: number | null | undefined) => (v == null ? "—" : `${Math.round(v * 100)}%`);
+const val = (v: number | null | undefined, unit = "") => (v == null ? "—" : `${v}${unit}`);
+
+/** Phase 5: each variant's metrics on the frozen query set; every missed query links into the splat editor. */
+function EvalTable({ scene, evals }: { scene: string; evals: SemEval[] }) {
+  const [open, setOpen] = useState<string | null>(null);
+  const failedLink = (t: string) => `#/splat/${encodeURIComponent(scene)}/${encodeURIComponent(t)}`;
+  return (
+    <div style={{ marginTop: 8 }}>
+      <p className="small" style={{ margin: "4px 0" }}><b>Evaluation</b> <span className="muted">· set {evals[0].set} · click a variant for its misses</span></p>
+      <table className="grid small">
+        <thead><tr><th>variant</th><th title="top-1 hit rate over the positive queries">hits</th><th title="median / p90 distance to the nearest instance">error (m)</th>
+          <th title="false positives on absent objects / AUROC of peak relevancy">negatives</th><th>build</th><th>VRAM</th><th>query</th></tr></thead>
+        <tbody>
+          {evals.map((e) => (
+            <Fragment key={e.variant}>
+              <tr className="click" onClick={() => setOpen(open === e.variant ? null : e.variant)} title={e.stale ? "evaluated on another checkpoint — re-run" : undefined}>
+                <td>{e.variant}{e.stale && <span className="bad"> (stale)</span>}</td>
+                <td>{e.metrics.hits}/{e.metrics.n_pos} ({pct(e.metrics.hit_rate)})</td>
+                <td>{val(e.metrics.error_median_m)} / {val(e.metrics.error_p90_m)}</td>
+                <td>FP {pct(e.metrics.neg_fp_rate)} · AUROC {val(e.metrics.neg_auroc)}</td>
+                <td>{val(e.metrics.build_min, " min")}</td><td>{val(e.metrics.peak_vram_gb, " GB")}</td><td>{val(e.metrics.query_ms_median, " ms")}</td>
+              </tr>
+              {open === e.variant && (
+                <tr><td colSpan={7}>
+                  {e.failed.length ? e.failed.map((f) => (
+                    <span key={f.text} style={{ marginRight: 12, whiteSpace: "nowrap" }}>
+                      <a href={failedLink(f.text)}>{f.text}</a> <span className="muted">{f.failure ?? "miss"}{f.error != null ? ` ${f.error} m` : ""}</span>
+                    </span>)) : <span className="muted">no misses</span>}
+                </td></tr>)}
+            </Fragment>))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 

@@ -187,9 +187,11 @@ export function splatUrl(scene: string, file: string) {
 }
 
 // ── semantic features (docs/SEMANTICS.md) ──────────────────────────────────
-export const SEM_STEPS = ["preflight", "cameras", "teachers", "lift", "export", "fmgs", "bake"] as const;
+export const SEM_STEPS = ["preflight", "cameras", "teachers", "lift", "export", "fmgs", "bake", "fmgs_c", "bake_c"] as const;
 export type SemStep = (typeof SEM_STEPS)[number];
 export type SemBackend = "lift" | "fmgs";
+/** Tables on disk also include Phase 5's F-C table (FMGS on CLIP alone), which is evaluated but not queried from the editor. */
+export type SemTableBackend = SemBackend | "fmgs_c";
 /** semantic_pipeline.py's steps per backend (the first three are shared). */
 export const SEM_BACKEND_STEPS: Record<SemBackend, SemStep[]> = {
   lift: ["preflight", "cameras", "teachers", "lift", "export"], fmgs: ["preflight", "cameras", "teachers", "fmgs", "bake"],
@@ -200,7 +202,7 @@ export interface SemanticRun {
   fmgs_steps?: number; fmgs_width?: number; fmgs_variant?: "auto" | "faithful" | "blite"; fmgs_table?: number;
 }
 export interface SemTable {
-  run: string; backend: SemBackend; rows: number | null; key: string | null; stale: boolean; active_run: boolean;
+  run: string; backend: SemTableBackend; rows: number | null; key: string | null; stale: boolean; active_run: boolean;
   teacher_tag: string | null; order_sha: string | null; created: string | null; mb: number; seen_rows: number | null;
   lift: { seconds: number | null; passes: number | null; peak_vram_mib: number | null; render_width: number | null; views: number | null };
   fmgs: { steps: number | null; variant: string | null; fallback: { level: number; name: string } | null; loss_first: number | null;
@@ -210,6 +212,16 @@ export interface SemStatus {
   scene: string; run: string | null; key: string | null; steps: { step: SemStep; done: boolean; when: string | null }[];
   config: Record<string, any>; results: Record<string, any>; tables: SemTable[]; ready: SemBackend[];
   queries: { total: number; annotated: number }; busy: number | null | boolean; script: boolean;
+  eval?: SemEval[];
+}
+/** One Phase 5 variant evaluated on the scene's frozen query set (radiance_semantics/evaluate.py). */
+export interface SemEval {
+  variant: string; backend: SemTableBackend; set: string; stale: boolean; evaluated: string | null;
+  metrics: { hit_rate: number | null; hits: number; n_pos: number; n_neg: number; error_median_m: number | null; error_p90_m: number | null;
+    ambiguous_rate: number | null; feasible_rate: number | null; neg_fp_rate: number | null; neg_auroc: number | null;
+    build_min: number | null; peak_vram_gb: number | null; table_mb: number | null; query_ms_median: number | null;
+    failures: Record<string, number> };
+  failed: { text: string; failure: string | null; error: number | null; top: number[] | null }[];
 }
 export interface Candidate {
   rank: number; score: number; n: number; large: boolean; centroid: V3; box: { lo: V3; hi: V3 };
