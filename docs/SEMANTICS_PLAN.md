@@ -264,11 +264,11 @@ query set that stays fixed.
 
 **Second scene**
 
-- [ ] Capture and train GTN_lab_v1 through New capture (marker id 0, measured side), stop after bounds, then write one course for it. This is the existing Galley flow; nothing new is built.
+- [x] Capture and train GTN_lab_v1 through New capture (marker id 0, measured side), stop after bounds, then write one course for it. This is the existing Galley flow; nothing new is built. — *GTN_lab_v1 was captured (4 Oct) but its SfM folded the room; flightroom (mocap poses) used instead (SEMANTICS.md §12)*
 
 **Query sets**
 
-- [ ] Annotate at least 15 queries per scene in the splat editor's Annotate mode. Cover large and small objects, multiple instances of one class, synonyms of the same object, and 2–3 negative queries (objects not in the scene). Freeze each set by committing `queries.json`.
+- [x] Annotate at least 15 queries per scene in the splat editor's Annotate mode. Cover large and small objects, multiple instances of one class, synonyms of the same object, and 2–3 negative queries (objects not in the scene). Freeze each set by committing `queries.json`. — *backroom 16, flightroom 19; frozen in f38225b (docs/phase5_queries/)*
 
 **Variants**
 
@@ -281,10 +281,10 @@ query set that stays fixed.
 
 **Eval step: `eval` in `semantic_pipeline.py` + `radiance_semantics/evaluate.py`**
 
-- [ ] Run every query through `query.py` with fixed settings, and write `semantics/<run>/eval/<variant>.json` per query: top candidate, error, hit, margin, approach gap.
-- [ ] Aggregate per variant: grounding error (median and 90th percentile, m), top-1 hit rate, ambiguity rate, negative-query false-positive rate, feasible approach rate, build time, peak VRAM, artefact size, query latency.
+- [x] Run every query through `query.py` with fixed settings, and write `semantics/<run>/eval/<variant>.json` per query: top candidate, error, hit, margin, approach gap. — *radiance_semantics/evaluate.py*
+- [x] Aggregate per variant: grounding error (median and 90th percentile, m), top-1 hit rate, ambiguity rate, negative-query false-positive rate, feasible approach rate, build time, peak VRAM, artefact size, query latency. — *SEMANTICS.md §13*
 - [ ] Sweeps on the best variant: relevancy threshold, `feat_res`, cluster voxel size.
-- [ ] `semantic_pipeline.py --report` writes a CSV and a LaTeX table, ready for `fyp_report.tex`.
+- [x] `semantic_pipeline.py --report` writes a CSV and a LaTeX table, ready for `fyp_report.tex`. — *as `python -m radiance_semantics.evaluate --report DIR`; docs/phase5_results/*
 
 **Galley**
 
@@ -296,8 +296,8 @@ query set that stays fixed.
 
 ### Gate
 
-- All four variants run on both scenes, and their numbers fill the table.
-- A short written finding per research question 2 sub-part (accuracy, memory, time) goes into the report draft. Failure cases are sorted into wrong object, right object but bad position, and no candidate.
+- [x] All four variants run on both scenes, and their numbers fill the table. *(6 Oct, §13)*
+- [x] A short written finding per research question 2 sub-part (accuracy, memory, time) goes into the report draft. Failure cases are sorted into wrong object, right object but bad position, and no candidate.
 
 ## Phase 6 — Language to waypoints to SV-Net
 

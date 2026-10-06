@@ -15,7 +15,7 @@ built, how to run it, and the numbers measured.
 | 2 | Galley backend | **DONE.** Gate PASSED on intellisense08, 5 Oct 17:24 (second run; the first failed only on a host-dependent test, §9): cold query 5.8 s, warm ≤ 789 ms, 5 of 5 hits. |
 | 3 | Splat editor UI | **DONE.** Gate PASSED on intellisense08, 5 Oct: automated half 19:01 (query → course → flight, tracking max 8 mm) and browser half 19:21 (whiteboard sent from the editor, 3-keyframe course flown, tracking max 73 mm); 532 k Gaussians recoloured in 20 ms + 71 ms frame (§10). |
 | 4 | FMGS backend | **DONE.** Gate PASSED on intellisense08, 6 Oct 13:31 (run 3, 7344e7a, §11): 4,200 steps in 31.4 min, default config (2^20, faithful, 480×270, tcnn split 2), no fallback; peak 5.5 GB PyTorch / 7.95 GB device; Gaussians and checkpoint unchanged; the dev queries hit 4 of 5 on FMGS vs 5 of 5 on the lift. Runs 1–2 failed on tcnn launch limits and then memory, and a NaN came out with the OOM fix (§3e). Standalone trainer (§3e), editor Compare. |
-| 5 | Evaluation and comparison | Not started |
+| 5 | Evaluation and comparison | **Results in (§13)**, 6 Oct: four variants × backroom + flightroom on frozen sets; lift best (0.62 / 0.63 top-1), F-CD's CLIP channel fragmented. GTN_lab_v1 excluded (folded, §12). Open: sweeps, Galley metrics tile, Compare check. |
 | 6 | Language → waypoints → SV-Net | Not started |
 
 ## 2. Phase 0: what was added
@@ -544,3 +544,64 @@ F-CD (job 26, step ~3950 of 4200) and during flightroom F-C (job 29, after step 
 and queued jobs interrupted on restart; no training was lost, because FMGS checkpoints every 1,000 steps and a
 re-queued job resumes from the latest one on the same settings (job 28 resumed from step 3000 and finished;
 F-C was re-queued the same way).
+
+## 13. Phase 5 results (intellisense08, 6 Oct 18:56–19:20; query sets frozen in f38225b before any run)
+
+Four variants × two scenes, the frozen `phase5` sets (backroom 13 positive + 3 negative; flightroom 16 + 3),
+query settings unchanged from Phase 1 (never tuned on these sets). Table: `docs/phase5_results/variants.csv` and
+`variants.tex` (for `fyp_report.tex`); per-query records in `semantics/<run>/eval/<variant>.json` on the host.
+
+| Scene | Variant | Top-1 hit | Err. median / p90 (m) | Ambig. | Feasible | Neg. FP | Neg. AUROC | Build (min) | VRAM (GB) | Table (MB) | Query (ms) |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| backroom | L-C | **8/13 (0.62)** | 0.19 / 3.70 | 0.08 | 0.88 | 1/3 | 0.85 | 3.0 | 7.4 | 924 | 720–890 |
+| backroom | L-CD | **8/13 (0.62)** | 0.19 / 3.91 | 0.00 | 0.75 | 1/3 | 0.85 | 3.0 | 7.4 | 924 | 790 |
+| backroom | F-C | 6/13 (0.46) | 0.32 / 2.06 | 0.00 | 0.83 | 1/3 | 0.80 | 13.9 | 5.8 | 967 | 737 |
+| backroom | F-CD | 7/13 (0.54) | 0.20 / 1.90 | 0.00 | 0.71 | 1/3 | 0.80 | 31.4 | 7.8 | 1357 | 742 |
+| flightroom | L-C | **10/16 (0.63)** | 0.22 / 0.75 | 0.06 | 0.80 | 1/3 | 0.90 | 4.4 | 2.4 | 659 | 537 |
+| flightroom | L-CD | **10/16 (0.63)** | 0.21 / 0.76 | 0.06 | 0.90 | 0/3 | 0.90 | 4.4 | 2.4 | 659 | 587 |
+| flightroom | F-C | 8/16 (0.50) | **0.11** / 3.58 | 0.00 | 0.75 | 0/3 | 0.81 | 11.5 | 5.1 | 814 | 538 |
+| flightroom | F-CD | 4/16 (0.25) | 0.18 / 0.56 | 0.00 | 1.00 | 0/3 | **0.96** | 25.2 | 7.5 | 1092 | 546 |
+
+Build = the backend's own step; the CLIP + DINOv2 teachers are shared by all four variants and cost more than
+any of them (backroom 31.5 min, 300 frames; flightroom ≈ 50 min, 499 frames). Error = top candidate to the
+nearest annotated instance, over queries that returned a candidate. Feasible = hits whose approach point has
+≥ 0.15 m clearance. Flightroom's two FMGS runs resumed from step 3000 after the power cuts; build time is
+steps ÷ it/s (eval fix in this commit).
+
+Failures (positives; no candidate / wrong object / bad position):
+- backroom: lift 2 / 3 / 0 (no candidate: swivel chair, camera tripod; wrong: purple foam mat, white bucket,
+  glass door cabinet); F-C 2 / 2 / 3; F-CD 5 / 1 / 0.
+- flightroom: lift 4 / 1 / 1 (no candidate: armchair, upholstered chair, keyboard, floor lamp — peak relevancy
+  below the 0.55 floor in every variant; wrong: drone gate; bad position: water jug 0.76 m); F-C 4 / 4 / 0;
+  F-CD **12** / 0 / 0.
+
+**Findings (research question 2):**
+- **Accuracy.** The training-free lift localises best on both scenes (0.62 and 0.63 top-1), with ~0.2 m median
+  error. FMGS on CLIP alone (F-C) finds fewer objects (0.46, 0.50) but localises the ones it finds most
+  tightly (0.11 m median on flightroom). FMGS with its paper weights (F-CD) is worst on flightroom (0.25).
+- **Why F-CD fails: its CLIP channel is spatially fragmented.** For "red cup" on flightroom, F-CD's Gaussians
+  above τ form 61 clusters of ≤ 3 (none reaches the 15-Gaussian minimum), where F-C forms one of 288 and the
+  lift one of 379. With unit-norm 512-d CLIP teachers the 0.2-weighted CLIP Huber term is ~4 orders below the
+  0.8-weighted DINO L2 (Phase 4: 1e-4 vs ~2), so the shared hash grid is shaped almost only by DINO and the
+  CLIP head's output is noisy at Gaussian scale. FMGS's weights presumably assume differently scaled CLIP
+  targets; rebalancing is the obvious next experiment, but it was not tuned here (it would need its own
+  development set).
+- **DINO at query time (L-CD)** changes no hit; it removes the one flightroom false positive ("recycling bin")
+  and backroom's one ambiguous result, for +50–70 ms per query. The lifted DINO rows are smooth (mean neighbour
+  similarity 0.945), which limits what diffusion and splitting can do.
+- **Negatives.** At the fixed floor 1 of 3 negatives returns a candidate in most variants ("ceiling fan" in
+  backroom). Separation by peak relevancy is 0.80–0.96 AUROC: the score separates absent objects reasonably,
+  but a single global floor does not.
+- **Memory.** All variants fit 8 GB: the lift peaked at 7.4 GB on backroom (960 px renders, 532k Gaussians) and
+  2.4 GB on flightroom; FMGS 5.1–7.8 GB on the device. Tables 0.66–1.36 GB.
+- **Time.** Teachers dominate (31–50 min). Then lift 3–4 min ≪ F-C 12–14 min < F-CD 25–31 min. Queries take
+  0.54–0.9 s on the CPU for every variant.
+- **Hard queries for all variants**: thin or low-texture objects (tripod, keyboard, floor lamp, armchair) and
+  colour + material phrases where a similar object exists (purple foam mat → another mat).
+
+Caveats: 29 positive and 6 negative queries over two scenes, one training seed per FMGS variant; ground truth
+placed by Claude from photos (dev-set check 0.09–0.42 m from Suhan's placements; flightroom positions
+reprojection-checked); GTN_lab_v1 excluded (folded reconstruction, §12).
+
+Still open in Phase 5: the sensitivity sweeps on the best variant (threshold, feature width, cluster voxel),
+the Galley Semantics-tile metrics table, and the browser check of View ▸ Compare.

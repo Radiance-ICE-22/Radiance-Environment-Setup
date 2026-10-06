@@ -67,3 +67,12 @@ def test_csv_and_latex(tmp_path):
     E.write_latex(rows, tmp_path / "v.tex")
     tex = (tmp_path / "v.tex").read_text()
     assert r"\toprule" in tex and "GTN\\_lab\\_v1" in tex and tex.count(r"\midrule") == 2 and "--" in tex
+
+
+def test_build_cost_of_a_resumed_fmgs_run(tmp_path):
+    class T:
+        path = tmp_path
+        index = {"metrics": {"fmgs": {"steps": 4200, "it_per_s": 2.0, "seconds": 600.0, "peak_vram_mib_device": 7680}}}
+    (tmp_path / "clip.f16").write_bytes(b"\0" * 2 ** 20)
+    c = E.build_cost(T)
+    assert c["build_min"] == 35.0 and c["peak_vram_gb"] == 7.5 and c["table_mb"] == 1.0

@@ -1,0 +1,20 @@
+\begin{table}[ht]
+\centering\small
+\begin{tabular}{@{}llrrrrrrrrrrr@{}}
+\toprule
+Scene & Variant & Top-1 hit & Err. med. (m) & Err. p90 (m) & Ambig. & Feasible & Neg. FP & Neg. AUROC & Build (min) & VRAM (GB) & Table (MB) & Query (ms) \\
+\midrule
+backroom & L-C & 0.61 & 0.19 & 3.70 & 0.08 & 0.88 & 0.33 & 0.85 & 3.00 & 7.41 & 923.50 & 892 \\
+backroom & L-CD & 0.61 & 0.19 & 3.91 & 0.00 & 0.75 & 0.33 & 0.85 & 3.00 & 7.41 & 923.50 & 791 \\
+backroom & F-C & 0.46 & 0.32 & 2.06 & 0.00 & 0.83 & 0.33 & 0.80 & 13.90 & 5.80 & 966.60 & 737 \\
+backroom & F-CD & 0.54 & 0.20 & 1.90 & 0.00 & 0.71 & 0.33 & 0.80 & 31.40 & 7.77 & 1356.50 & 742 \\
+\midrule
+flightroom & L-C & 0.62 & 0.22 & 0.75 & 0.06 & 0.80 & 0.33 & 0.90 & 4.40 & 2.41 & 658.70 & 537 \\
+flightroom & L-CD & 0.62 & 0.21 & 0.76 & 0.06 & 0.90 & 0.00 & 0.90 & 4.40 & 2.41 & 658.70 & 587 \\
+flightroom & F-C & 0.50 & 0.11 & 3.58 & 0.00 & 0.75 & 0.00 & 0.81 & 11.50 & 5.06 & 813.60 & 538 \\
+flightroom & F-CD & 0.25 & 0.18 & 0.56 & 0.00 & 1.00 & 0.00 & 0.96 & 25.20 & 7.48 & 1091.70 & 546 \\
+\bottomrule
+\end{tabular}
+\caption{Goal localisation by variant (frozen query sets).}
+\label{tab:sem-variants}
+\end{table}

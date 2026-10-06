@@ -33,7 +33,7 @@ Read only the sections you need; they are long.
 | P2 Galley backend + CPU query worker | DONE (warm query ~0.74 s, cold 5.8 s) |
 | P3 splat editor `#/splat/<scene>` | DONE (query → Send to course → flight) |
 | P4 FMGS backend | DONE — gate PASSED 6 Oct 13:31 (run 3, 7344e7a) |
-| **P5 evaluation (L-C, L-CD, F-C, F-CD × backroom, GTN_lab_v1)** | **In progress — `docs/SEMANTICS.md` §12** (variants + evaluator built; query sets drafted; GPU runs queued) |
+| **P5 evaluation (L-C, L-CD, F-C, F-CD × backroom, flightroom)** | **Results in — `docs/SEMANTICS.md` §13** (lift 0.62/0.63 top-1 best; F-CD CLIP fragmented). Open: sweeps, Galley metrics tile, Compare check |
 | P6 instruction → semantic-course → SV-Net cohorts | Not started (experiment waits on SV-Net flying) |
 
 **Phase 4 gate, run 3** (6 Oct, intellisense08, `7344e7a`) — PASSED; details in `docs/SEMANTICS.md` §3e and §11.
@@ -49,9 +49,8 @@ checkpoint unchanged, dev queries FMGS 4/5 (garden cart misses) vs lift 5/5. Wha
 - Planned by Suhan (6 Oct): a separate branch that extends nerfstudio to handle semantics (the
   `ns-train` route the plan first had). `main` keeps the standalone trainer until that branch is ready.
 
-Next: Phase 5 (capture and train GTN_lab_v1 through Galley's New capture — marker DICT_4X4 id 0,
-printed 0.18 m or 0.34 m; annotate ≥ 15 queries per scene **before** looking at results; the four variants;
-CSV + LaTeX table for `fyp_report.tex`). Phase 6 parts that don't need SV-Net (parser, `semantic-course`,
+Next: finish Phase 5 (sweeps, Galley metrics tile; table already in `docs/phase5_results/`). GTN_lab_v1 is
+folded (SEMANTICS.md §12); the intellisense lab footage could become our own extra scene. Phase 6 parts that don't need SV-Net (parser, `semantic-course`,
 feasibility loop). Separate open thread: the SV-Net student (Maverick, cohort `p4_smoke`) does not fly the
 course yet; next is cohort `p4_beta` (data_beta) — see `docs/GALLEY_UI.md` §6.
 

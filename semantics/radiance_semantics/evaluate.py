@@ -109,6 +109,8 @@ def build_cost(table, teachers_meta=None):
     met = table.index.get("metrics", {})
     part = met.get("fmgs") or met.get("lift") or {}
     secs = part.get("seconds")
+    if part.get("steps") and part.get("it_per_s"):          # FMGS: a run resumed after an interruption
+        secs = part["steps"] / part["it_per_s"]                # records only its last leg in "seconds"
     vram = part.get("peak_vram_mib_device") or part.get("peak_vram_mib")
     size = sum(f.stat().st_size for f in Path(table.path).iterdir() if f.is_file()) / 2 ** 20
     out = {"build_min": round(secs / 60, 1) if secs else None, "peak_vram_gb": round(vram / 1024, 2) if vram else None,
