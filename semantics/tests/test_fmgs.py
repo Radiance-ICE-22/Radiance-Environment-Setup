@@ -227,6 +227,85 @@ def test_out_of_memory_walks_the_ladder(tmp_path, monkeypatch):
     assert sum("fallback" in m for m in logs) == 2
 
 
+TCNN_OOM = ("/tmp/pip-req-build/include/tiny-cuda-nn/gpu_memory.h:563 cuMemCreate(&m_handles.back(), "
+            "n_bytes_to_allocate, &prop, 0) failed: CUDA_ERROR_OUT_OF_MEMORY")
+
+
+def test_tcnn_out_of_memory_counts_as_out_of_memory():
+    assert T.is_oom(RuntimeError(TCNN_OOM))
+    assert T.is_oom(torch.cuda.OutOfMemoryError("CUDA out of memory. Tried to allocate 254.00 MiB"))
+    assert not T.is_oom(RuntimeError("CUDA error: invalid configuration argument"))
+    assert not T.is_oom(ValueError("out of memory"))
+
+
+def test_tcnn_out_of_memory_walks_the_ladder(tmp_path, monkeypatch):
+    """Gate run 2: tiny-cuda-nn's RuntimeError never reached the ladder, which caught only PyTorch's error."""
+    g, views, maps = scene_and_teachers()
+    seen = []
+    real = T._train_once
+
+    def fake(g_, views_, teachers, c, *a, **k):
+        seen.append(c.log2_table)
+        if len(seen) < 2:
+            raise RuntimeError(TCNN_OOM)
+        return real(g_, views_, teachers, c, *a, **k)
+    monkeypatch.setattr(T, "_train_once", fake)
+    stats, _ = T.train(g, views, lambda s: maps[s], cfg(variant="auto", steps=10, log2_table=20), tmp_path, "cpu",
+                       "reference", log=lambda m: None)
+    assert seen == [20, 19] and stats["fallback"] == {"level": 1, "name": "hash table 2^19"}
+
+
+def test_out_of_memory_in_a_step_is_retried_once(tmp_path, monkeypatch):
+    g, views, maps = scene_and_teachers()
+    ref, _ = T.train(g, views, lambda s: maps[s], cfg(steps=30), tmp_path / "ref", "cpu", "reference", log=lambda m: None)
+    calls = []
+    real = T._step_backward
+
+    def flaky(*a):
+        calls.append(1)
+        if len(calls) == 7:                                       # step 7, first attempt
+            T._step(a[0], *a[3:])                                # use the step's random numbers, then fail
+            raise RuntimeError(TCNN_OOM)
+        return real(*a)
+    monkeypatch.setattr(T, "_step_backward", flaky)
+    logs = []
+    stats, _ = T.train(g, views, lambda s: maps[s], cfg(steps=30), tmp_path / "retry", "cpu", "reference", log=logs.append)
+    assert stats["oom_retries"] == 1 and stats["fallback"] is None and len(calls) == 31
+    assert any("retrying the step once" in m for m in logs)
+    assert stats["loss_first"] == ref["loss_first"] and stats["loss_last"] == ref["loss_last"]   # same random state
+
+
+def test_out_of_memory_twice_in_a_step_goes_to_the_ladder(tmp_path, monkeypatch):
+    g, views, maps = scene_and_teachers()
+    real = T._step_backward
+    tables = []
+
+    def flaky(field, opt, scaler, c, *a):
+        if c.log2_table == 20:
+            tables.append(20)
+            raise RuntimeError(TCNN_OOM)
+        return real(field, opt, scaler, c, *a)
+    monkeypatch.setattr(T, "_step_backward", flaky)
+    stats, _ = T.train(g, views, lambda s: maps[s], cfg(variant="auto", steps=10, log2_table=20), tmp_path, "cpu",
+                       "reference", log=lambda m: None)
+    assert tables == [20, 20] and stats["fallback"]["level"] == 1 and stats["oom_retries"] == 0
+
+
+def test_pixel_alignment_gradient_is_bounded_near_zero_clip():
+    """6 Oct: a CLIP render of ~0 gave 1/‖x‖ gradients (2e4 per Gaussian) and fp16 overflow in tiny-cuda-nn."""
+    torch.manual_seed(0)
+    H, W = 20, 24
+    dino = torch.randn(H, W, 16)
+    mask = torch.ones(H, W, dtype=torch.bool)
+    clip = (torch.randn(H, W, 32) * 1e-7).requires_grad_()
+    LS.pixel_alignment(clip, dino, mask, samples=200, generator=torch.Generator().manual_seed(0)).backward()
+    assert torch.isfinite(clip.grad).all() and clip.grad.abs().max() < 1e4
+    big = torch.randn(H, W, 32)                     # away from 0 the floor changes nothing
+    a = LS.pixel_alignment(big, dino, mask, samples=200, generator=torch.Generator().manual_seed(0))
+    b = LS.pixel_alignment(big, dino, mask, samples=200, generator=torch.Generator().manual_seed(0), min_norm=1e-12)
+    assert torch.allclose(a, b)
+
+
 def test_blend_weights_match_the_lift():
     g, views, maps = scene_and_teachers()
     w = L.blend_weights(g, views, 24, "reference", log=lambda m: None)

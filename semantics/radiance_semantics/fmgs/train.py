@@ -16,6 +16,18 @@ Variants:
             lighter, but NOT FMGS: results must label it as a variant
   auto      faithful, falling back on CUDA out-of-memory through the ladder below
 
+Memory (8 GB card): PyTorch's allocator runs with expandable segments. tiny-cuda-nn takes its
+own memory (cuMemCreate) beside PyTorch's cache, and with the default allocator the free but
+fragmented blocks PyTorch keeps cached starved tcnn's backward (gate run 2, 5 Oct). A step that
+still runs out of memory (PyTorch's OutOfMemoryError or tcnn's RuntimeError) is retried once with
+the cache emptied and the same random state; a second failure goes down the ladder.
+
+Precision: tiny-cuda-nn computes in fp16 and receives the gradient of its outputs already cast to
+fp16 (its own ×128 loss scale comes after the cast). The CLIP term's gradients (~1e-8; its loss is
+~4 orders below the DINO term's) underflowed there, so the CLIP head hardly learned. With a tcnn
+part the loss is scaled dynamically (torch.cuda.amp.GradScaler; Adam's update does not depend on
+the scale): a step whose gradients overflow is skipped and the scale halved, both recorded.
+
 Out-of-memory ladder (auto; docs/SEMANTICS_PLAN.md, after the 480×270 default): 1. hash table
 2^19 · 2. half of the visible subset per step · 3. B-lite. A fallback restarts training from step 0
 and is recorded in the stats.
@@ -46,6 +58,25 @@ LADDER = [("default", {}), ("hash table 2^19", {"log2_table": 19}),
           ("B-lite (render the encoding, heads per pixel)", {"log2_table": 19, "subsample": 0.5, "variant": "blite"})]
 
 
+def is_oom(e):
+    """PyTorch's OutOfMemoryError, or tiny-cuda-nn's RuntimeError from its own allocator."""
+    return isinstance(e, torch.cuda.OutOfMemoryError) or (
+        isinstance(e, RuntimeError) and ("CUDA_ERROR_OUT_OF_MEMORY" in str(e) or "out of memory" in str(e)))
+
+
+def free_cuda(dev):
+    import gc
+    gc.collect()
+    if dev.type == "cuda":
+        torch.cuda.empty_cache()
+
+
+def device_used_mib(dev):
+    """Memory in use on the whole device (PyTorch's cache, tiny-cuda-nn's arena, other processes)."""
+    free, total = torch.cuda.mem_get_info(torch.cuda.current_device() if dev.index is None else dev.index)
+    return (total - free) / 2 ** 20
+
+
 @dataclass
 class TrainConfig:
     steps: int = 4200
@@ -64,6 +95,7 @@ class TrainConfig:
     delta: float = 1.25
     alpha_min: float = 0.5
     pa_samples: int = 4096
+    loss_scale: float = 2.0 ** 10  # initial dynamic loss scale when a part is tiny-cuda-nn (fp16)
     ckpt_every: int = 1000
     log_every: int = 50
     seed: int = 0
@@ -145,11 +177,14 @@ def _step(field, cfg, g, sub, v, teachers, render_backend, gen, dev):
             dino[mask] = out["dino"]
     else:
         out = field(gs.means)
+        C = out["clip"].shape[-1]
         feats = torch.cat([out["clip"], out["dino"]], -1) if has_dino else out["clip"]
+        del out                      # the fp32 head outputs (~0.5 GB at 140k Gaussians) are in feats now
         img, alpha = render_features(gs, feats, vm, K, W, H, render_backend)
+        del feats
         mask = alpha[..., 0] >= cfg.alpha_min
         pred = img / alpha.clamp_min(1e-6)
-        C = out["clip"].shape[-1]
+        del img                      # the division keeps only alpha for backward
         clip, dino = pred[..., :C], (pred[..., C:] if has_dino else None)
     losses = total_loss(clip, tgt["clip"], dino, tgt.get("dino"), mask, cfg.w_clip, cfg.w_dino, cfg.w_pa, cfg.delta,
                         cfg.pa_samples, generator=gen)
@@ -162,6 +197,14 @@ def cfg_dim(field, which):
     return field.cfg.clip_dim if which == "clip" else field.cfg.dino_dim
 
 
+def _step_backward(field, opt, scaler, cfg, g, sub, v, teachers, render_backend, gen, dev):
+    losses = _step(field, cfg, g, sub, v, teachers, render_backend, gen, dev)
+    if losses is not None:
+        opt.zero_grad(set_to_none=True)
+        scaler.scale(losses["loss"]).backward()
+    return losses
+
+
 def _latest_ckpt(d):
     c = sorted(Path(d).glob("step-*.pt"))
     return c[-1] if c else None
@@ -172,6 +215,8 @@ def train(g, views, maps_for, cfg: TrainConfig, out, device=None, render_backend
     out = Path(out)
     (out / "ckpt").mkdir(parents=True, exist_ok=True)
     dev = torch.device(device) if device else g.means.device
+    if dev.type == "cuda":
+        torch.cuda.memory._set_allocator_settings("expandable_segments:True")
     g = g.to(dev)
     checksum0 = gauss_checksum(g)
     lo, hi = scene_box(g.means)
@@ -199,15 +244,12 @@ def train(g, views, maps_for, cfg: TrainConfig, out, device=None, render_backend
         try:
             stats, field = _train_once(g, views, teachers, cfg, out, dev, render_backend, log, resume, lo, hi)
             break
-        except torch.cuda.OutOfMemoryError:
-            if not auto or level + 1 >= len(LADDER):
+        except Exception as e:                                          # noqa: BLE001
+            if not is_oom(e) or not auto or level + 1 >= len(LADDER):
                 raise
             oom = True
         if oom:                      # outside the except: the failed step's tensors are released by now
-            import gc
-            gc.collect()
-            if dev.type == "cuda":
-                torch.cuda.empty_cache()
+            free_cuda(dev)
             level += 1
             log(f"  ! CUDA out of memory — fallback {level}: {LADDER[level][0]}; restarting from step 0")
             for p in (out / "ckpt").glob("step-*.pt"):
@@ -231,12 +273,16 @@ def _train_once(g, views, teachers, cfg, out, dev, render_backend, log, resume, 
     opt = torch.optim.Adam(field.parameters(), lr=cfg.lr, eps=cfg.eps)
     gamma = (cfg.lr_final / cfg.lr) ** (1.0 / max(1, cfg.steps))
     sched = torch.optim.lr_scheduler.ExponentialLR(opt, gamma)
+    scaler = torch.cuda.amp.GradScaler(init_scale=cfg.loss_scale, growth_interval=200,
+                                       enabled=dev.type == "cuda" and "tcnn" in cfg.impl)
     start, hist = 0, []
     ck = _latest_ckpt(out / "ckpt") if resume else None
     if ck is not None:
         d = torch.load(ck, map_location="cpu")
         if d.get("key") == cfg.key():
             field.load_state_dict(d["field"]); opt.load_state_dict(d["opt"]); sched.load_state_dict(d["sched"])
+            if d.get("scaler"):
+                scaler.load_state_dict(d["scaler"])
             start, hist = d["step"], d.get("hist", [])
             gen.set_state(d["gen"])
             log(f"  resumed from {ck.name} (step {start})")
@@ -255,15 +301,33 @@ def _train_once(g, views, teachers, cfg, out, dev, render_backend, log, resume, 
     if dev.type == "cuda":
         torch.cuda.reset_peak_memory_stats(dev)
     t0 = time.time()
-    run_sum = {}
+    run_sum, retries, skipped, dev_peak = {}, 0, 0, 0.0
     for step in range(start, cfg.steps):
         v = views[int(torch.randint(len(views), (1,), generator=gen))]
-        losses = _step(field, cfg, g, sub, v, teachers, render_backend, gen, dev)
+        state = gen.get_state()
+        args = (field, opt, scaler, cfg, g, sub, v, teachers, render_backend, gen, dev)
+        try:
+            losses = _step_backward(*args)
+            retry = False
+        except Exception as e:                                          # noqa: BLE001
+            if not is_oom(e):
+                raise
+            retry = True
+        if retry:                    # outside the except, so the failed step's tensors are released
+            free_cuda(dev)
+            gen.set_state(state)
+            retries += 1
+            log(f"  step {step + 1}: out of memory — cache emptied, retrying the step once")
+            losses = _step_backward(*args)                              # a second failure goes to the ladder
         if losses is None:
             continue
-        opt.zero_grad(set_to_none=True)
-        losses["loss"].backward()
-        opt.step()
+        if dev.type == "cuda":
+            dev_peak = max(dev_peak, device_used_mib(dev))
+        scale = scaler.get_scale() if scaler.is_enabled() else None
+        scaler.step(opt)             # skipped when the scaled gradients overflowed
+        scaler.update()
+        if scale is not None and scaler.get_scale() < scale:
+            skipped += 1
         sched.step()
         rec = {k: float(x) for k, x in losses.items() if k in ("loss", "clip", "dino", "pa")}
         hist.append(rec["loss"])
@@ -281,13 +345,15 @@ def _train_once(g, views, teachers, cfg, out, dev, render_backend, log, resume, 
             run_sum = {}
             rate = (s1 - start) / max(1e-6, time.time() - t0)
             eta = (cfg.steps - s1) / max(rate, 1e-6)
-            vram = f" · {torch.cuda.max_memory_allocated(dev) / 2 ** 20:.0f} MiB peak" if dev.type == "cuda" else ""
+            vram = (f" · peak {torch.cuda.max_memory_allocated(dev) / 2 ** 20:.0f} MiB torch, {dev_peak:.0f} MiB device"
+                    if dev.type == "cuda" else "")
             log(f"  step {s1}/{cfg.steps}  loss {avg['loss']:.4f} (clip {avg['clip']:.4f}"
                 + (f" dino {avg['dino']:.4f}" if "dino" in avg else "") + (f" pa {avg['pa']:.3f}" if "pa" in avg else "")
                 + f")  {losses['n']:,} Gaussians  {rate:.2f} it/s  ETA {eta / 60:.0f} min{vram}")
         if s1 % cfg.ckpt_every == 0 or s1 == cfg.steps:
             p = out / "ckpt" / f"step-{s1:06d}.pt"
-            torch.save({"field": field.state_dict(), "opt": opt.state_dict(), "sched": sched.state_dict(), "step": s1,
+            torch.save({"field": field.state_dict(), "opt": opt.state_dict(), "sched": sched.state_dict(),
+                        "scaler": scaler.state_dict(), "step": s1,
                         "key": cfg.key(), "hist": hist, "gen": gen.get_state()}, p)
             for old in sorted((out / "ckpt").glob("step-*.pt"))[:-2]:
                 old.unlink()
@@ -299,6 +365,9 @@ def _train_once(g, views, teachers, cfg, out, dev, render_backend, log, resume, 
              "loss_first": round(float(np.mean(hist[:k])), 5) if hist else None,
              "loss_last": round(float(np.mean(hist[-k:])), 5) if hist else None,
              "peak_vram_mib": int(torch.cuda.max_memory_allocated(dev) / 2 ** 20) if dev.type == "cuda" else None,
+             "peak_device_mib": int(dev_peak) if dev.type == "cuda" else None,   # whole GPU after each backward, incl. tcnn
+             "oom_retries": retries,
+             "loss_scale": scaler.get_scale() if scaler.is_enabled() else None, "overflow_skipped_steps": skipped,
              "params_m": round(sum(p.numel() for p in field.parameters()) / 1e6, 2),
              "trainable_gaussians": len(sub)}
     return stats, field
@@ -358,7 +427,7 @@ def main(argv=None):
     stats, _ = train_run(run, tdir, cfg, a.out, a.device, a.render_backend, limit=a.limit)
     fell = stats["loss_last"] is not None and stats["loss_first"] is not None and stats["loss_last"] < stats["loss_first"]
     print(json.dumps({k: stats.get(k) for k in ("steps", "seconds", "it_per_s", "loss_first", "loss_last", "peak_vram_mib",
-                                                 "fallback", "variant", "gauss_unchanged", "gauss_checksum_after")}))
+                                                 "peak_device_mib", "oom_retries", "fallback", "variant", "gauss_unchanged", "gauss_checksum_after")}))
     print(f"loss {'FELL' if fell else 'DID NOT FALL'}: {stats['loss_first']} → {stats['loss_last']}")
     return 0 if fell and stats["gauss_unchanged"] else 1
 

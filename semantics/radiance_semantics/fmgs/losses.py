@@ -13,6 +13,10 @@ a k × k window (dilation `dil`), with cos(·,·) on unit vectors,
 
 DINO here is the TEACHER map (fixed), so the term only shapes CLIP; both sides are compared on the
 same pixel pairs. Pairs whose neighbour falls outside the image or the valid mask are dropped.
+
+The CLIP vectors are normalised with a floor of `min_norm` (1e-3) on their length: the gradient of
+x/‖x‖ grows as 1/‖x‖, and early in training the rendered CLIP map is ~0 (the teacher vectors have
+length 1), which gave per-Gaussian gradients of 2e4 and fp16 overflow in tiny-cuda-nn (6 Oct).
 """
 
 import torch
@@ -21,9 +25,9 @@ import torch.nn.functional as F
 
 def masked_mean(x, mask):
     """Mean of x [H, W, C] over pixels where mask [H, W] is true (0 when none are)."""
-    m = mask.to(x.dtype)[..., None]
+    m = mask.to(x.dtype)
     n = m.sum() * x.shape[-1]
-    return (x * m).sum() / n.clamp_min(1.0)
+    return (x.sum(-1) * m).sum() / n.clamp_min(1.0)      # channels first: no [H, W, C] product kept for backward
 
 
 def clip_loss(pred, target, mask, delta=1.25):
@@ -39,7 +43,7 @@ def neighbour_offsets(k=3, dil=1):
     return [(dy * dil, dx * dil) for dy in range(-r, r + 1) for dx in range(-r, r + 1) if (dy, dx) != (0, 0)]
 
 
-def pixel_alignment(clip, dino, mask, samples=4096, k=3, dil=2, generator=None):
+def pixel_alignment(clip, dino, mask, samples=4096, k=3, dil=2, generator=None, min_norm=1e-3):
     """|cos_clip − cos_dino| over sampled pixels and their k×k neighbours (see the module docstring)."""
     H, W, _ = clip.shape
     valid = torch.nonzero(mask.reshape(-1), as_tuple=False)[:, 0]
@@ -48,7 +52,9 @@ def pixel_alignment(clip, dino, mask, samples=4096, k=3, dil=2, generator=None):
     pick = valid[torch.randint(len(valid), (min(samples, len(valid)),), generator=generator,
                                device="cpu").to(valid.device)]
     py, px = pick // W, pick % W
-    cn, dn = F.normalize(clip, dim=-1), F.normalize(dino, dim=-1)
+    # normalise only the gathered pixels: normalising the whole maps kept ~0.5 GB for backward at 480×270
+    def unit(m, y, x, eps=1e-12):
+        return F.normalize(m[y, x], dim=-1, eps=eps)
     terms = []
     for dy, dx in neighbour_offsets(k, dil):
         qy, qx = py + dy, px + dx
@@ -60,8 +66,8 @@ def pixel_alignment(clip, dino, mask, samples=4096, k=3, dil=2, generator=None):
         ay, ax, by, bx = ay[ok2], ax[ok2], by[ok2], bx[ok2]
         if len(ay) == 0:
             continue
-        sc = (cn[ay, ax] * cn[by, bx]).sum(-1)
-        sd = (dn[ay, ax] * dn[by, bx]).sum(-1)
+        sc = (unit(clip, ay, ax, min_norm) * unit(clip, by, bx, min_norm)).sum(-1)
+        sd = (unit(dino, ay, ax) * unit(dino, by, bx)).sum(-1)
         terms.append((sc - sd).abs())
     if not terms:
         return clip.sum() * 0.0
