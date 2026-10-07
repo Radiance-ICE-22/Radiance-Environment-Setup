@@ -319,3 +319,20 @@ def test_clip_only_variant_trains_without_dino(tmp_path):
     stats, _ = T.train(g, views, lambda s: maps[s], cfg(w_dino=0.0, w_pa=0.0), tmp_path, "cpu", "reference",
                        log=lambda m: None)
     assert stats["loss_last"] < stats["loss_first"] and stats["gauss_unchanged"]
+
+
+def test_scale_group_heads_train_and_bake(tmp_path):
+    """Variant A: one CLIP head per crop-scale group, one group per step; bake returns every group."""
+    from radiance_semantics.fmgs.bake import bake
+    g, views, maps = scene_and_teachers()
+    for v in maps.values():          # three different targets: the true map, shifted and negated
+        c = v.pop("clip")
+        v.update(clip_s0=c, clip_s1=np.roll(c, 1, axis=-1), clip_s2=-c)
+    stats, field = T.train(g, views, lambda s: maps[s], cfg(field_cfg={**SMALL, "clip_groups": 3}), tmp_path, "cpu",
+                           "reference", log=lambda m: None)
+    assert stats["loss_last"] < stats["loss_first"] and stats["gauss_unchanged"]
+    assert len(field.clip_heads) == 3
+    clip, dino, scales = bake(field, g.means.numpy(), device="cpu", with_scales=True)
+    assert scales.shape == (len(clip), 3, clip.shape[1])
+    assert np.allclose(np.linalg.norm(scales[:, 1], axis=1), 1, atol=1e-4)
+    assert bake(field, g.means.numpy(), device="cpu")[0].shape == clip.shape   # 2-tuple without with_scales

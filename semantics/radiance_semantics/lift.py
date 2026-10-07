@@ -175,6 +175,7 @@ def gaussians_from_model(model):
 def lift_run(run, teacher_dir, feat_width=960, backend="gsplat", log=print, acc_budget_gb=2.5, limit=None):
     """Load the trained run (refined poses) and lift every training view's teacher maps.
     Returns (feats {teacher: [N_total, C]}, weight [N_total], stats); rows are in checkpoint order."""
+    from pathlib import Path
     import torch
     from .cameras import in_workspace, load_pipeline, train_views
     from .teachers import load_maps
@@ -189,7 +190,9 @@ def lift_run(run, teacher_dir, feat_width=960, backend="gsplat", log=print, acc_
         del pipeline
     dev = g.means.device
     total_c = 0
-    for t in ("clip", "dino"):
+    groups = sorted(p.name for p in Path(teacher_dir).glob("clip_s*") if p.is_dir())
+    names = (["dino"] + groups) if groups else ["clip", "dino"]      # variant A: 'clip' follows from the groups
+    for t in names:
         p = next(iter((teacher_dir / t).glob("*.npy")), None) if (teacher_dir / t).is_dir() else None
         if p is not None:
             total_c += int(np.load(p, mmap_mode="r").shape[-1])
@@ -197,7 +200,12 @@ def lift_run(run, teacher_dir, feat_width=960, backend="gsplat", log=print, acc_
     acc_device = dev if (dev.type == "cpu" or need_gb <= acc_budget_gb) else torch.device("cpu")
     log(f"  {len(g):,} Gaussians, {len(views)} training views, render {feat_width} px wide, "
         f"accumulators {need_gb:.2f} GB on {acc_device}")
-    feats, w, stats = lift_views(g, views, lambda stem: load_maps(teacher_dir, stem), feat_width, backend,
+    def maps_for(stem):
+        m = load_maps(teacher_dir, stem)
+        if groups:                         # the lift is linear: lifting the mean = the mean of the lifted groups
+            m.pop("clip", None)
+        return m
+    feats, w, stats = lift_views(g, views, maps_for, feat_width, backend,
                                  acc_device=acc_device, log=log)
     stats.update(step=int(step), acc_device=str(acc_device))
     return feats, w, stats, g

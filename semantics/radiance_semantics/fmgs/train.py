@@ -161,14 +161,21 @@ def _step(field, cfg, g, sub, v, teachers, render_backend, gen, dev):
         return None
     gs = Gaussians(g.means[sel], g.quats[sel], g.scales[sel], g.opacities[sel])
     maps = teachers.get(v.stem)
-    tgt = {k: upsample(t.to(dev), W, H, dev) for k, t in maps.items()}
-    has_dino = "dino" in tgt and (cfg.w_dino > 0 or cfg.w_pa > 0)     # F-C (both 0) renders CLIP alone
+    group = 0
+    G = field.cfg.clip_groups
+    if G > 1:                        # variant A: train one crop-scale group's head per step
+        group = int(torch.randint(G, (1,), generator=gen))
+    ckey = f"clip_s{group}" if G > 1 else "clip"
+    has_dino = "dino" in maps and (cfg.w_dino > 0 or cfg.w_pa > 0)   # F-C (both 0) renders CLIP alone
+    tgt = {"clip": upsample(maps[ckey].to(dev), W, H, dev)}             # only what this step uses
+    if has_dino:
+        tgt["dino"] = upsample(maps["dino"].to(dev), W, H, dev)
     if cfg.variant == "blite":
         enc = field.encode(gs.means)
         img, alpha = render_features(gs, enc, vm, K, W, H, render_backend)
         mask = alpha[..., 0] >= cfg.alpha_min
         e = img / alpha.clamp_min(1e-6)
-        out = field.heads(e[mask])
+        out = field.heads(e[mask], group)
         clip = torch.zeros(H, W, cfg_dim(field, "clip"), device=dev)
         clip[mask] = out["clip"]
         dino = None
@@ -176,7 +183,7 @@ def _step(field, cfg, g, sub, v, teachers, render_backend, gen, dev):
             dino = torch.zeros(H, W, cfg_dim(field, "dino"), device=dev)
             dino[mask] = out["dino"]
     else:
-        out = field(gs.means)
+        out = field(gs.means, group)
         C = out["clip"].shape[-1]
         feats = torch.cat([out["clip"], out["dino"]], -1) if has_dino else out["clip"]
         del out                      # the fp32 head outputs (~0.5 GB at 140k Gaussians) are in feats now
@@ -390,7 +397,12 @@ def train_run(run, teacher_dir, cfg, out, device=None, render_backend="gsplat", 
     if device:
         g = g.to(device)
     log(f"  {len(g):,} Gaussians, {len(views)} training views (refined poses), teachers {Path(teacher_dir).name}")
-    stats, field = train(g, views, lambda stem: load_maps(teacher_dir, stem), cfg, out, device, render_backend, log)
+    def maps_for(stem):
+        m = load_maps(teacher_dir, stem)
+        if any(k.startswith("clip_s") for k in m):    # variant A trains the groups; the mean is not needed
+            m.pop("clip", None)
+        return m
+    stats, field = train(g, views, maps_for, cfg, out, device, render_backend, log)
     stats.update(splat_step=int(step))
     (Path(out) / "train.json").write_text(json.dumps(stats, indent=2) + "\n")
     return stats, field

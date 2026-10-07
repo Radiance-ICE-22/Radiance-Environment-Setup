@@ -39,6 +39,7 @@ class FieldConfig:
     clip_dim: int = 512
     dino_dim: int = 384
     split: int = 1                 # the levels as this many consecutive grids (tiny-cuda-nn on sm_75: ≤ 96 dims per grid)
+    clip_groups: int = 1           # variant A: one CLIP head per crop-scale group (teachers clip_s0..)
 
     @property
     def enc_dim(self):
@@ -183,22 +184,27 @@ class FeatureField(nn.Module):
         self.register_buffer("hi", torch.as_tensor(hi, dtype=torch.float32).clone())
         c = self.cfg
         self.encoding = tcnn_encoding(c) if enc == "tcnn" else TorchHashGrid(c)
-        if head == "tcnn":
-            self.clip_head, self.dino_head = tcnn_head(c, c.clip_dim), tcnn_head(c, c.dino_dim)
+        make = (lambda n: tcnn_head(c, n)) if head == "tcnn" else (lambda n: _mlp(c.enc_dim, n, c.hidden, c.layers))
+        if c.clip_groups > 1:
+            self.clip_heads = nn.ModuleList([make(c.clip_dim) for _ in range(c.clip_groups)])
         else:
-            self.clip_head = _mlp(c.enc_dim, c.clip_dim, c.hidden, c.layers)
-            self.dino_head = _mlp(c.enc_dim, c.dino_dim, c.hidden, c.layers)
+            self.clip_head = make(c.clip_dim)
+        self.dino_head = make(c.dino_dim)
 
     def encode(self, xyz):
         """[N, 3] splat-frame points → [N, L·F] float32 encoding."""
         return self.encoding(normalise(xyz.float(), self.lo, self.hi)).float()
 
-    def heads(self, enc):
-        """[M, L·F] → {"clip": [M, 512], "dino": [M, 384]} float32."""
-        return {"clip": self.clip_head(enc).float(), "dino": self.dino_head(enc).float()}
+    def clip_out(self, enc, group=0):
+        head = self.clip_heads[group] if self.cfg.clip_groups > 1 else self.clip_head
+        return head(enc).float()
 
-    def forward(self, xyz):
-        return self.heads(self.encode(xyz))
+    def heads(self, enc, group=0):
+        """[M, L·F] → {"clip": [M, 512], "dino": [M, 384]} float32 (CLIP of scale group `group` in variant A)."""
+        return {"clip": self.clip_out(enc, group), "dino": self.dino_head(enc).float()}
+
+    def forward(self, xyz, group=0):
+        return self.heads(self.encode(xyz), group)
 
     def save(self, path, **extra):
         torch.save({"state": self.state_dict(), "cfg": asdict(self.cfg), "impl": self.impl,

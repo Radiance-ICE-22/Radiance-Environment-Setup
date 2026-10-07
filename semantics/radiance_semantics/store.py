@@ -27,7 +27,8 @@ import numpy as np
 VERSION = 1
 GEOM_COLS = ["x", "y", "z", "opacity", "scale_max"]
 _DTYPES = {"clip.f16": np.float16, "dino.f16": np.float16, "weight.f32": np.float32,
-           "geom.f32": np.float32, "pca_rgb.u8": np.uint8}
+           "geom.f32": np.float32, "pca_rgb.u8": np.uint8,
+           "clip_scales.f16": np.float16}     # variant A: [n, groups, D] unit rows per crop-scale group
 
 
 def order_hash(order):
@@ -55,7 +56,7 @@ def pca_rgb(x, sample=100_000, seed=0):
     return np.round(out * 255).astype(np.uint8)
 
 
-def write_table(dest, *, clip, weight, geom, order, meta, dino=None):
+def write_table(dest, *, clip, weight, geom, order, meta, dino=None, clip_scales=None):
     """Write a complete table into `dest` (atomically replacing an old one). Arrays are already
     in .splat order. Returns the index dict."""
     dest = Path(dest)
@@ -70,6 +71,9 @@ def write_table(dest, *, clip, weight, geom, order, meta, dino=None):
     if dino is not None:
         assert dino.shape[0] == n
         arrays["dino.f16"] = dino
+    if clip_scales is not None:
+        assert clip_scales.shape[0] == n and clip_scales.ndim == 3
+        arrays["clip_scales.f16"] = clip_scales
     shapes = {}
     for name, arr in arrays.items():
         a = np.ascontiguousarray(np.asarray(arr).astype(_DTYPES[name]))
@@ -98,6 +102,7 @@ class Table:
     geom: np.ndarray
     pca: np.ndarray
     dino: object = None
+    clip_scales: object = None        # variant A: [n, groups, D] or None
 
     @property
     def n(self):
@@ -118,7 +123,7 @@ def read_table(path, mmap=True):
         return np.fromfile(p, dtype=_DTYPES[name]).reshape(shape)
 
     return Table(path, index, arr("clip.f16"), arr("weight.f32"), arr("geom.f32"), arr("pca_rgb.u8"),
-                 arr("dino.f16"))
+                 arr("dino.f16"), arr("clip_scales.f16"))
 
 
 def check_order(table, order):
