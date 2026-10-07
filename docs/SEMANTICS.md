@@ -639,3 +639,33 @@ stale flag by checkpoint key). The Scene page's table was added and built afterw
 Galley's Scene page shows these results (Semantics tile ▸ Evaluation; misses link into the splat editor), built
 with Node 22.23.3 under `~/Radiance/tools/node` (9de0182). Still open in Phase 5: the browser check of
 View ▸ Compare (and of the new Evaluation table).
+
+## 14. Where the misses come from (diagnostic, 7 Oct)
+
+Question (Suhan): are the misses caused by using the teachers coarsely? `semantics/scripts/diag_teachers.py`
+(GPU, ~5 min) takes, for every Phase 5 positive query, the 3 nearest training photos where an annotated
+instance is visible and compares the same LERF relevancy at three stages: **(a)** the cached teacher grid at the
+object's pixel (our 7-scale pyramid, scales averaged with equal weight, max over 3 × 3 cells), **(d)** CLIP on
+crops *centred* on the object at each of the 7 scales (best scale), **(c)** the lift table's Gaussians within
+0.25 m of the annotation (max). Outcomes from the L-C evaluation.
+
+| Group | (a) grid | (d) best centred scale | (c) 3D near |
+| --- | --- | --- | --- |
+| hits (18) | 0.682 | 0.748 (+0.066) | 0.675 (−0.007) |
+| misses (11) | 0.485 | 0.577 (+0.093) | 0.517 |
+| no-candidate misses (6) | 0.439 | 0.522 (+0.083) | 0.504 |
+
+- **Lifting into 3D loses almost nothing** (hits: −0.007 from grid to 3D). The loss happens in 2D.
+- **The scale-averaged pyramid costs ~0.07–0.09 relevancy everywhere.** `clip_pyramid` averages a 5 % crop
+  with crops covering half the image, so small objects are diluted by context (FMGS's choice; LERF keeps the
+  scales and picks one per query). Misses where the best centred scale clears 0.6 but the grid does not:
+  **swivel chair (0.55 → 0.71), camera tripod (0.56 → 0.61), white bucket (0.52 → 0.64 at the 0.125 scale), glass
+  door cabinet (0.60 → 0.69)** — these are coarseness misses.
+- **Recognition misses — CLIP does not respond even to a centred crop at its best scale (< 0.55):** keyboard
+  (0.50), floor lamp (0.52), armchair / upholstered chair (0.40 / 0.39), purple foam mat (0.54). Finer use of the
+  same CLIP will not fix these; a stronger or region-level model might. Two need a ground-truth check first:
+  armchair's 2D scores are lower than its 3D score (the nearest photos may show it occluded or from behind),
+  and purple foam mat / glass door cabinet may have unannotated second instances (backroom has several glass
+  cabinets and purple foam), which would make "wrong object" a correct answer.
+- Best scales: large objects peak at the 0.5 scale (bins, mats, gate, cart), small ones at 0.05–0.2 (red cup,
+  clock, hose reel, white bucket), so no single fixed scale suits all queries.
