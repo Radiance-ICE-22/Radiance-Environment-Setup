@@ -136,6 +136,51 @@ def clip_pyramid(encode, img, s):
     return acc / used, n_crops
 
 
+SAM_CELL_FRAC = 0.0125     # variant B: a 2x finer common grid, so features keep object shapes
+
+
+def clip_regions(encode, segment, img, s, pad=0.1):
+    """Variant B (region-level CLIP, as LangSplat): segment the photo with SAM's automatic mask generator,
+    embed each segment with CLIP — its bounding box (+ `pad` context), pixels outside the mask blacked out,
+    squared and resized to 224 — and give every common-grid cell the coverage-weighted mean of the unit
+    embeddings of the segments covering it. Cells no segment covers stay 0 (they add nothing in the lift).
+    segment(img [3, H, W]) → bool masks [M, H, W]. Returns ([gh, gw, D] float32, number of segments)."""
+    import torch
+    import torch.nn.functional as F
+    _, H, W = img.shape
+    gh, gw = common_grid(H, W, s.cell_frac)
+    masks = segment(img)
+    if len(masks) == 0:
+        return None, 0
+    mean = torch.tensor(CLIP_MEAN, device=img.device).view(1, 3, 1, 1)
+    std = torch.tensor(CLIP_STD, device=img.device).view(1, 3, 1, 1)
+    crops = []
+    for m in masks:
+        ys, xs = torch.nonzero(m, as_tuple=True)
+        y0, y1, x0, x1 = int(ys.min()), int(ys.max()) + 1, int(xs.min()), int(xs.max()) + 1
+        side = int(max(y1 - y0, x1 - x0) * (1 + 2 * pad)) + 1
+        cy, cx = (y0 + y1) // 2, (x0 + x1) // 2
+        sy, sx = max(0, cy - side // 2), max(0, cx - side // 2)
+        ey, ex = min(H, sy + side), min(W, sx + side)
+        crop = img[:, sy:ey, sx:ex] * m[sy:ey, sx:ex].to(img.dtype)            # background blacked out
+        sq = torch.zeros(3, side, side, device=img.device, dtype=img.dtype)    # centred on a square canvas
+        oy, ox = (side - crop.shape[1]) // 2, (side - crop.shape[2]) // 2
+        sq[:, oy:oy + crop.shape[1], ox:ox + crop.shape[2]] = crop
+        crops.append(F.interpolate(sq[None], size=(224, 224), mode="bilinear", align_corners=False,
+                                   antialias=side > 224)[0])
+    embs = []
+    for b in range(0, len(crops), s.batch):
+        with torch.no_grad():
+            e = encode((torch.stack(crops[b:b + s.batch]) - mean) / std).float()
+        embs.append(e / e.norm(dim=-1, keepdim=True).clamp_min(1e-8))
+    E = torch.cat(embs)                                                       # [M, D]
+    cover = F.adaptive_avg_pool2d(masks.float()[:, None], (gh, gw))[:, 0]    # [M, gh, gw] coverage fractions
+    num = torch.einsum("mhw,md->hwd", cover, E)
+    den = cover.sum(0)[..., None]
+    grid = torch.where(den > 1e-6, num / den.clamp_min(1e-6), torch.zeros_like(num))
+    return grid, len(masks)
+
+
 def dino_dense(forward_tokens, img, s):
     """img: [3, H, W] in [0, 1]. forward_tokens(x [1, 3, h, w]) → patch tokens [1, h·w/196, D].
     Returns [h/14, w/14, D] float32."""
@@ -154,11 +199,36 @@ def dino_dense(forward_tokens, img, s):
 
 # ── models and the extraction loop ───────────────────────────────────────────────
 
+def sam_segmenter(device, points_per_side=32, min_area_frac=0.0005):
+    """segment(img [3, H, W] float 0-1) → bool masks [M, H, W] from SAM ViT-B's automatic mask generator
+    (weights torch hub checkpoints/sam_vit_b_01ec64.pth), smallest segments dropped."""
+    import torch
+    from pathlib import Path as _P
+    from segment_anything import SamAutomaticMaskGenerator, sam_model_registry
+    ck = _P(torch.hub.get_dir()) / "checkpoints" / "sam_vit_b_01ec64.pth"
+    sam = sam_model_registry["vit_b"](checkpoint=str(ck)).to(device).eval()
+    gen = SamAutomaticMaskGenerator(sam, points_per_side=points_per_side, pred_iou_thresh=0.86,
+                                    stability_score_thresh=0.92, min_mask_region_area=100)
+
+    def segment(img):
+        H, W = img.shape[1:]
+        rgb = (img.clamp(0, 1) * 255).byte().permute(1, 2, 0).cpu().numpy()
+        with torch.no_grad():
+            anns = gen.generate(rgb)
+        keep = [a["segmentation"] for a in anns if a["area"] >= min_area_frac * H * W]
+        if not keep:
+            return torch.zeros(0, H, W, dtype=torch.bool, device=img.device)
+        return torch.from_numpy(np.stack(keep)).to(img.device)
+    return segment
+
+
 def default_encoders(device, s):
     """(clip_encode, dino_tokens) from the pinned models, fp16 autocast on CUDA."""
     import torch
     from .models import load_clip, load_dino
     out = {}
+    if "clip" in s.teachers and s.clip_mode == "sam":
+        out["segment"] = sam_segmenter(device)
     if "clip" in s.teachers:
         clip, _, _ = load_clip(device, s.clip_model, s.clip_pretrained)
 
@@ -224,7 +294,12 @@ def extract(scene_dir, out_root, settings=None, device="cuda", encoders=None, lo
         rec = meta["images"].get(stem, {})
         rec["size"] = [int(img.shape[2]), int(img.shape[1])]
         if "clip" in need:
-            g, nc = clip_pyramid(enc["clip"], img, s)
+            if s.clip_mode == "sam":
+                g, nc = clip_regions(enc["clip"], enc["segment"], img, s)
+                if g is None:                       # no segment at all: fall back to the pyramid for this photo
+                    g, nc = clip_pyramid(enc["clip"], img, s)
+            else:
+                g, nc = clip_pyramid(enc["clip"], img, s)
             meta["clip_dim"] = int(g.shape[-1])
             _save(out / "clip" / f"{stem}.npy", g.cpu().numpy())
             rec["clip_grid"], rec["crops"] = list(g.shape[:2]), nc

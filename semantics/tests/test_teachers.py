@@ -104,3 +104,26 @@ def test_default_tag_is_unchanged_by_variant_fields():
     assert base.tag() == "d7a30d7264"
     assert TeacherSettings(clip_mode="scales").tag() != base.tag()
     assert TeacherSettings(clip_model="ViT-L-14", clip_pretrained="laion2b_s32b_b82k").tag() != base.tag()
+
+
+def test_clip_regions_paints_each_segment_with_its_own_embedding():
+    """Variant B: two segments (left / right halves) get two different embeddings; a cell straddling both
+    is their coverage-weighted mean; uncovered cells stay 0."""
+    s = T.TeacherSettings(cell_frac=0.25, batch=8)
+    img = torch.zeros(3, 40, 80)
+    img[0, :, :40] = 1.0                                   # left half red, right half green
+    img[1, :, 40:] = 1.0
+
+    def segment(im):
+        m = torch.zeros(2, 40, 80, dtype=torch.bool)
+        m[0, :, :40] = True
+        m[1, :30, 40:] = True                              # the bottom of the right half: no segment
+        return m
+
+    enc = lambda x: x.mean(dim=(2, 3))                     # noqa: E731  (mean colour as the embedding)
+    grid, n = T.clip_regions(enc, segment, img, s)
+    assert n == 2 and grid.shape[:2] == T.common_grid(40, 80, 0.25)
+    left, right = grid[0, 0].numpy(), grid[0, -1].numpy()
+    assert np.allclose(np.linalg.norm(left), 1, atol=1e-5) and np.allclose(grid[1, 0].numpy(), left, atol=1e-6)
+    assert float(left @ right) < 0.99                      # the two segments keep different embeddings
+    assert float(grid[-1, -1].abs().sum()) == 0.0          # bottom-right: nothing covers it
