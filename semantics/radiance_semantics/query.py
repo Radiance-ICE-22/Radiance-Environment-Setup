@@ -42,10 +42,17 @@ to_splat = to_course                                       # 180° about x, self
 class TextEncoder:
     """CLIP text tower (CPU by default — a query must never compete with a GPU job)."""
 
-    def __init__(self, device="cpu", loader=None):
+    def __init__(self, device="cpu", loader=None, model_name=None, pretrained=None):
         self.device = device
         self._loader = loader
+        self.model_name, self.pretrained = model_name, pretrained       # None: the pinned ViT-B/16
         self._m = None
+
+    @classmethod
+    def for_table(cls, table, device="cpu"):
+        """The text tower of the CLIP model that made the table (index.json "clip"; older tables: the default)."""
+        c = (getattr(table, "index", None) or {}).get("clip") or {}
+        return cls(device, model_name=c.get("model"), pretrained=c.get("pretrained"))
 
     def encode(self, texts):
         import torch
@@ -54,7 +61,7 @@ class TextEncoder:
                 self._m = self._loader()
             else:
                 from .models import load_clip
-                m, _, tok = load_clip(self.device)
+                m, _, tok = load_clip(self.device, self.model_name, self.pretrained)
                 self._m = (m, tok)
         m, tok = self._m
         with torch.no_grad():

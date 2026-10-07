@@ -48,9 +48,12 @@ class TeacherSettings:
     clip_pretrained: str = CLIP_PRETRAINED
     dino_model: str = DINO_MODEL
     teachers: tuple = ("clip", "dino")
+    clip_mode: str = "pyramid"        # pyramid (LERF/FMGS, scales averaged) | variants on their own branches
 
     def tag(self):
         key = {k: v for k, v in asdict(self).items() if k not in ("batch",)}
+        if key.get("clip_mode") == "pyramid":       # the default hashes exactly as before clip_mode existed
+            key.pop("clip_mode")
         key["version"] = TEACHERS_VERSION
         key["teachers"] = list(self.teachers)
         return hashlib.sha256(json.dumps(key, sort_keys=True).encode()).hexdigest()[:10]
@@ -157,7 +160,7 @@ def default_encoders(device, s):
     from .models import load_clip, load_dino
     out = {}
     if "clip" in s.teachers:
-        clip, _, _ = load_clip(device)
+        clip, _, _ = load_clip(device, s.clip_model, s.clip_pretrained)
 
         def clip_encode(x):
             with torch.autocast("cuda", dtype=torch.float16, enabled=x.is_cuda):
@@ -207,7 +210,7 @@ def extract(scene_dir, out_root, settings=None, device="cuda", encoders=None, lo
     enc = encoders or default_encoders(device, s)
     meta_p = out / "meta.json"
     meta = json.loads(meta_p.read_text()) if meta_p.exists() else {}
-    meta.update(tag=tag, settings=asdict(s), clip_dim=CLIP_DIM, dino_dim=DINO_DIM, n_frames=len(frames),
+    meta.update(tag=tag, settings=asdict(s), clip_dim=meta.get("clip_dim", CLIP_DIM), dino_dim=DINO_DIM, n_frames=len(frames),
                 images=meta.get("images", {}))
     meta["settings"]["teachers"] = list(s.teachers)
     t_all, done, skipped, crops_total = time.time(), 0, 0, 0
@@ -222,6 +225,7 @@ def extract(scene_dir, out_root, settings=None, device="cuda", encoders=None, lo
         rec["size"] = [int(img.shape[2]), int(img.shape[1])]
         if "clip" in need:
             g, nc = clip_pyramid(enc["clip"], img, s)
+            meta["clip_dim"] = int(g.shape[-1])
             _save(out / "clip" / f"{stem}.npy", g.cpu().numpy())
             rec["clip_grid"], rec["crops"] = list(g.shape[:2]), nc
             crops_total += nc

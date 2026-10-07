@@ -94,3 +94,13 @@ def test_extract_writes_resumes_and_tags(tmp_path):
     assert again["stats"]["done"] == 0 and again["stats"]["skipped"] == 3
     assert T.TeacherSettings(scales=[0.25]).tag() != s.tag()
     assert T.TeacherSettings(batch=8).tag() == T.TeacherSettings(batch=512).tag()   # batch is not a result
+
+
+def test_default_tag_is_unchanged_by_variant_fields():
+    """Teacher caches already on the hosts (tag d7a30d7264 for the defaults) must stay valid after the
+    variant plumbing: clip_mode 'pyramid' is not part of the hash; any other mode or model is."""
+    from radiance_semantics.teachers import TeacherSettings
+    base = TeacherSettings()
+    assert base.tag() == "d7a30d7264"
+    assert TeacherSettings(clip_mode="scales").tag() != base.tag()
+    assert TeacherSettings(clip_model="ViT-L-14", clip_pretrained="laion2b_s32b_b82k").tag() != base.tag()
