@@ -1,0 +1,346 @@
+{
+  "version": 1,
+  "frame": "course (x, -y, -z), z down",
+  "queries": [
+    {
+      "text": "red tool chest",
+      "position": [
+        -0.366,
+        2.6,
+        -0.931
+      ],
+      "set": "phase1_gate",
+      "note": "big, saturated colour, one of a kind \u2014 the easy case (frames 0060, 0090)",
+      "updated": "2026-10-05T16:09:22"
+    },
+    {
+      "text": "shop vacuum",
+      "position": [
+        -2.09,
+        -5.678,
+        -0.349
+      ],
+      "set": "phase1_gate",
+      "note": "medium cylinder among similar-coloured clutter (0209)",
+      "updated": "2026-10-05T10:55:55"
+    },
+    {
+      "text": "green foam mats",
+      "position": [
+        -0.649,
+        -4.179,
+        -0.375
+      ],
+      "set": "phase1_gate",
+      "note": "flat leaning panels; colour + material phrase (0090)",
+      "updated": "2026-10-05T10:55:55"
+    },
+    {
+      "text": "garden cart",
+      "position": [
+        -1.845,
+        -4.468,
+        -0.57
+      ],
+      "set": "phase1_gate",
+      "note": "black, low, partly occluded \u2014 the hardest (0209)",
+      "updated": "2026-10-05T10:55:55"
+    },
+    {
+      "text": "whiteboard",
+      "position": [
+        -1.8,
+        -8.37,
+        -1.233
+      ],
+      "set": "phase1_gate",
+      "note": "large, seen from many angles; assumed to be one rolling board (0030, 0149, 0179, 0239)",
+      "updated": "2026-10-05T16:09:22"
+    },
+    {
+      "text": "recycling bin",
+      "set": "phase5",
+      "position": [
+        0.493,
+        -5.859,
+        -0.374
+      ],
+      "note": "single instance; 4 views (f41, f141, f201, f261) within 0.3 m",
+      "updated": "2026-10-06T15:01:42",
+      "author": "claude (photo picks, locate)"
+    },
+    {
+      "text": "blue trash can",
+      "set": "phase5",
+      "position": [
+        0.493,
+        -5.859,
+        -0.374
+      ],
+      "note": "synonym of recycling bin",
+      "updated": "2026-10-06T15:01:42",
+      "author": "claude (photo picks, locate)"
+    },
+    {
+      "text": "office chair",
+      "set": "phase5",
+      "instances": [
+        [
+          0.5,
+          -5.223,
+          -0.708
+        ],
+        [
+          -0.542,
+          -3.586,
+          -0.563
+        ],
+        [
+          -0.416,
+          -1.706,
+          -0.658
+        ]
+      ],
+      "position": [
+        0.5,
+        -5.223,
+        -0.708
+      ],
+      "note": "3 instances: by the bin (3 views), mid-room (f121), at the play-mat desk (f61+f241)",
+      "updated": "2026-10-06T15:01:42",
+      "author": "claude (photo picks, locate)"
+    },
+    {
+      "text": "swivel chair",
+      "set": "phase5",
+      "instances": [
+        [
+          0.5,
+          -5.223,
+          -0.708
+        ],
+        [
+          -0.542,
+          -3.586,
+          -0.563
+        ],
+        [
+          -0.416,
+          -1.706,
+          -0.658
+        ]
+      ],
+      "position": [
+        0.5,
+        -5.223,
+        -0.708
+      ],
+      "note": "synonym of office chair",
+      "updated": "2026-10-06T15:01:42",
+      "author": "claude (photo picks, locate)"
+    },
+    {
+      "text": "grandfather clock",
+      "set": "phase5",
+      "position": [
+        -1.848,
+        -7.38,
+        -1.328
+      ],
+      "note": "f201 + f171, spread 0.09 m",
+      "updated": "2026-10-06T15:01:42",
+      "author": "claude (photo picks, locate)"
+    },
+    {
+      "text": "clock",
+      "set": "phase5",
+      "position": [
+        -1.848,
+        -7.38,
+        -1.328
+      ],
+      "note": "synonym (short form) of grandfather clock",
+      "updated": "2026-10-06T15:01:42",
+      "author": "claude (photo picks, locate)"
+    },
+    {
+      "text": "children's road play mat",
+      "set": "phase5",
+      "position": [
+        -2.152,
+        -2.732,
+        -0.322
+      ],
+      "note": "foam puzzle mat printed with roads; f61, f121, f241",
+      "updated": "2026-10-06T15:01:42",
+      "author": "claude (photo picks, locate)"
+    },
+    {
+      "text": "camera tripod",
+      "set": "phase5",
+      "position": [
+        -0.41,
+        2.518,
+        -0.567
+      ],
+      "note": "in front of the red tool chest; f71 + f241; thin",
+      "updated": "2026-10-06T15:01:42",
+      "author": "claude (photo picks, locate)"
+    },
+    {
+      "text": "purple foam mat",
+      "set": "phase5",
+      "position": [
+        0.518,
+        -3.975,
+        -0.373
+      ],
+      "note": "under the bench, f141; colour + material",
+      "updated": "2026-10-06T15:01:42",
+      "author": "claude (photo picks, locate)",
+      "amended": {
+        "date": "2026-10-07",
+        "by": "claude (ground-truth check D, SEMANTICS.md \u00a714)",
+        "previous": [
+          -0.434,
+          -2.141,
+          -0.102
+        ],
+        "reason": "sparse-point pick leaked 2 m behind the mat (5.2 m vs 3.1 m depth in frame_00141); re-placed with splat-depth picks in frame_00141 + frame_00259 (spread 0.14 m)"
+      }
+    },
+    {
+      "text": "white bucket",
+      "set": "phase5",
+      "position": [
+        0.282,
+        -3.19,
+        -0.202
+      ],
+      "note": "small; f121",
+      "updated": "2026-10-06T15:01:42",
+      "author": "claude (photo picks, locate)"
+    },
+    {
+      "text": "glass door cabinet",
+      "set": "phase5",
+      "position": [
+        -2.222,
+        -0.838,
+        -0.667
+      ],
+      "note": "lab cabinet with glass doors, f241",
+      "updated": "2026-10-06T15:01:42",
+      "author": "claude (photo picks, locate)",
+      "instances": [
+        [
+          -2.222,
+          -0.838,
+          -0.667
+        ],
+        [
+          2.789,
+          0.471,
+          -2.288
+        ],
+        [
+          2.743,
+          -0.153,
+          -2.277
+        ],
+        [
+          3.164,
+          -0.602,
+          -1.914
+        ],
+        [
+          3.052,
+          -0.939,
+          -1.963
+        ],
+        [
+          2.757,
+          -1.396,
+          -1.972
+        ],
+        [
+          2.737,
+          -4.598,
+          -2.022
+        ],
+        [
+          3.097,
+          -7.896,
+          -2.148
+        ],
+        [
+          2.767,
+          -8.815,
+          -1.954
+        ]
+      ],
+      "amended": {
+        "date": "2026-10-07",
+        "by": "claude (ground-truth check D, SEMANTICS.md \u00a714)",
+        "previous": [
+          [
+            -2.222,
+            -0.838,
+            -0.667
+          ]
+        ],
+        "reason": "incomplete: the upper wall cabinets along x = 2.8 m also have glass doors; 8 points along those runs added from splat-depth picks in frame_00023 + frame_00181 + frame_00259"
+      }
+    },
+    {
+      "text": "hose reel",
+      "set": "phase5",
+      "position": [
+        0.604,
+        -1.972,
+        -2.968
+      ],
+      "note": "ceiling-mounted, ~3 m up; f181",
+      "updated": "2026-10-06T15:01:42",
+      "author": "claude (photo picks, locate)"
+    },
+    {
+      "text": "moving box",
+      "set": "phase5",
+      "position": [
+        -0.336,
+        -5.856,
+        -0.435
+      ],
+      "note": "printed NOR-CAL moving box under the bench, f41",
+      "updated": "2026-10-06T15:01:42",
+      "author": "claude (photo picks, locate)"
+    },
+    {
+      "text": "bicycle",
+      "position": null,
+      "negative": true,
+      "set": "phase5",
+      "note": "negative: not in the scene (checked in the photos)"
+    },
+    {
+      "text": "sofa",
+      "position": null,
+      "negative": true,
+      "set": "phase5",
+      "note": "negative: not in the scene (checked in the photos)"
+    },
+    {
+      "text": "ceiling fan",
+      "position": null,
+      "negative": true,
+      "set": "phase5",
+      "note": "negative: not in the scene (checked in the photos)"
+    }
+  ],
+  "phase5": {
+    "status": "frozen 2026-10-06; amended 2026-10-07 (2 ground-truth errors, see 'amended' fields)",
+    "drafted": "2026-10-06",
+    "method": "positions from SfM sparse points under picked pixels of training photos (annotations.py locate); validated on the dev set: 0.09-0.42 m from Suhan's placements"
+  }
+}

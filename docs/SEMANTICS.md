@@ -669,3 +669,30 @@ crops *centred* on the object at each of the 7 scales (best scale), **(c)** the 
   cabinets and purple foam), which would make "wrong object" a correct answer.
 - Best scales: large objects peak at the 0.5 scale (bins, mats, gate, cart), small ones at 0.05–0.2 (red cup,
   clock, hose reel, white bucket), so no single fixed scale suits all queries.
+
+**Ground-truth check (D, 7 Oct).** Every Phase 5 miss was re-examined by drawing the annotation and the top
+candidate into training photos:
+- **purple foam mat — annotation wrong (mine).** The sparse-point pick leaked through to points behind the mat
+  (5.2 m vs the mat's 3.1 m in frame_00141); the model's "wrong object" *was* the purple mat. Re-placed with
+  splat-depth picks in two photos (spread 0.14 m), 0.3 m from the model's candidate — placed independently of it.
+- **glass door cabinet — annotation incomplete.** The upper wall cabinets (x ≈ 2.8 m, 2 m up) also have glass doors;
+  8 points along those runs added as instances (splat-depth picks). The model's candidate is 0.2 m from one.
+- Genuine misses, annotation verified: armchair (correct, but behind the whiteboard in most photos — occluded),
+  keyboard, floor lamp, swivel chair, camera tripod, water jug (candidate on the table, 0.76 m), drone gate
+  (candidate on a tripod by the far window), white bucket (candidate on a white ceiling fixture).
+
+The original frozen set and its results are kept (`docs/phase5_queries/backroom.json`,
+`semantics/<run>/eval_frozen_2026-10-06/` on the host); the amended set is
+`docs/phase5_queries/backroom_amended_2026-10-07.json` (each change in an `amended` field) with results in
+`docs/phase5_results/amended_2026-10-07/`. flightroom: no ground-truth error found.
+
+| backroom (13 positives) | frozen set | amended set |
+| --- | --- | --- |
+| L-C / L-CD | 8 / 8 | **10 / 10** |
+| F-C / F-CD | 6 / 7 | 7 / 7 |
+
+With the amended set the lift is at 10/13 (backroom) and 10/16 (flightroom). Of the 9 genuine misses that remain,
+4 are coarseness misses (scale averaging: swivel chair, camera tripod, white bucket, and the water jug's near-miss)
+and 4–5 are CLIP recognition or occlusion limits (keyboard, floor lamp, armchair, drone gate). Next: variants A
+(multi-scale teachers), B (region-level CLIP) and C (larger CLIP), each on its own branch, evaluated on the amended
+sets.

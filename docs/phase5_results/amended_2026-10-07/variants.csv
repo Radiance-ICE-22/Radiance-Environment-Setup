@@ -1,0 +1,9 @@
+scene,variant,hit_rate,error_median_m,error_p90_m,ambiguous_rate,feasible_rate,neg_fp_rate,neg_auroc,build_min,peak_vram_gb,table_mb,query_ms_median,n_pos,n_neg,failures
+backroom,L-C,0.769,0.188,0.481,0.077,0.8,0.333,0.846,3.0,7.41,923.5,779,13,3,"{""no candidate"": 2, ""wrong object"": 1}"
+backroom,L-CD,0.769,0.186,0.543,0.0,0.7,0.333,0.846,3.0,7.41,923.5,808,13,3,"{""no candidate"": 2, ""wrong object"": 1}"
+backroom,F-C,0.538,0.264,1.056,0.0,0.714,0.333,0.795,13.9,5.8,966.6,729,13,3,"{""bad position"": 3, ""no candidate"": 2, ""wrong object"": 1}"
+backroom,F-CD,0.538,0.197,1.348,0.0,0.714,0.333,0.795,31.4,7.77,1356.5,735,13,3,"{""no candidate"": 5, ""wrong object"": 1}"
+flightroom,L-C,0.625,0.217,0.746,0.062,0.8,0.333,0.896,4.4,2.41,658.7,537,16,3,"{""no candidate"": 4, ""bad position"": 1, ""wrong object"": 1}"
+flightroom,L-CD,0.625,0.212,0.756,0.062,0.9,0.0,0.896,4.4,2.41,658.7,587,16,3,"{""no candidate"": 4, ""bad position"": 1, ""wrong object"": 1}"
+flightroom,F-C,0.5,0.11,3.583,0.0,0.75,0.0,0.812,11.5,5.06,813.6,538,16,3,"{""no candidate"": 4, ""wrong object"": 4}"
+flightroom,F-CD,0.25,0.184,0.561,0.0,1.0,0.0,0.958,25.2,7.48,1091.7,546,16,3,"{""no candidate"": 12}"
