@@ -36,22 +36,22 @@ reproduce the training images. Test scene: backroom on intellisense08.
 
 **Package skeleton**
 
-- [ ] `semantics/pyproject.toml` — package `radiance-semantics`, Python 3.10, dependencies listed for documentation but installed with `--no-deps`.
-- [ ] `semantics/radiance_semantics/__init__.py`, `paths.py` (scene workspace, `semantics/<run>/<backend>/` layout, state dir), `log.py` (reuses the `info/ok/warn` style from `figs_pipeline.py`).
+- [x] `semantics/pyproject.toml` — package `radiance-semantics`, Python 3.10, dependencies listed for documentation but installed with `--no-deps`.
+- [x] `semantics/radiance_semantics/__init__.py`, `paths.py` (scene workspace, `semantics/<run>/<backend>/` layout, state dir), `log.py` (reuses the `info/ok/warn` style from `figs_pipeline.py`).
 
 **Install, without moving torch**
 
-- [ ] New step `semantics` in `setup_scripts/install_figs.sh` (it is already step-addressable): `pip install --no-deps` OpenCLIP plus its pure-Python dependencies (`ftfy`, `regex`, `huggingface_hub`), then `pip install -e semantics --no-deps`.
-- [ ] Choose the newest OpenCLIP release that imports on torch 2.1.2, and record the pin in the script.
-- [ ] Pre-download weights into the caches `install_figs.sh` already sets: OpenCLIP `ViT-B-16` / `laion2b_s34b_b88k`, and DINOv2 `dinov2_vits14` through `torch.hub`. A host without internet then still works.
-- [ ] Re-run the existing torch-pin check after the step. It must fail loudly if torch, tiny-cuda-nn or gsplat changed.
+- [x] New step `semantics` in `setup_scripts/install_figs.sh` (it is already step-addressable): `pip install --no-deps` OpenCLIP plus its pure-Python dependencies (`ftfy`, `regex`, `huggingface_hub`), then `pip install -e semantics --no-deps`.
+- [x] Choose the newest OpenCLIP release that imports on torch 2.1.2, and record the pin in the script.
+- [x] Pre-download weights into the caches `install_figs.sh` already sets: OpenCLIP `ViT-B-16` / `laion2b_s34b_b88k`, and DINOv2 `dinov2_vits14` through `torch.hub`. A host without internet then still works.
+- [x] Re-run the existing torch-pin check after the step. It must fail loudly if torch, tiny-cuda-nn or gsplat changed.
 
 **Checks**
 
-- [ ] `setup_scripts/verify_figs.sh --semantics` — imports, one CLIP image and text forward pass, one DINOv2 forward pass, torch still `2.1.2`.
-- [ ] `semantics/radiance_semantics/probe.py` — build random Gaussians at backroom's size, render 32 feature channels with the gsplat call splatfacto uses (gsplat 1.0.0's backward kernel takes at most 32; found at the first gate, 5 Oct), and backpropagate. Compare `f.grad` against a finite difference on a few Gaussians. Log ms and peak MiB at 480×270 and 960×540.
-- [ ] `semantics/radiance_semantics/cameras.py` — load the run with nerfstudio `eval_setup`, list the training cameras and image paths, and apply the trained camera optimizer to each camera (look up the exact 1.1.4 call, e.g. `CameraOptimizer.apply_to_camera`).
-- [ ] `cameras` check — render 10 training views with optimized poses and with raw `transforms.json` poses. Report PSNR for both against the images.
+- [x] `setup_scripts/verify_figs.sh --semantics` — imports, one CLIP image and text forward pass, one DINOv2 forward pass, torch still `2.1.2`.
+- [x] `semantics/radiance_semantics/probe.py` — build random Gaussians at backroom's size, render 32 feature channels with the gsplat call splatfacto uses (gsplat 1.0.0's backward kernel takes at most 32; found at the first gate, 5 Oct), and backpropagate. Compare `f.grad` against a finite difference on a few Gaussians. Log ms and peak MiB at 480×270 and 960×540.
+- [x] `semantics/radiance_semantics/cameras.py` — load the run with nerfstudio `eval_setup`, list the training cameras and image paths, and apply the trained camera optimizer to each camera (look up the exact 1.1.4 call, e.g. `CameraOptimizer.apply_to_camera`).
+- [x] `cameras` check — render 10 training views with optimized poses and with raw `transforms.json` poses. Report PSNR for both against the images.
 
 ### Tests
 
@@ -73,39 +73,39 @@ second command turns a phrase into ranked 3D candidates with an approach point. 
 
 **Step runner: `figs/semantic_pipeline.py`** (modelled on `svnet_pipeline.py`)
 
-- [ ] Import the shared helpers from `figs_pipeline.py` (`StepFailed`, `VramMonitor`, `info/ok/warn`, `resolve_project_root`).
-- [ ] Copy svnet's marker pattern: each step's fingerprint includes the previous step's marker, and every GPU step runs as a child process (`--in-step`).
-- [ ] Settings saved per scene and run in `<PROJECT_ROOT>/.semantic_pipeline_state/<scene>/<run>/config.json`, so a resume needs only `--scene`.
-- [ ] Flags: `--scene`, `--backend lift|fmgs|both`, `--teachers clip,dino`, `--clip-model`, `--dino-model`, `--feat-res`, `--from`, `--only`, `--redo`, `--status`.
-- [ ] Steps in this phase: `preflight`, `cameras`, `teachers`, `lift`, `export`. Plain progress lines, and a final JSON result in `runs/` (time and peak VRAM per step).
+- [x] Import the shared helpers from `figs_pipeline.py` (`StepFailed`, `VramMonitor`, `info/ok/warn`, `resolve_project_root`).
+- [x] Copy svnet's marker pattern: each step's fingerprint includes the previous step's marker, and every GPU step runs as a child process (`--in-step`).
+- [x] Settings saved per scene and run in `<PROJECT_ROOT>/.semantic_pipeline_state/<scene>/<run>/config.json`, so a resume needs only `--scene`.
+- [x] Flags: `--scene`, `--backend lift|fmgs|both`, `--teachers clip,dino`, `--clip-model`, `--dino-model`, `--feat-res`, `--from`, `--only`, `--redo`, `--status`.
+- [x] Steps in this phase: `preflight`, `cameras`, `teachers`, `lift`, `export`. Plain progress lines, and a final JSON result in `runs/` (time and peak VRAM per step).
 
 **Teacher features: `radiance_semantics/teachers.py`**
 
-- [ ] CLIP pyramid: port LERF's multi-scale patch embedding. At 7 crop scales from 0.05 to 0.5 of the image, slide crops, embed each with OpenCLIP, place on a common grid, and average the scales as FMGS does.
-- [ ] DINOv2: resize to a multiple of 14, keep the dense patch tokens.
-- [ ] Output in `gsplats/workspace/<scene>/semantics/teachers/<tag>/`: fp16 `.npy` per image plus `meta.json` (model ids, grid sizes, image-list hash). `<tag>` hashes models and settings, so changing a model never mixes files.
-- [ ] Batch crops for GPU efficiency. Measure time per image and total size; the design estimate is 1–2 GB per 300 images.
+- [x] CLIP pyramid: port LERF's multi-scale patch embedding. At 7 crop scales from 0.05 to 0.5 of the image, slide crops, embed each with OpenCLIP, place on a common grid, and average the scales as FMGS does.
+- [x] DINOv2: resize to a multiple of 14, keep the dense patch tokens.
+- [x] Output in `gsplats/workspace/<scene>/semantics/teachers/<tag>/`: fp16 `.npy` per image plus `meta.json` (model ids, grid sizes, image-list hash). `<tag>` hashes models and settings, so changing a model never mixes files.
+- [x] Batch crops for GPU efficiency. Measure time per image and total size; the design estimate is 1–2 GB per 300 images.
 
 **Lift backend: `radiance_semantics/lift.py`**
 
-- [ ] For each training camera with optimized pose: render per-Gaussian features `f = 0` that require grad at `--feat-res`, take `loss = (render(f) · F2D).sum()`, backpropagate, and add `f.grad` into a host-RAM accumulator. One pass with `f = 1` gives the weight sums.
-- [ ] Work in 32-channel chunks (gsplat 1.0.0's backward limit; `render_features` chunks automatically), so 512 + 384 channels are 16 + 12 passes plus one weight pass per image. Later speed-up: project and sort once per camera, then call `rasterize_to_pixels` per chunk.
-- [ ] Divide by the weights, then L2-normalise CLIP vectors. Gaussians with zero weight (never seen) get a zero vector and a mask bit.
-- [ ] Optional flag for later: `--diffuse` (LUDVIG-style DINO graph diffusion). Leave it off in v1.
+- [x] For each training camera with optimized pose: render per-Gaussian features `f = 0` that require grad at `--feat-res`, take `loss = (render(f) · F2D).sum()`, backpropagate, and add `f.grad` into a host-RAM accumulator. One pass with `f = 1` gives the weight sums.
+- [x] Work in 32-channel chunks (gsplat 1.0.0's backward limit; `render_features` chunks automatically), so 512 + 384 channels are 16 + 12 passes plus one weight pass per image. Later speed-up: project and sort once per camera, then call `rasterize_to_pixels` per chunk.
+- [x] Divide by the weights, then L2-normalise CLIP vectors. Gaussians with zero weight (never seen) get a zero vector and a mask bit.
+- [x] Optional flag for later: `--diffuse` (LUDVIG-style DINO graph diffusion). Leave it off in v1.
 
 **Shared ordering and export**
 
-- [ ] Refactor `figs/course_tools.py splat` so the selection (opacity ≥ 0.05, most visible first, at most 1 M) is one function, `splat_order(state, min_opacity, max_splats)`. `cmd_splat` and the semantic export both call it, so feature row i always belongs to `.splat` record i.
-- [ ] `radiance_semantics/store.py` writes `clip.f16` and `dino.f16` (memory-mapped), `pca_rgb.u8` (3 PCA components of CLIP, 1st–99th percentile to 0–255) and `index.json` (run, checkpoint name and mtime, backend, teacher tag, N, hash of the order, step metrics).
+- [x] Refactor `figs/course_tools.py splat` so the selection (opacity ≥ 0.05, most visible first, at most 1 M) is one function, `splat_order(state, min_opacity, max_splats)`. `cmd_splat` and the semantic export both call it, so feature row i always belongs to `.splat` record i.
+- [x] `radiance_semantics/store.py` writes `clip.f16` and `dino.f16` (memory-mapped), `pca_rgb.u8` (3 PCA components of CLIP, 1st–99th percentile to 0–255) and `index.json` (run, checkpoint name and mtime, backend, teacher tag, N, hash of the order, step metrics).
 
 **Query: `radiance_semantics/query.py` + CLI `figs/semantic_query.py`**
 
-- [ ] CLIP text encoding with LERF's canonical negatives, then per-Gaussian relevancy (formula in the integration plan).
-- [ ] Selection weighted by opacity × volume, then 3D clustering by voxel connected components (0.1 m voxels, `scipy.ndimage.label`). This is deterministic and needs no new dependency.
-- [ ] Rank candidates by summed weighted relevancy. Each returns its centroid, box, score and margin over the runner-up.
-- [ ] Approach point: the standoff (default **1.0 m**, a flag) points from the centroid toward the mean position of the training cameras that saw the cluster, kept horizontal, clipped to the course waypoint box from `course_tools.py geometry`.
-- [ ] Gap check: reuse `course_tools.py`'s clearance (k-th nearest sparse point minus body radius 0.19 m, minimum gap 0.15 m).
-- [ ] Usage: `semantic_query.py --scene backroom --backend lift "office chair"` prints JSON.
+- [x] CLIP text encoding with LERF's canonical negatives, then per-Gaussian relevancy (formula in the integration plan).
+- [x] Selection weighted by opacity × volume, then 3D clustering by voxel connected components (0.1 m voxels, `scipy.ndimage.label`). This is deterministic and needs no new dependency.
+- [x] Rank candidates by summed weighted relevancy. Each returns its centroid, box, score and margin over the runner-up.
+- [x] Approach point: the standoff (default **1.0 m**, a flag) points from the centroid toward the mean position of the training cameras that saw the cluster, kept horizontal, clipped to the course waypoint box from `course_tools.py geometry`.
+- [x] Gap check: reuse `course_tools.py`'s clearance (k-th nearest sparse point minus body radius 0.19 m, minimum gap 0.15 m).
+- [x] Usage: `semantic_query.py --scene backroom --backend lift "office chair"` prints JSON.
 
 ### Tests
 
@@ -127,23 +127,23 @@ through a CPU worker. Everything is tested with fake scripts in the cloud, the w
 
 **Jobs: `ui/backend/galley/semantics.py`**
 
-- [ ] `SemanticRun` (Pydantic): scene, backends, teachers, models, `feat_res`, `from_step`, `only`, `redo`. `build_argv()` mirrors `svnet.build_argv`.
-- [ ] `POST /api/jobs/semantics` in `app.py`, next to `/api/jobs/figs` and `/api/jobs/svnet`. The job carries the scene, so Archive/Promote wait for it as they do for SV-Net cohorts.
-- [ ] `GET /api/scenes/{scene}/semantics` reads the state dir and each backend's `index.json`. It marks a backend **stale** when the run, checkpoint name or mtime differs from the active model, with the same key Galley's `.splat` cache uses.
-- [ ] Settings: `semantic_script` and `semantic_query_script` beside `pipeline` (default: next to `figs_pipeline.py`), plus a worker idle timeout. Machine profiles (`ui/machines/*.toml`) can set `feat_res` defaults: intellisense08 960×540, dummy 480×270.
+- [x] `SemanticRun` (Pydantic): scene, backends, teachers, models, `feat_res`, `from_step`, `only`, `redo`. `build_argv()` mirrors `svnet.build_argv`.
+- [x] `POST /api/jobs/semantics` in `app.py`, next to `/api/jobs/figs` and `/api/jobs/svnet`. The job carries the scene, so Archive/Promote wait for it as they do for SV-Net cohorts.
+- [x] `GET /api/scenes/{scene}/semantics` reads the state dir and each backend's `index.json`. It marks a backend **stale** when the run, checkpoint name or mtime differs from the active model, with the same key Galley's `.splat` cache uses.
+- [x] Settings: `semantic_script` and `semantic_query_script` beside `pipeline` (default: next to `figs_pipeline.py`), plus a worker idle timeout. Machine profiles (`ui/machines/*.toml`) can set `feat_res` defaults: intellisense08 960×540, dummy 480×270.
 
 **Query worker: `figs/semantic_worker.py` (kitchen) + `ui/backend/galley/semworker.py`**
 
-- [ ] The worker reads JSON lines on stdin and writes one JSON line per request on stdout: `load {scene, run, backend}`, `query {text, negatives, threshold, standoff}`, `relevancy {id}`, `ping`. It keeps OpenCLIP's text tower and the memory-mapped tables loaded.
-- [ ] Galley starts it like `CourseTools._run` (`bash -c 'source figs_env.sh; exec …'`, `CUDA_VISIBLE_DEVICES=""`), but as a long-lived `Popen`. One request at a time behind a lock; restart on crash; stop after the idle timeout; reload when `index.json` changes.
-- [ ] Relevancy results are cached in Galley's memory by id (last 8), as N bytes in `.splat` order, served gzipped.
+- [x] The worker reads JSON lines on stdin and writes one JSON line per request on stdout: `load {scene, run, backend}`, `query {text, negatives, threshold, standoff}`, `relevancy {id}`, `ping`. It keeps OpenCLIP's text tower and the memory-mapped tables loaded.
+- [x] Galley starts it like `CourseTools._run` (`bash -c 'source figs_env.sh; exec …'`, `CUDA_VISIBLE_DEVICES=""`), but as a long-lived `Popen`. One request at a time behind a lock; restart on crash; stop after the idle timeout; reload when `index.json` changes.
+- [x] Relevancy results are cached in Galley's memory by id (last 8), as N bytes in `.splat` order, served gzipped.
 
 **Endpoints**
 
-- [ ] `POST /api/scenes/{scene}/semantics/query` → candidates (centroid, box, score, margin, approach, gap, gap_ok) + `relevancy_id` + timing.
-- [ ] `GET /api/scenes/{scene}/semantics/relevancy/{id}` and `GET /api/scenes/{scene}/semantics/{backend}/pca` (bytes).
-- [ ] `GET/PUT /api/scenes/{scene}/semantics/queries` — ground-truth annotations stored in `gsplats/workspace/<scene>/semantics/queries.json` (label, position, optional box, author, date).
-- [ ] No new course endpoint. `semantic_goal` keeps going through the existing course save (`PUT /api/configs/courses/{name}`); the course model in `configs.py` accepts the new optional fields `query`, `backend`, `score`, `extent`, `approach`.
+- [x] `POST /api/scenes/{scene}/semantics/query` → candidates (centroid, box, score, margin, approach, gap, gap_ok) + `relevancy_id` + timing.
+- [x] `GET /api/scenes/{scene}/semantics/relevancy/{id}` and `GET /api/scenes/{scene}/semantics/{backend}/pca` (bytes).
+- [x] `GET/PUT /api/scenes/{scene}/semantics/queries` — ground-truth annotations stored in `gsplats/workspace/<scene>/semantics/queries.json` (label, position, optional box, author, date).
+- [x] No new course endpoint. `semantic_goal` keeps going through the existing course save (`PUT /api/configs/courses/{name}`); the course model in `configs.py` accepts the new optional fields `query`, `backend`, `score`, `extent`, `approach`.
 
 ### Tests
 
@@ -166,30 +166,30 @@ splat → course frame flip and the keyboard flying from the course 3D view.
 
 **Document and navigation: `ui/frontend/src/main.tsx`, `shell/`**
 
-- [ ] Route `#/splat/<scene>` → document key `splat:<scene>`, icon `splat`, lazy-loaded like the course editor.
-- [ ] A `TAB_FOR` entry for a contextual **Semantics** ribbon tab, plus Explorer entries (scene ▸ Semantics ▸ lift / fmgs).
-- [ ] `shell/ribbonSpec.ts`: the Build, Query, View, Goal and Annotate groups from the integration plan, each command with hover help naming the script and flags it runs, as the other tabs do.
+- [x] Route `#/splat/<scene>` → document key `splat:<scene>`, icon `splat`, lazy-loaded like the course editor.
+- [x] A `TAB_FOR` entry for a contextual **Semantics** ribbon tab, plus Explorer entries (scene ▸ Semantics ▸ lift / fmgs).
+- [x] `shell/ribbonSpec.ts`: the Build, Query, View, Goal and Annotate groups from the integration plan, each command with hover help naming the script and flags it runs, as the other tabs do.
 
 **Page: `ui/frontend/src/pages/SplatEditor.tsx` + `src/splat/`**
 
-- [ ] `splat/SplatView.tsx`: factor the splat part of `course/Scene3D.tsx` out so both documents share it (load state, error boundary, demand-frame workaround, keyboard flying).
-- [ ] `splat/recolor.ts`: fetch the `.splat` once into an `ArrayBuffer`. For Relevancy or PCA mode, copy it, overwrite RGBA (bytes 24–27 of each 32-byte record) with a colour map of the relevancy byte or the PCA RGB, and pass a `blob:` URL to `<Splat src>`. If drei's loader rejects blob URLs or reloads too slowly at 1 M splats, vendor its loader as a local component that takes a buffer.
-- [ ] Colour map: a sequential map for relevancy, an opacity floor slider, and *Candidates only*, which greys everything outside the selected cluster.
-- [ ] `splat/pick.ts`: click ray → nearest Gaussian centre along the ray weighted by opacity, from positions parsed from the same buffer (CPU, with a spatial grid built once). The Properties pane shows the position and that Gaussian's best matches against an editable label list, via a `labels` request to the worker.
-- [ ] Candidates pane: rows of score, margin (flagged when ambiguous), size and gap. Hover draws the box; select shows the goal marker, approach point and the drone's 0.19 m sphere.
-- [ ] Query bar: text, backend toggle, threshold, standoff (default 1.0 m), advanced negatives. *Compare* splits the view into lift | FMGS with linked cameras, enabled once both exist.
-- [ ] Build group: the job dialog (backends, teachers, Continue, Redo step), a status pill per backend (none, running, ready, stale), live log through the existing job views.
-- [ ] Annotate mode: type a label, click to place, saved through `PUT …/semantics/queries`; existing annotations are drawn as labelled pins.
+- [x] `splat/SplatView.tsx`: factor the splat part of `course/Scene3D.tsx` out so both documents share it (load state, error boundary, demand-frame workaround, keyboard flying).
+- [x] `splat/recolor.ts`: fetch the `.splat` once into an `ArrayBuffer`. For Relevancy or PCA mode, copy it, overwrite RGBA (bytes 24–27 of each 32-byte record) with a colour map of the relevancy byte or the PCA RGB, and pass a `blob:` URL to `<Splat src>`. If drei's loader rejects blob URLs or reloads too slowly at 1 M splats, vendor its loader as a local component that takes a buffer.
+- [x] Colour map: a sequential map for relevancy, an opacity floor slider, and *Candidates only*, which greys everything outside the selected cluster.
+- [x] `splat/pick.ts`: click ray → nearest Gaussian centre along the ray weighted by opacity, from positions parsed from the same buffer (CPU, with a spatial grid built once). The Properties pane shows the position and that Gaussian's best matches against an editable label list, via a `labels` request to the worker.
+- [x] Candidates pane: rows of score, margin (flagged when ambiguous), size and gap. Hover draws the box; select shows the goal marker, approach point and the drone's 0.19 m sphere.
+- [x] Query bar: text, backend toggle, threshold, standoff (default 1.0 m), advanced negatives. *Compare* splits the view into lift | FMGS with linked cameras, enabled once both exist.
+- [x] Build group: the job dialog (backends, teachers, Continue, Redo step), a status pill per backend (none, running, ready, stale), live log through the existing job views.
+- [x] Annotate mode: type a label, click to place, saved through `PUT …/semantics/queries`; existing annotations are drawn as labelled pins.
 
 **Course hand-off: `course/model.ts`, `pages/Course.tsx`**
 
-- [ ] Extend `SemanticGoal` with optional `query`, `backend`, `score`, `extent`, `approach`, and keep them when the marker is moved. Moving it clears `score`, because the position is no longer the resolved one.
-- [ ] *Send to course…*: choose a course or create one, write `semantic_goal`, optionally append the approach point as the final keyframe (yaw facing the object), save, and open the course editor.
-- [ ] Course editor: the Semantic goal tile shows query, backend and score read-only, with *Open in splat editor*.
+- [x] Extend `SemanticGoal` with optional `query`, `backend`, `score`, `extent`, `approach`, and keep them when the marker is moved. Moving it clears `score`, because the position is no longer the resolved one.
+- [x] *Send to course…*: choose a course or create one, write `semantic_goal`, optionally append the approach point as the final keyframe (yaw facing the object), save, and open the course editor.
+- [x] Course editor: the Semantic goal tile shows query, backend and score read-only, with *Open in splat editor*.
 
 **Scene page**
 
-- [ ] A Semantics tile per active run: backend status, time, peak VRAM, artefact size, and eval metrics once Phase 5 exists.
+- [x] A Semantics tile per active run: backend status, time, peak VRAM, artefact size, and eval metrics once Phase 5 exists.
 
 ### Tests
 
