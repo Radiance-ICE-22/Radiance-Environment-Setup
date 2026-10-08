@@ -132,7 +132,7 @@ class Ctx:
                             clip_model=self.a.clip_model, clip_pretrained=self.a.clip_pretrained)
         if self.a.scales:
             s.scales = [round(float(x), 4) for x in self.a.scales]
-        if s.clip_mode == "sam":
+        if s.clip_mode.startswith("sam"):
             from radiance_semantics.teachers import SAM_CELL_FRAC
             s.cell_frac = SAM_CELL_FRAC                 # variant B: finer grid, features keep object shapes
         return s

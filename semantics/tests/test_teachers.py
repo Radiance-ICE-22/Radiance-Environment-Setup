@@ -140,3 +140,40 @@ def test_scales_mode_writes_one_map_per_group_and_their_mean(tmp_path):
     assert all(m[k].shape == m["clip"].shape for k in m)
     assert np.allclose((m["clip_s0"] + m["clip_s1"] + m["clip_s2"]) / 3, m["clip"], atol=2e-3)   # one scale per group
     assert [T.scale_group(x) for x in (0.05, 0.125, 0.2, 0.35, 0.425, 0.5)] == [0, 0, 1, 1, 2, 2]
+
+
+def test_sam2_levels_and_pyramid_fallback():
+    """B2: uncovered cells take the fallback (not 0); segments split into size levels; each level map falls
+    back where none of its segments covers."""
+    s = T.TeacherSettings(cell_frac=0.25, batch=8)
+    img = torch.rand(3, 40, 80)
+
+    def segment(im):
+        m = torch.zeros(2, 40, 80, dtype=torch.bool)
+        m[0, :2, :4] = True                                 # tiny: 8 px of 3200 (< 1 %) → level 0
+        m[1, :, :40] = True                                 # half the image → level 2
+        return m
+
+    enc = lambda x: x.mean(dim=(2, 3))                      # noqa: E731
+    gh, gw = T.common_grid(40, 80, 0.25)
+    fb = torch.zeros(gh, gw, 3); fb[..., 2] = 1.0           # a recognisable fallback direction
+    grid, n, levels = T.clip_regions(enc, segment, img, s, fallback=fb, by_level=True)
+    assert n == 2 and len(levels) == 3
+    assert torch.allclose(grid[-1, -1], fb[-1, -1])         # right half: no segment → fallback, not 0
+    assert torch.allclose(levels[1], fb)                    # no medium segment at all → all fallback
+    assert torch.allclose(levels[0][-1, 0], fb[-1, 0])      # tiny segment covers only the top-left cell
+    assert not torch.allclose(levels[2][0, 0], fb[0, 0])    # the large segment paints the left half
+    assert T.clip_teacher_names(T.TeacherSettings(clip_mode="sam2")) == ["clip", "clip_s0", "clip_s1", "clip_s2"]
+
+
+def test_sam_mask_cache_round_trip(tmp_path):
+    calls = []
+
+    def segment(im):
+        calls.append(1)
+        m = torch.zeros(3, 7, 9, dtype=torch.bool); m[1, 2:5, 3:8] = True
+        return m
+    img = torch.zeros(3, 7, 9)
+    seg = T._cached_segments(segment, tmp_path, "frame_00001")
+    a = seg(img); b = seg(img)
+    assert len(calls) == 1 and torch.equal(a, b) and b.dtype == torch.bool and b.shape == (3, 7, 9)

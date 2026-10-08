@@ -107,8 +107,13 @@ def scale_group(sc):
 
 
 def clip_teacher_names(s):
-    """The CLIP map names a teacher setting writes: 'clip' (+ 'clip_s0..2' per scale group in mode 'scales')."""
-    return ["clip"] + ([f"clip_s{g}" for g in range(len(SCALE_GROUPS))] if s.clip_mode == "scales" else [])
+    """The CLIP map names a teacher setting writes: 'clip' (+ 'clip_s0..2' per scale group in mode 'scales',
+    per segment-size level in mode 'sam2')."""
+    if s.clip_mode == "scales":
+        return ["clip"] + [f"clip_s{g}" for g in range(len(SCALE_GROUPS))]
+    if s.clip_mode == "sam2":
+        return ["clip"] + [f"clip_s{g}" for g in range(len(SAM_LEVELS))]
+    return ["clip"]
 
 
 def clip_pyramid(encode, img, s, by_group=False):
@@ -160,19 +165,29 @@ def clip_pyramid(encode, img, s, by_group=False):
 SAM_CELL_FRAC = 0.0125     # variant B: a 2x finer common grid, so features keep object shapes
 
 
-def clip_regions(encode, segment, img, s, pad=0.1):
+SAM_LEVELS = ((0.0, 0.01), (0.01, 0.1), (0.1, 1.01))   # B2: segment area as a fraction of the image
+
+
+def clip_regions(encode, segment, img, s, pad=0.1, fallback=None, by_level=False):
     """Variant B (region-level CLIP, as LangSplat): segment the photo with SAM's automatic mask generator,
     embed each segment with CLIP — its bounding box (+ `pad` context), pixels outside the mask blacked out,
     squared and resized to 224 — and give every common-grid cell the coverage-weighted mean of the unit
     embeddings of the segments covering it. Cells no segment covers stay 0 (they add nothing in the lift).
-    segment(img [3, H, W]) → bool masks [M, H, W]. Returns ([gh, gw, D] float32, number of segments)."""
+    segment(img [3, H, W]) → bool masks [M, H, W]. Returns ([gh, gw, D] float32, number of segments).
+
+    B2 (clip_mode 'sam2'): `fallback` [gh, gw, D] (the pyramid map, resampled to this grid) fills every cell no
+    segment covers instead of 0 — FMGS learned those zeros as targets and collapsed (8 Oct); with by_level the
+    segments are also split by area (SAM_LEVELS: parts / objects / large regions, as LangSplat's levels) into one
+    map each, returned as a third value, so a query can pick its level like variant A picks a crop scale."""
     import torch
     import torch.nn.functional as F
     _, H, W = img.shape
     gh, gw = common_grid(H, W, s.cell_frac)
     masks = segment(img)
     if len(masks) == 0:
-        return None, 0
+        if fallback is not None and by_level:
+            return fallback, 0, [fallback] * len(SAM_LEVELS)
+        return (fallback, 0) if fallback is not None else (None, 0)
     mean = torch.tensor(CLIP_MEAN, device=img.device).view(1, 3, 1, 1)
     std = torch.tensor(CLIP_STD, device=img.device).view(1, 3, 1, 1)
     crops = []
@@ -196,10 +211,20 @@ def clip_regions(encode, segment, img, s, pad=0.1):
         embs.append(e / e.norm(dim=-1, keepdim=True).clamp_min(1e-8))
     E = torch.cat(embs)                                                       # [M, D]
     cover = F.adaptive_avg_pool2d(masks.float()[:, None], (gh, gw))[:, 0]    # [M, gh, gw] coverage fractions
-    num = torch.einsum("mhw,md->hwd", cover, E)
-    den = cover.sum(0)[..., None]
-    grid = torch.where(den > 1e-6, num / den.clamp_min(1e-6), torch.zeros_like(num))
-    return grid, len(masks)
+    fb = fallback if fallback is not None else None
+
+    def paint(sel):
+        c = cover[sel]
+        num = torch.einsum("mhw,md->hwd", c, E[sel])
+        den = c.sum(0)[..., None]
+        empty = torch.zeros_like(num) if fb is None else fb.to(num.dtype).expand_as(num)
+        return torch.where(den > 1e-6, num / den.clamp_min(1e-6), empty)
+    grid = paint(torch.ones(len(masks), dtype=torch.bool, device=cover.device))
+    if not by_level:
+        return grid, len(masks)
+    area = masks.float().mean(dim=(1, 2))
+    levels = [paint((area >= lo) & (area < hi)) for lo, hi in SAM_LEVELS]
+    return grid, len(masks), levels
 
 
 def dino_dense(forward_tokens, img, s):
@@ -243,12 +268,46 @@ def sam_segmenter(device, points_per_side=32, min_area_frac=0.0005):
     return segment
 
 
+SAM_CACHE = "sam_masks_vitb_p32"   # SAM ViT-B masks per photo (32x32 points), shared by every sam2 teacher build
+
+
+def _cached_segments(segment, cache_dir, stem):
+    """segment() with an on-disk cache of the masks (packed bits), so later SAM builds skip segmentation."""
+    import torch
+    p = Path(cache_dir) / f"{stem}.npz"
+
+    def seg(img):
+        if p.exists():
+            d = np.load(p)
+            m = np.unpackbits(d["bits"])[: int(np.prod(d["shape"]))].reshape(d["shape"]).astype(bool)
+            return torch.from_numpy(m).to(img.device)
+        m = segment(img)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        a = m.cpu().numpy().astype(bool)
+        np.savez_compressed(p, bits=np.packbits(a), shape=np.asarray(a.shape))
+        return m
+    return seg
+
+
+def _pyramid_fallback(encode, img, s, out_root, stem):
+    """The standard pyramid CLIP map of this photo (from its cache when a pyramid teacher build exists, else
+    computed), resampled onto this setting's grid: B2's value for cells no segment covers."""
+    import torch
+    import torch.nn.functional as F
+    base = TeacherSettings(clip_model=s.clip_model, clip_pretrained=s.clip_pretrained, scales=s.scales,
+                           dino_width=s.dino_width)
+    p = Path(out_root) / base.tag() / "clip" / f"{stem}.npy"
+    g = torch.from_numpy(np.load(p).astype(np.float32)).to(img.device) if p.exists() else clip_pyramid(encode, img, base)[0]
+    gh, gw = common_grid(img.shape[1], img.shape[2], s.cell_frac)
+    return F.interpolate(g.permute(2, 0, 1)[None], size=(gh, gw), mode="bilinear", align_corners=False)[0].permute(1, 2, 0)
+
+
 def default_encoders(device, s):
     """(clip_encode, dino_tokens) from the pinned models, fp16 autocast on CUDA."""
     import torch
     from .models import load_clip, load_dino
     out = {}
-    if "clip" in s.teachers and s.clip_mode == "sam":
+    if "clip" in s.teachers and s.clip_mode.startswith("sam"):
         out["segment"] = sam_segmenter(device)
     if "clip" in s.teachers:
         clip, _, _ = load_clip(device, s.clip_model, s.clip_pretrained)
@@ -316,7 +375,13 @@ def extract(scene_dir, out_root, settings=None, device="cuda", encoders=None, lo
         rec = meta["images"].get(stem, {})
         rec["size"] = [int(img.shape[2]), int(img.shape[1])]
         if any(n.startswith("clip") for n in need):
-            if s.clip_mode == "sam":
+            if s.clip_mode == "sam2":
+                seg = _cached_segments(enc["segment"], Path(out_root) / SAM_CACHE, stem)
+                fb = _pyramid_fallback(enc["clip"], img, s, Path(out_root), stem)
+                g, nc, levels = clip_regions(enc["clip"], seg, img, s, fallback=fb, by_level=True)
+                for k, gg in enumerate(levels):
+                    _save(out / f"clip_s{k}" / f"{stem}.npy", gg.cpu().numpy())
+            elif s.clip_mode == "sam":
                 g, nc = clip_regions(enc["clip"], enc["segment"], img, s)
                 if g is None:                       # no segment at all: fall back to the pyramid for this photo
                     g, nc = clip_pyramid(enc["clip"], img, s)

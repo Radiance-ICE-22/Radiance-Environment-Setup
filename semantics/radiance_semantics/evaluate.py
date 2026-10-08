@@ -39,6 +39,9 @@ VARIANTS = {
     "L-CD": ("lift", {"dino_diffuse": True, "dino_split": True}),
     "F-C": ("fmgs_c", {}),
     "F-CD": ("fmgs", {}),
+    # tables with clip_scales (A, B2): the same table without the per-query scale/level choice
+    "L-Cflat": ("lift", {"scale_select": False}),
+    "F-Cflat": ("fmgs_c", {"scale_select": False}),
 }
 def parse_variant(v):
     """"L-C" → ("lift", {}, ""); "L-C@480" → the lift_w480 table (feature-width sweep); "F-CD@ms" → the
