@@ -231,3 +231,25 @@ def test_scale_select_uses_the_group_where_the_query_peaks():
     res = Q.run_query(tab, Q.Scene(cam_c2w=np.tile(np.eye(4), (5, 1, 1))), "x", enc, Q.Settings(min_gaussians=10))
     assert res["scale_group"] == 0 and res["scale_peaks"][0] > max(res["scale_peaks"][1:])
     assert res["candidates"] and np.linalg.norm(np.asarray(res["candidates"][0]["centroid_splat"]) - [1, 1, 0.5]) < 0.2
+
+
+def test_table_floor_overrides_the_default_but_not_an_explicit_threshold():
+    """Variant C: a table calibrated for another CLIP carries its floor in index.json; an explicit threshold wins."""
+    from types import SimpleNamespace
+    rng = np.random.default_rng(5)
+    n, D = 300, 8
+    xyz = rng.uniform(-2, 2, (n, 3)); xyz[:30] = rng.normal([1, 1, 0.5], 0.05, (30, 3))
+    geom = np.concatenate([xyz, np.full((n, 1), 0.9), np.full((n, 1), 0.02)], 1).astype(np.float32)
+    q, neg = np.eye(D)[0], np.eye(D)[1]
+    f = neg + 0.1 * rng.standard_normal((n, D)); f[:30] = 0.502 * q + 0.498 * neg    # weak object: rel ≈ 0.514
+    f = (f / np.linalg.norm(f, axis=1, keepdims=True)).astype(np.float32)
+    enc = SimpleNamespace(encode=lambda t: np.stack([q] + [neg] * (len(t) - 1)).astype(np.float32))
+    cams = Q.Scene(cam_c2w=np.tile(np.eye(4), (5, 1, 1)))
+    base = dict(clip=f, weight=np.ones(n, np.float32), geom=geom, dino=None)
+    plain = SimpleNamespace(**base, index={})
+    calib = SimpleNamespace(**base, index={"query": {"threshold": 0.5}})
+    s = Q.Settings(min_gaussians=10)
+    assert Q.run_query(plain, cams, "x", enc, s)["candidates"] == []              # below the 0.55 default
+    r = Q.run_query(calib, cams, "x", enc, s)
+    assert r["floor"] == 0.5 and r["candidates"]                                  # the table's floor lets it through
+    assert Q.run_query(calib, cams, "x", enc, Q.Settings(min_gaussians=10, threshold=0.6))["floor"] == 0.6

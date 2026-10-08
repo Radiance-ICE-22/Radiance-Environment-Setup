@@ -131,6 +131,9 @@ class Settings:
     # variant A (tables with clip_scales): use the crop-scale group whose relevancy peaks highest for this
     # query (LERF picks the scale per query the same way); False = the scale-averaged 'clip' rows
     scale_select: bool = True
+    # a table may carry its own relevancy floor (index.json "query": {"threshold": …}, calibrated for its CLIP model,
+    # e.g. ViT-L/14 — scripts/calibrate_floor.py); used when this is True and `threshold` was left at its default
+    table_floor: bool = True
 
 
 def pose_inliers(P, k=4.0):
@@ -328,7 +331,11 @@ def run_query(table, scene, text, encoder, s=None, return_relevancy=False):
     rv = rel[valid]
     k = min(s.peak_k, len(rv))
     peak = float(np.partition(rv, len(rv) - k)[len(rv) - k:].mean()) if k else 0.0
-    tau = s.threshold + s.rel_alpha * max(0.0, peak - s.threshold)
+    floor = s.threshold
+    tq = ((getattr(table, "index", None) or {}).get("query") or {})
+    if s.table_floor and s.threshold == Settings.threshold and tq.get("threshold") is not None:
+        floor = float(tq["threshold"])
+    tau = floor + s.rel_alpha * max(0.0, peak - floor)
     sel = valid & (rel >= tau)
     pts = geom[sel, :3].astype(np.float64)
     scores = ((rel[sel] - tau) * opac[sel]).astype(np.float64)
@@ -359,7 +366,7 @@ def run_query(table, scene, text, encoder, s=None, return_relevancy=False):
                         "p99.9": round(float(qs[3]), 4)},
             "n_selected": int(sel.sum()), "rel_max": round(float(rel.max()) if len(rel) else 0.0, 4),
             "rel_p99": round(float(np.percentile(rel[rel > 0], 99)) if (rel > 0).any() else 0.0, 4),
-            "voxel": vox, "candidates": res, "margin": margin,
+            "voxel": vox, "candidates": res, "margin": margin, "floor": round(floor, 4),
             "scale_group": scale_group, "scale_peaks": scale_peaks,
             "ambiguous": margin is not None and margin < s.ambiguous_margin,
             "frame": "course (x, -y, -z), z down",
