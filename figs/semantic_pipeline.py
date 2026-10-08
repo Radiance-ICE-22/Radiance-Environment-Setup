@@ -60,7 +60,15 @@ DEFAULTS = {"backend": "lift", "teachers": ["clip", "dino"], "feat_width": 960, 
             "clip_mode": "pyramid", "clip_model": "ViT-B-16", "clip_pretrained": "laion2b_s34b_b88k"}
 LISTS = ("teachers",)
 VARIANT_KEYS = ("clip_mode", "clip_model", "clip_pretrained")   # teacher variants (A/B/C, 7 Oct)
-NOT_STICKY = ("backend",)        # never taken from config.json: a bare run (Galley's Continue) is the lift
+NOT_STICKY = ("backend", "clip_mode")   # never taken from config.json: a bare run (Galley's Continue) is the lift,
+                                        # and the CLIP mode follows the backend unless given (see default_clip_mode)
+
+
+def default_clip_mode(backend):
+    """The lift uses multi-scale CLIP teachers (variant A: crop-scale groups, the scale chosen per query —
+    22/29 vs 20/29 hits in the Phase 5 teacher comparison, SEMANTICS.md §15); FMGS keeps the standard
+    scale-averaged pyramid (multi-scale did not help it)."""
+    return "scales" if backend == "lift" else "pyramid"
 
 
 class Ctx:
@@ -504,6 +512,7 @@ def run_step_child(c, name):
             "--scene", c.a.scene, "--backend", c.a.backend, "--in-step", name]
     if getattr(c.a, "table_suffix", None):
         argv += ["--table-suffix", c.a.table_suffix]
+    argv += ["--clip-mode", c.a.clip_mode, "--clip-model", c.a.clip_model, "--clip-pretrained", c.a.clip_pretrained]
     env = os.environ.copy()
     env.setdefault("PYTORCH_CUDA_ALLOC_CONF", "max_split_size_mb:128")
     env["PYTHONUNBUFFERED"] = "1"
@@ -587,6 +596,7 @@ def main(argv=None):
 
     cfg_path = c.state / "config.json"
     saved = json.loads(cfg_path.read_text()) if cfg_path.exists() else {}
+    explicit_mode = a.clip_mode is not None
     for k, dflt in DEFAULTS.items():
         v = getattr(a, k)
         if v is None:
@@ -594,6 +604,8 @@ def main(argv=None):
         elif k in LISTS:
             v = [x.strip() for x in v.split(",") if x.strip()]
         setattr(a, k, v)
+    if not explicit_mode:
+        a.clip_mode = default_clip_mode(a.backend)
     if not set(a.teachers) <= {"clip", "dino"} or "clip" not in a.teachers:
         ap.error("--teachers: clip (required) and optionally dino")
     if a.in_step:

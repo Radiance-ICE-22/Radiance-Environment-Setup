@@ -15,7 +15,7 @@ built, how to run it, and the numbers measured.
 | 2 | Galley backend | **DONE.** Gate PASSED on intellisense08, 5 Oct 17:24 (second run; the first failed only on a host-dependent test, §9): cold query 5.8 s, warm ≤ 789 ms, 5 of 5 hits. |
 | 3 | Splat editor UI | **DONE.** Gate PASSED on intellisense08, 5 Oct: automated half 19:01 (query → course → flight, tracking max 8 mm) and browser half 19:21 (whiteboard sent from the editor, 3-keyframe course flown, tracking max 73 mm); 532 k Gaussians recoloured in 20 ms + 71 ms frame (§10). |
 | 4 | FMGS backend | **DONE.** Gate PASSED on intellisense08, 6 Oct 13:31 (run 3, 7344e7a, §11): 4,200 steps in 31.4 min, default config (2^20, faithful, 480×270, tcnn split 2), no fallback; peak 5.5 GB PyTorch / 7.95 GB device; Gaussians and checkpoint unchanged; the dev queries hit 4 of 5 on FMGS vs 5 of 5 on the lift. Runs 1–2 failed on tcnn launch limits and then memory, and a NaN came out with the OOM fix (§3e). Standalone trainer (§3e), editor Compare. |
-| 5 | Evaluation and comparison | **Results in (§13)**, 6 Oct: four variants × backroom + flightroom on frozen sets; lift best (0.62 / 0.63 top-1), F-CD's CLIP channel fragmented. GTN_lab_v1 excluded (folded, §12). Open: sweeps, Galley metrics tile, Compare check. |
+| 5 | Evaluation and comparison | **DONE** (§13–15). Four backends × backroom + flightroom on frozen (and amended, §14) sets; teacher variants A/B/C compared (§15): **multi-scale CLIP (A) merged and now the default lift** (lift 22/29 vs 20/29). |
 | 6 | Language → waypoints → SV-Net | Not started |
 
 ## 2. Phase 0: what was added
@@ -696,3 +696,50 @@ With the amended set the lift is at 10/13 (backroom) and 10/16 (flightroom). Of 
 and 4–5 are CLIP recognition or occlusion limits (keyboard, floor lamp, armchair, drone gate). Next: variants A
 (multi-scale teachers), B (region-level CLIP) and C (larger CLIP), each on its own branch, evaluated on the amended
 sets.
+
+## 15. Teacher variants A / B / C (7–8 Oct, intellisense08) — A merged, multi-scale is the default lift
+
+Each variant changes only the CLIP teachers; lift, FMGS (F-CD) and FMGS on CLIP alone (F-C) were rebuilt on both
+scenes into suffixed tables and evaluated on the **amended** query sets (§14; 29 positives, 6 negatives). Query
+settings unchanged. Table: `docs/phase5_results/teacher_variants_2026-10-08/variants.{csv,tex}`.
+
+- **A — multi-scale** (`sem/variant-a-multiscale`, **merged 8 Oct**): CLIP crops kept in three scale groups
+  (small < 15 %, medium 15–40 %, large > 40 % of the short side) instead of one average; lifted per group; the
+  query uses the group whose relevancy peaks highest (LERF's rule); FMGS gets one CLIP head per group.
+- **B — region-level** (`sem/variant-b-sam`, not merged): SAM ViT-B automatic masks, one CLIP embedding per
+  segment (box + 10 % context, background blacked out), painted onto a 2× finer grid (LangSplat-style).
+- **C — larger CLIP** (base branch, flags only): OpenCLIP ViT-L/14 (laion2b_s32b_b82k, 768-d); the query encodes
+  text with the same model.
+
+| Top-1 hits (backroom /13 + flightroom /16) | Lift L-C | Lift L-CD | FMGS F-C | FMGS F-CD | Teachers (backroom / flightroom) |
+| --- | --- | --- | --- | --- | --- |
+| baseline (scale-averaged pyramid) | 10 + 10 = **20** | 20 | 7 + 8 = 15 | 7 + 4 = 11 | 31 / 50 min |
+| **A multi-scale** | 9 + 13 = **22** | 10 + 12 = 22 | 7 + 8 = 15 | 4 + 4 = 8 | 32 / 53 min |
+| B SAM regions | 8 + 11 = 19 | 8 + 7 = 15 | 8 + 1 = 9 | 6 + 0 = 6 | 38 / 45 min |
+| C ViT-L/14 | 8 + 10 = 18 | 8 + 9 = 17 | 4 + 4 = 8 | 3 + 1 = 4 | 216 / 363 min |
+
+Per query, lift (L-C) vs baseline: **A** gained armchair, upholstered chair (both heavily occluded behind the
+whiteboard) and water jug, lost hose reel; **B** gained the same three, lost office chair, hose reel, round
+table, PVC pipe frame; **C** lost office chair and purple foam mat.
+
+Findings:
+- **A is the only variant that improves the lift** (+2 net, 3 gained / 1 lost — encouraging, not significant on 29
+  queries: sign test p ≈ 0.3). It supports the diagnosis of §14: averaging crop scales dilutes small or partly
+  visible objects, and choosing the scale per query recovers some of them. Cost: lift 17–23 min instead of 3–4
+  (four 512-channel maps instead of two), tables 1.8–2.5 GB instead of 0.7–0.9 GB; teacher time unchanged
+  (same crops). The lift's GPU peak *falls* to 0.8 GB because its larger accumulators live in host RAM.
+- **FMGS does not benefit from any variant.** A's per-group heads make F-CD worse (11 → 8). B collapses FMGS on
+  flightroom (15 of 16 queries without a candidate): SAM maps leave uncovered cells at 0, which FMGS learns as
+  targets, while the lift simply ignores them — a fix would be to mask uncovered pixels out of the loss.
+- **C is confounded, not a clean negative.** The relevancy floor (0.55) and temperature were fixed on ViT-B/16;
+  ViT-L/14's similarity scale differs, so it is judged with mis-calibrated settings — yet it rejects absent
+  objects best (AUROC 0.96 on flightroom). Its FMGS also fell back to PyTorch heads (tiny-cuda-nn ran out of
+  memory with 768-wide heads). A fair test needs the floor recalibrated on the development set. Its teachers
+  are 6–7× slower.
+
+**Decision (Suhan, 8 Oct):** merge A; `semantic_pipeline.py --backend lift` now defaults to `--clip-mode scales`
+(`default_clip_mode`), FMGS keeps the scale-averaged pyramid. `clip_mode` is no longer sticky in `config.json`
+(it follows the backend unless given) and is passed to each step's child process. The official `lift` tables
+were rebuilt multi-scale on 8 Oct (the pyramid ones kept as `lift_pyr`; their per-query results as
+`eval_amended_pyramid_2026-10-07/`). B and C stay on their branches; B needs FMGS to ignore uncovered cells,
+C needs a recalibrated floor.

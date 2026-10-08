@@ -33,7 +33,7 @@ Read only the sections you need; they are long.
 | P2 Galley backend + CPU query worker | DONE (warm query ~0.74 s, cold 5.8 s) |
 | P3 splat editor `#/splat/<scene>` | DONE (query → Send to course → flight) |
 | P4 FMGS backend | DONE — gate PASSED 6 Oct 13:31 (run 3, 7344e7a) |
-| **P5 evaluation (L-C, L-CD, F-C, F-CD × backroom, flightroom)** | **Results in — `docs/SEMANTICS.md` §13** (lift 0.62/0.63 top-1 best; F-CD CLIP fragmented). Sweeps and Galley tile done; open: browser check |
+| P5 evaluation (L-C, L-CD, F-C, F-CD × backroom, flightroom) | DONE — `docs/SEMANTICS.md` §13–15; multi-scale CLIP teachers (variant A) merged 8 Oct and the default lift (22/29 vs 20/29 hits) |
 | P6 instruction → semantic-course → SV-Net cohorts | Not started (experiment waits on SV-Net flying) |
 
 **Phase 4 gate, run 3** (6 Oct, intellisense08, `7344e7a`) — PASSED; details in `docs/SEMANTICS.md` §3e and §11.
@@ -164,6 +164,9 @@ Suhan views Galley from the laptop with a tunnel (Windows reserves 8800, and VS 
 - **Table rows = `.splat` records**, both in `course_tools.splat_order()` order; table key = run + checkpoint
   stem + mtime = Galley's `.splat` cache key (stale together).
 - **Frames**: splat → course is (x, −y, −z). Annotations and goals are in the course frame.
+- **Multi-scale lift (default since 8 Oct)**: `--backend lift` uses `--clip-mode scales` — CLIP teachers in three
+  crop-scale groups, tables carry `clip_scales`, the query picks the group whose relevancy peaks highest. FMGS keeps
+  the scale-averaged pyramid. Variants B (SAM, `sem/variant-b-sam`) and C (ViT-L/14) are unmerged (SEMANTICS.md §15).
 - **Query**: LERF relevancy with canonical negatives; relative threshold τ = 0.55 + 0.5·(peak − 0.55);
   voxel connected components (0.1 m); approach point at a configurable standoff (default 1.0 m); clearance =
   k-th nearest sparse point minus body radius 0.19 m, min gap 0.15 m.
