@@ -778,10 +778,38 @@ Findings:
   features, so the three maps differ less than A's scale groups.
 - **C2 helps C slightly** (18 → 19 lift, 8 → 10 F-C; gains armchair, red cup, water bottle, loses nothing) but stays
   below the ViT-B/16 teachers; the larger CLIP is not the bottleneck on these scenes.
-- **No variant finds anything A and Old together miss.** The union of all lift hits is 23/29 (A + hose reel). Six
-  queries are missed by every teacher: swivel chair, camera tripod, keyboard, floor lamp (no candidate: peaks
-  0.50–0.56, at or under the floor), white bucket and drone gate (wrong object). Teacher combinations can gain at most
-  one hit; the remaining misses need query-side or geometry-side work (report §8).
+- **No variant finds anything A and Old together miss.** The union of all L-C hits is 23/29 (A + hose reel), 24/29
+  with L-CD (A's L-CD finds swivel chair). Five queries are missed by every teacher and backend at the default floor:
+  camera tripod, keyboard, floor lamp (no candidate: peaks 0.49–0.56, at or under the floor), white bucket and drone gate
+  (wrong object).
 
-Decision pending (Suhan): A stays the default; B2 and C2 stay on their branches (pushed 8 Oct). The B2 teacher caches
+**Floor sweep (8 Oct, CPU, `semantics/scripts/floor_sweep.py`, `floor_sweep.json` in the results dir).** The default
+floor 0.55 was fixed on ViT-B/16's scale-averaged rows. Hits / absent objects with a candidate (of 6), both scenes:
+
+| Floor | 0.46 | 0.48 | 0.50 | 0.51 | 0.53 | 0.55 | 0.575 | 0.60 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Old | 24/5 | 24/5 | 23/4 | **23/2** | 22/2 | 20/2 | 19/1 | 18/1 |
+| A | 24/5 | 24/5 | 24/5 | 24/5 | 23/4 | **22/2** | 21/2 | 19/1 |
+| A without scale choice | 24/5 | 24/5 | 23/3 | 22/2 | 22/2 | 20/2 | 19/1 | 18/1 |
+| B | 23/5 | 22/4 | 22/2 | 21/2 | 19/1 | 19/1 | 15/1 | 13/1 |
+| B2 | 24/5 | 24/4 | 24/4 | **23/2** | 23/2 | 21/2 | 19/2 | 18/1 |
+| B2 flat | **24/2** | **24/2** | 23/2 | 23/2 | 22/2 | 21/1 | 17/1 | 14/1 |
+| C (ViT-L/14) | 22/3 | **20/1** | 19/1 | 19/1 | 19/1 | 18/1 | 16/1 | 10/1 |
+
+- **A's advantage at 0.55 is a floor effect.** Taking the best of three scale groups raises every query's peak by
+  ~0.04–0.05, absent objects included (mean positive peak 0.624 → 0.679, absent 0.511 → 0.547); A without the choice
+  is 20/29 like Old, and Old at floor 0.51 reaches 23/29 with the same false positives (2/6) as A at 0.55.
+- **At equal false positives the best teacher is B2 flat** (24/29 with 2/6 at floor 0.46–0.48, the only variant that
+  finds keyboard), then Old / B2 (23 at 2/6); at 1/6 false positives B2 flat 21, C 20, Old 19, A 19. The spread
+  between teachers (1–2 queries) is within noise on 29 queries; the floor matters more than the teacher.
+- Two "absent" objects fire for every teacher at every floor: **ceiling fan** (backroom) and **recycling bin**
+  (flightroom) — likely look-alikes that are actually in the scenes (light fixture; a bin-like object); to check.
+- Floors read off this sweep are tuned on the evaluation set (optimistic). A fair default needs a floor calibrated per
+  table and scoring rule without evaluation queries (as C2 did for ViT-L), and more queries.
+- **FMGS "no candidate" is not a floor problem.** Its no-candidate peaks average 0.57–0.61 (above the floor), but its
+  top-100 relevancies are scattered over the room (spread 5.8–7.5 m, ~⅓ outside the camera volume, flightroom) so no
+  0.1 m voxel cluster reaches 15 Gaussians; the lift's top-100 lie within 0.05–0.7 m.
+
+Full analysis and proposals: `docs/report/semantic_embedding_report.pdf` (prerequisites: `docs/report/semantics_primer.pdf`).
+Decision pending (Suhan): A stays the default for now; B2 and C2 stay on their branches (pushed 8 Oct). The B2 teacher caches
 (`d869f497f5`, 37 GB over both scenes) can be deleted once no further B2 runs are planned.

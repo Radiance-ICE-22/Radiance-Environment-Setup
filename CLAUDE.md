@@ -166,7 +166,7 @@ Suhan views Galley from the laptop with a tunnel (Windows reserves 8800, and VS 
 - **Frames**: splat → course is (x, −y, −z). Annotations and goals are in the course frame.
 - **Multi-scale lift (default since 8 Oct)**: `--backend lift` uses `--clip-mode scales` — CLIP teachers in three
   crop-scale groups, tables carry `clip_scales`, the query picks the group whose relevancy peaks highest. FMGS keeps
-  the scale-averaged pyramid. Variants B/B2 (SAM, `sem/variant-b-sam`) and C/C2 (ViT-L/14, `sem/variant-c-clipl`) are unmerged; B2 21/29 and C2 19/29 vs A 22/29 (SEMANTICS.md §16).
+  the scale-averaged pyramid. Variants B/B2 (SAM, `sem/variant-b-sam`) and C/C2 (ViT-L/14, `sem/variant-c-clipl`) are unmerged; B2 21/29 and C2 19/29 vs A 22/29 at the default floor, but a floor sweep shows A's lead is a floor effect (max over scale groups raises all peaks); at equal false positives B2 flat is best (SEMANTICS.md §16, `docs/report/semantic_embedding_report.pdf`).
 - **Query**: LERF relevancy with canonical negatives; relative threshold τ = 0.55 + 0.5·(peak − 0.55);
   voxel connected components (0.1 m); approach point at a configurable standoff (default 1.0 m); clearance =
   k-th nearest sparse point minus body radius 0.19 m, min gap 0.15 m.
