@@ -42,10 +42,17 @@ to_splat = to_course                                       # 180° about x, self
 class TextEncoder:
     """CLIP text tower (CPU by default — a query must never compete with a GPU job)."""
 
-    def __init__(self, device="cpu", loader=None):
+    def __init__(self, device="cpu", loader=None, model_name=None, pretrained=None):
         self.device = device
         self._loader = loader
+        self.model_name, self.pretrained = model_name, pretrained       # None: the pinned ViT-B/16
         self._m = None
+
+    @classmethod
+    def for_table(cls, table, device="cpu"):
+        """The text tower of the CLIP model that made the table (index.json "clip"; older tables: the default)."""
+        c = (getattr(table, "index", None) or {}).get("clip") or {}
+        return cls(device, model_name=c.get("model"), pretrained=c.get("pretrained"))
 
     def encode(self, texts):
         import torch
@@ -54,7 +61,7 @@ class TextEncoder:
                 self._m = self._loader()
             else:
                 from .models import load_clip
-                m, _, tok = load_clip(self.device)
+                m, _, tok = load_clip(self.device, self.model_name, self.pretrained)
                 self._m = (m, tok)
         m, tok = self._m
         with torch.no_grad():
@@ -121,6 +128,9 @@ class Settings:
     diffuse_iters: int = 2
     dino_split: bool = False      # split a candidate whose DINO features form two clearly different groups
     split_cos: float = 0.5        # split when the two groups' mean DINO directions have cosine below this
+    # variant A (tables with clip_scales): use the crop-scale group whose relevancy peaks highest for this
+    # query (LERF picks the scale per query the same way); False = the scale-averaged 'clip' rows
+    scale_select: bool = True
 
 
 def pose_inliers(P, k=4.0):
@@ -294,6 +304,21 @@ def run_query(table, scene, text, encoder, s=None, return_relevancy=False):
     t_enc = time.time() - t0
     geom = np.asarray(table.geom, dtype=np.float32)
     rel = relevancy(table.clip, table.weight, E[0], E[1:])
+    scale_group, scale_peaks = None, None
+    cs = getattr(table, "clip_scales", None)
+    if cs is not None and s.scale_select:
+        opac0 = np.asarray(table.geom[:, 3], np.float32)
+        best = None
+        scale_peaks = []
+        for g in range(cs.shape[1]):
+            rg = relevancy(cs[:, g, :], table.weight, E[0], E[1:])
+            v = rg[(opac0 >= s.min_opacity) & (rg > 0)]
+            k = min(s.peak_k, len(v))
+            pk = float(np.partition(v, len(v) - k)[len(v) - k:].mean()) if k else 0.0
+            scale_peaks.append(round(pk, 4))
+            if best is None or pk > best[0]:
+                best = (pk, g, rg)
+        _, scale_group, rel = best
     if s.dino_diffuse:
         idx, w = dino_graph(table, s.diffuse_k)
         rel = diffuse(rel, idx, w, s.diffuse_alpha, s.diffuse_iters)
@@ -335,6 +360,7 @@ def run_query(table, scene, text, encoder, s=None, return_relevancy=False):
             "n_selected": int(sel.sum()), "rel_max": round(float(rel.max()) if len(rel) else 0.0, 4),
             "rel_p99": round(float(np.percentile(rel[rel > 0], 99)) if (rel > 0).any() else 0.0, 4),
             "voxel": vox, "candidates": res, "margin": margin,
+            "scale_group": scale_group, "scale_peaks": scale_peaks,
             "ambiguous": margin is not None and margin < s.ambiguous_margin,
             "frame": "course (x, -y, -z), z down",
             "ms": {"encode": round(t_enc * 1000), "relevancy": round(t_rel * 1000),

@@ -41,12 +41,14 @@ VARIANTS = {
     "F-CD": ("fmgs", {}),
 }
 def parse_variant(v):
-    """"L-C" → ("lift", {}, ""); "L-C@480" → the same variant on the lift_w480 table (feature-width sweep)."""
-    name, _, width = v.partition("@")
-    if name not in VARIANTS or (width and not width.isdigit()):
-        raise ValueError(f"unknown variant {v!r} ({', '.join(VARIANTS)}, optionally @<feature width>)")
+    """"L-C" → ("lift", {}, ""); "L-C@480" → the lift_w480 table (feature-width sweep); "F-CD@ms" → the
+    fmgs_ms table (a teacher variant built with --table-suffix _ms)."""
+    import re
+    name, _, tag = v.partition("@")
+    if name not in VARIANTS or (tag and not re.fullmatch(r"[a-z0-9]{1,16}", tag)):
+        raise ValueError(f"unknown variant {v!r} ({', '.join(VARIANTS)}, optionally @<width> or @<suffix>)")
     backend, over = VARIANTS[name]
-    return backend, over, f"_w{width}" if width else ""
+    return backend, over, (f"_w{tag}" if tag.isdigit() else f"_{tag}") if tag else ""
 
 
 NEAR = 1.5          # m: a miss whose top centroid is this close to an instance is "bad position"
@@ -192,6 +194,11 @@ def run_variants(project_root, scene, variants, set_name="phase5", log=print):
             continue
         s = replace(Settings(), **over)
         log(f"  {v} ({backend}{', DINO at query time' if over else ''}): {len(queries)} queries")
+        c = table.index.get("clip") or {}
+        key = (c.get("model"), c.get("pretrained"))
+        if key != getattr(enc, "_key", (None, None)) and key != (None, None):
+            enc = TextEncoder.for_table(table)                      # e.g. a ViT-L/14 teacher variant
+            enc._key = key
         recs = evaluate(table, sc, queries, enc, s, log)
         m = aggregate(recs)
         m.update(build_cost(table, tmeta))
@@ -220,8 +227,9 @@ def sweep(project_root, scene, variant="L-C", set_name="phase5", sweeps=None, lo
     run = find_scene_run(project_root, scene)
     queries = [q for q in load(path_for(run))["queries"]
                if q.get("set") == set_name and (q.get("negative") or q.get("position") is not None)]
-    backend, over = VARIANTS[variant]
-    table, sc, enc = read_table(run.backend_dir(backend)), load_scene(run.scene_dir), TextEncoder()
+    backend, over, suffix = parse_variant(variant)
+    table = read_table(run.backend_dir(backend, suffix))
+    sc, enc = load_scene(run.scene_dir), TextEncoder.for_table(table)
     base = replace(Settings(), **over)
     rows = []
     for param, values in (sweeps or SWEEPS).items():

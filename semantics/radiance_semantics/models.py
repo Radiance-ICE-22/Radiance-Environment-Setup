@@ -30,12 +30,18 @@ def provenance_file():
     return Path(torch.hub.get_dir()).parent / "radiance_semantics_models.json"
 
 
-def load_clip(device="cpu"):
-    """(model, preprocess, tokenizer) for the pinned OpenCLIP model, in eval mode."""
+def load_clip(device="cpu", model_name=None, pretrained=None):
+    """(model, preprocess, tokenizer) for an OpenCLIP model (default: the pinned ViT-B/16), in eval mode."""
     import open_clip
-    model, _, preprocess = open_clip.create_model_and_transforms(CLIP_MODEL, pretrained=CLIP_PRETRAINED, device=device)
+    name, pre = model_name or CLIP_MODEL, pretrained or CLIP_PRETRAINED
+    model, _, preprocess = open_clip.create_model_and_transforms(name, pretrained=pre, device=device)
     model.eval()
-    return model, preprocess, open_clip.get_tokenizer(CLIP_MODEL)
+    return model, preprocess, open_clip.get_tokenizer(name)
+
+
+def clip_dim_of(model):
+    """Embedding width of a loaded OpenCLIP model (512 for ViT-B/16, 768 for ViT-L/14)."""
+    return int(getattr(model.visual, "output_dim", 512))
 
 
 def load_dino(device="cpu"):

@@ -82,6 +82,7 @@ def test_parse_variant():
     assert E.parse_variant("L-C") == ("lift", {}, "")
     assert E.parse_variant("L-CD@480") == ("lift", {"dino_diffuse": True, "dino_split": True}, "_w480")
     import pytest
-    for bad in ("X", "L-C@wide"):
+    assert E.parse_variant("F-CD@ms") == ("fmgs", {}, "_ms")
+    for bad in ("X", "L-C@Wide!", "L-C@" + "a" * 17):
         with pytest.raises(ValueError):
             E.parse_variant(bad)
