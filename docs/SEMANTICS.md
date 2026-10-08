@@ -15,7 +15,7 @@ built, how to run it, and the numbers measured.
 | 2 | Galley backend | **DONE.** Gate PASSED on intellisense08, 5 Oct 17:24 (second run; the first failed only on a host-dependent test, §9): cold query 5.8 s, warm ≤ 789 ms, 5 of 5 hits. |
 | 3 | Splat editor UI | **DONE.** Gate PASSED on intellisense08, 5 Oct: automated half 19:01 (query → course → flight, tracking max 8 mm) and browser half 19:21 (whiteboard sent from the editor, 3-keyframe course flown, tracking max 73 mm); 532 k Gaussians recoloured in 20 ms + 71 ms frame (§10). |
 | 4 | FMGS backend | **DONE.** Gate PASSED on intellisense08, 6 Oct 13:31 (run 3, 7344e7a, §11): 4,200 steps in 31.4 min, default config (2^20, faithful, 480×270, tcnn split 2), no fallback; peak 5.5 GB PyTorch / 7.95 GB device; Gaussians and checkpoint unchanged; the dev queries hit 4 of 5 on FMGS vs 5 of 5 on the lift. Runs 1–2 failed on tcnn launch limits and then memory, and a NaN came out with the OOM fix (§3e). Standalone trainer (§3e), editor Compare. |
-| 5 | Evaluation and comparison | **DONE** (§13–15). Four backends × backroom + flightroom on frozen (and amended, §14) sets; teacher variants A/B/C compared (§15): **multi-scale CLIP (A) merged and now the default lift** (lift 22/29 vs 20/29). |
+| 5 | Evaluation and comparison | **DONE** (§13–15). Four backends × backroom + flightroom on frozen (and amended, §14) sets; teacher variants A/B/C compared (§15): **multi-scale CLIP (A) merged and now the default lift** (lift 22/29 vs 20/29). Improved B2 (21/29) and C2 (19/29) do not beat A (§16). |
 | 6 | Language → waypoints → SV-Net | Not started |
 
 ## 2. Phase 0: what was added
@@ -743,3 +743,45 @@ Findings:
 were rebuilt multi-scale on 8 Oct (the pyramid ones kept as `lift_pyr`; their per-query results as
 `eval_amended_pyramid_2026-10-07/`). B and C stay on their branches; B needs FMGS to ignore uncovered cells,
 C needs a recalibrated floor.
+
+## 16. Improved B and C: variants B2 and C2 (8 Oct, intellisense08)
+
+Both follow §15's diagnosis of why B and C lost. Same amended query sets and query settings, same build steps
+(lift, F-CD, F-C on both scenes). Full table and per-query outcomes:
+`docs/phase5_results/teacher_variants_final_2026-10-08/{variants,per_query}.csv` (Old = `eval_amended_pyramid_2026-10-07/`
+on the host, C = `eval_clipl_uncalibrated/`). Full write-up: `docs/report/semantic_embedding_report.tex`.
+
+- **B2** (`sem/variant-b-sam`, 83e0cc0, `--clip-mode sam2`): SAM segments split by area into three levels (parts < 1 %,
+  objects 1–10 %, regions ≥ 10 % of the photo) written as `clip_s0..2`, so the query picks a level as A picks a scale;
+  every cell no segment covers takes the photo's pyramid feature instead of 0 (the zeros FMGS learned); SAM masks
+  cached per photo (`teachers/sam_masks_vitb_p32`, 18 + 14 MB). `L-Cflat` / `F-Cflat` evaluate the same tables
+  without per-query level choice. Teachers 41 / 47 min, 13.8 / 23.0 GB (2× finer grid × four maps).
+- **C2** (`sem/variant-c-clipl`, 7ac2cb0): a table can carry its own relevancy floor (`index.json` `query.threshold`).
+  `semantics/scripts/calibrate_floor.py` maps ViT-B/16's 0.55 to ViT-L/14 by quantiles of pooled relevancy over a
+  neutral 30-word vocabulary (no evaluation or development query): 0.5222 (backroom 0.498, flightroom 0.546).
+  Same tables as C, only re-queried.
+
+| Top-1 hits (backroom /13 + flightroom /16) | L-C | L-CD | F-C | F-CD |
+| --- | --- | --- | --- | --- |
+| Old (scale-averaged pyramid) | 10 + 10 = 20 | 20 | 7 + 8 = 15 | 7 + 4 = 11 |
+| **A multi-scale (default lift)** | 9 + 13 = **22** | 10 + 12 = **22** | 7 + 8 = 15 | 4 + 4 = 8 |
+| B SAM regions | 8 + 11 = 19 | 15 | 8 + 1 = 9 | 6 |
+| **B2** SAM levels + pyramid fallback | 9 + 12 = 21 | 10 + 11 = 21 | 6 + 6 = 12 | 3 + 3 = 6 |
+| B2 flat (no level choice) | 10 + 11 = 21 | – | 7 + 4 = 11 | – |
+| C ViT-L/14 | 8 + 10 = 18 | 17 | 4 + 4 = 8 | 4 |
+| **C2** ViT-L/14 + calibrated floor | 8 + 11 = 19 | 8 + 10 = 18 | 4 + 6 = 10 | 3 + 2 = 5 |
+
+Findings:
+- **B2 repairs B** (lift 19 → 21, F-C 9 → 12; flightroom FMGS 1 → 6): the fallback removes the zero targets, and office
+  chair, round table and PVC pipe frame come back. It still trails A by one (misses hose reel and water jug). The
+  level choice adds nothing (flat 21 = 21): with the fallback, most cells of the part and region maps are pyramid
+  features, so the three maps differ less than A's scale groups.
+- **C2 helps C slightly** (18 → 19 lift, 8 → 10 F-C; gains armchair, red cup, water bottle, loses nothing) but stays
+  below the ViT-B/16 teachers; the larger CLIP is not the bottleneck on these scenes.
+- **No variant finds anything A and Old together miss.** The union of all lift hits is 23/29 (A + hose reel). Six
+  queries are missed by every teacher: swivel chair, camera tripod, keyboard, floor lamp (no candidate: peaks
+  0.50–0.56, at or under the floor), white bucket and drone gate (wrong object). Teacher combinations can gain at most
+  one hit; the remaining misses need query-side or geometry-side work (report §8).
+
+Decision pending (Suhan): A stays the default; B2 and C2 stay on their branches (pushed 8 Oct). The B2 teacher caches
+(`d869f497f5`, 37 GB over both scenes) can be deleted once no further B2 runs are planned.
