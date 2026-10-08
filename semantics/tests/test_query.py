@@ -211,3 +211,23 @@ def test_diffusion_spreads_relevancy_within_dino_similar_neighbours_only():
     r = Q.diffuse(rel, idx, w, 0.5, 1)
     assert r[1] > 0.5 and np.isclose(r[2], 0.5) and r[3] == 0.0                  # unseen rows (rel 0) stay 0
     assert np.isclose(r[0], 0.5 * 0.9 + 0.5 * 0.5)
+
+
+def test_scale_select_uses_the_group_where_the_query_peaks():
+    """Variant A: a table with clip_scales; the object is only visible in the small-scale group."""
+    from types import SimpleNamespace
+    rng = np.random.default_rng(3)
+    n, D = 400, 8
+    xyz = rng.uniform(-2, 2, (n, 3)); xyz[:40] = rng.normal([1.0, 1.0, 0.5], 0.05, (40, 3))
+    geom = np.concatenate([xyz, np.full((n, 1), 0.9), np.full((n, 1), 0.02)], 1).astype(np.float32)
+    q, neg = np.eye(D)[0], np.eye(D)[1]
+    bg = neg + 0.1 * rng.standard_normal((n, D))
+    small = bg.copy(); small[:40] = q + 0.05 * rng.standard_normal((40, D))     # only the small scale sees it
+    unit = lambda x: (x / np.linalg.norm(x, axis=-1, keepdims=True)).astype(np.float32)
+    mean = unit(bg + small)
+    cs = np.stack([unit(small), unit(bg), unit(bg)], 1)
+    enc = SimpleNamespace(encode=lambda t: np.stack([q] + [neg] * (len(t) - 1)).astype(np.float32))
+    tab = SimpleNamespace(clip=mean, weight=np.ones(n, np.float32), geom=geom, dino=None, clip_scales=cs)
+    res = Q.run_query(tab, Q.Scene(cam_c2w=np.tile(np.eye(4), (5, 1, 1))), "x", enc, Q.Settings(min_gaussians=10))
+    assert res["scale_group"] == 0 and res["scale_peaks"][0] > max(res["scale_peaks"][1:])
+    assert res["candidates"] and np.linalg.norm(np.asarray(res["candidates"][0]["centroid_splat"]) - [1, 1, 0.5]) < 0.2

@@ -98,10 +98,24 @@ def resample(grid, centers_y, centers_x, H, W, gh, gw):
     return out[0].permute(1, 2, 0)                          # [gh, gw, C]
 
 
-def clip_pyramid(encode, img, s):
+SCALE_GROUPS = ((0.0, 0.15), (0.15, 0.4), (0.4, 1.01))   # variant A: small / medium / large crop scales
+
+
+def scale_group(sc):
+    """Index of the group a crop scale (fraction of the short side) belongs to."""
+    return next(i for i, (lo, hi) in enumerate(SCALE_GROUPS) if lo <= sc < hi)
+
+
+def clip_teacher_names(s):
+    """The CLIP map names a teacher setting writes: 'clip' (+ 'clip_s0..2' per scale group in mode 'scales')."""
+    return ["clip"] + ([f"clip_s{g}" for g in range(len(SCALE_GROUPS))] if s.clip_mode == "scales" else [])
+
+
+def clip_pyramid(encode, img, s, by_group=False):
     """img: [3, H, W] float in [0, 1] on the model's device. encode(batch [B, 3, 224, 224],
     normalised) → [B, D]. Returns [gh, gw, D] float32 (average of unit embeddings) and the
-    number of crops embedded."""
+    number of crops embedded. With by_group (variant A) also a list of per-scale-group averages
+    [gh, gw, D] (SCALE_GROUPS), so a query can later pick the scale that suits its object."""
     import torch
     import torch.nn.functional as F
     _, H, W = img.shape
@@ -109,6 +123,7 @@ def clip_pyramid(encode, img, s):
     mean = torch.tensor(CLIP_MEAN, device=img.device).view(1, 3, 1, 1)
     std = torch.tensor(CLIP_STD, device=img.device).view(1, 3, 1, 1)
     acc, used, n_crops = None, 0, 0
+    gacc, gused = [None] * len(SCALE_GROUPS), [0] * len(SCALE_GROUPS)
     for sc in s.scales:
         tile = int(round(sc * min(H, W)))
         if tile < s.min_tile:
@@ -131,8 +146,14 @@ def clip_pyramid(encode, img, s):
         acc = g if acc is None else acc + g
         used += 1
         n_crops += len(pos)
+        k = scale_group(sc)
+        gacc[k] = g if gacc[k] is None else gacc[k] + g
+        gused[k] += 1
     if acc is None:
         raise ValueError(f"image {W}x{H} is too small for every pyramid scale (min_tile {s.min_tile})")
+    if by_group:
+        groups = [(a / n if n else acc / used) for a, n in zip(gacc, gused)]    # an empty group falls back to the mean
+        return acc / used, n_crops, groups
     return acc / used, n_crops
 
 
@@ -285,7 +306,8 @@ def extract(scene_dir, out_root, settings=None, device="cuda", encoders=None, lo
     meta["settings"]["teachers"] = list(s.teachers)
     t_all, done, skipped, crops_total = time.time(), 0, 0, 0
     for k, (stem, rel) in enumerate(frames):
-        need = [t for t in s.teachers if not (out / t / f"{stem}.npy").exists()]
+        names = [n for t in s.teachers for n in (clip_teacher_names(s) if t == "clip" else [t])]
+        need = [t for t in names if not (out / t / f"{stem}.npy").exists()]
         if not need:
             skipped += 1
             continue
@@ -293,11 +315,15 @@ def extract(scene_dir, out_root, settings=None, device="cuda", encoders=None, lo
         img = load_image(Path(scene_dir) / rel, device)
         rec = meta["images"].get(stem, {})
         rec["size"] = [int(img.shape[2]), int(img.shape[1])]
-        if "clip" in need:
+        if any(n.startswith("clip") for n in need):
             if s.clip_mode == "sam":
                 g, nc = clip_regions(enc["clip"], enc["segment"], img, s)
                 if g is None:                       # no segment at all: fall back to the pyramid for this photo
                     g, nc = clip_pyramid(enc["clip"], img, s)
+            elif s.clip_mode == "scales":
+                g, nc, groups = clip_pyramid(enc["clip"], img, s, by_group=True)
+                for k, gg in enumerate(groups):
+                    _save(out / f"clip_s{k}" / f"{stem}.npy", gg.cpu().numpy())
             else:
                 g, nc = clip_pyramid(enc["clip"], img, s)
             meta["clip_dim"] = int(g.shape[-1])
@@ -325,7 +351,8 @@ def extract(scene_dir, out_root, settings=None, device="cuda", encoders=None, lo
 def load_maps(teacher_dir, stem):
     """{teacher: float32 array [gh, gw, C]} for one image stem."""
     out = {}
-    for t in ("clip", "dino"):
+    names = ["clip", "dino"] + sorted(p.name for p in Path(teacher_dir).glob("clip_s*") if p.is_dir())
+    for t in names:
         p = Path(teacher_dir) / t / f"{stem}.npy"
         if p.exists():
             out[t] = np.load(p).astype(np.float32)

@@ -60,7 +60,15 @@ DEFAULTS = {"backend": "lift", "teachers": ["clip", "dino"], "feat_width": 960, 
             "clip_mode": "pyramid", "clip_model": "ViT-B-16", "clip_pretrained": "laion2b_s34b_b88k"}
 LISTS = ("teachers",)
 VARIANT_KEYS = ("clip_mode", "clip_model", "clip_pretrained")   # teacher variants (A/B/C, 7 Oct)
-NOT_STICKY = ("backend",)        # never taken from config.json: a bare run (Galley's Continue) is the lift
+NOT_STICKY = ("backend", "clip_mode")   # never taken from config.json: a bare run (Galley's Continue) is the lift,
+                                        # and the CLIP mode follows the backend unless given (see default_clip_mode)
+
+
+def default_clip_mode(backend):
+    """The lift uses multi-scale CLIP teachers (variant A: crop-scale groups, the scale chosen per query —
+    22/29 vs 20/29 hits in the Phase 5 teacher comparison, SEMANTICS.md §15); FMGS keeps the standard
+    scale-averaged pyramid (multi-scale did not help it)."""
+    return "scales" if backend == "lift" else "pyramid"
 
 
 class Ctx:
@@ -302,14 +310,22 @@ def step_export(c):
     if meta is None or meta.get("key") != c.a.key:
         raise StepFailed(f"no lift output for this checkpoint in {raw}: run the lift step")
     means, scales, opac, order = _ckpt_gaussians(c)
-    clip = normalise_rows(np.load(raw / "clip.npy").astype(np.float32)[order]) if (raw / "clip.npy").exists() else None
+    groups = sorted(raw.glob("clip_s*.npy"))
+    clip_scales = None
+    if groups:                             # variant A: per scale group; 'clip' = their mean (the lift is linear)
+        G = [np.load(p).astype(np.float32)[order] for p in groups]
+        clip = normalise_rows(sum(G) / len(G))
+        clip_scales = np.stack([normalise_rows(x) for x in G], 1)
+        del G
+    else:
+        clip = normalise_rows(np.load(raw / "clip.npy").astype(np.float32)[order]) if (raw / "clip.npy").exists() else None
     dino = normalise_rows(np.load(raw / "dino.npy").astype(np.float32)[order]) if (raw / "dino.npy").exists() else None
     if clip is None:
         raise StepFailed("the lift produced no CLIP features (teachers without clip?)")
     w = np.load(raw / "weight.npy")[order]
     geom = _geom(means, scales, opac, order)
     ckpt = c.run.checkpoint
-    index = write_table(c.backend_dir, clip=clip, dino=dino, weight=w, geom=geom, order=order, meta={
+    index = write_table(c.backend_dir, clip=clip, dino=dino, clip_scales=clip_scales, weight=w, geom=geom, order=order, meta={
         "scene": c.a.scene, "run": c.run.run, "checkpoint": ckpt.name, "checkpoint_mtime": int(ckpt.stat().st_mtime),
         "key": c.a.key, "backend": c.a.backend, "teacher_tag": meta["teacher_tag"], "n_total": int(len(means)),
         "clip": {"model": c.a.clip_model, "pretrained": c.a.clip_pretrained, "mode": c.a.clip_mode},
@@ -332,6 +348,9 @@ def _fmgs_cfg(c):
     no_dino = {"w_dino": 0.0, "w_pa": 0.0} if c.a.backend == "fmgs_c" else {}   # F-C: CLIP alone (Phase 5)
     tmeta = json.loads((c.teacher_dir / "meta.json").read_text()) if (c.teacher_dir / "meta.json").exists() else {}
     field = {"clip_dim": int(tmeta["clip_dim"])} if tmeta.get("clip_dim", 512) != 512 else {}   # e.g. ViT-L/14: 768
+    groups = len([p for p in c.teacher_dir.glob("clip_s*") if p.is_dir()])
+    if groups > 1:
+        field["clip_groups"] = groups                                   # variant A: a CLIP head per scale group
     return TrainConfig(steps=int(c.a.fmgs_steps), feat_width=int(c.a.fmgs_width), variant=c.a.fmgs_variant,
                        impl=c.a.fmgs_impl, log2_table=int(c.a.fmgs_table), field_cfg=field, **no_dino)
 
@@ -380,7 +399,7 @@ def step_bake(c):
     field, saved = FeatureField.load(tdir / "field.pt", dev)
     means, scales, opac, order = _ckpt_gaussians(c)
     t0 = time.time()
-    clip, dino = bake(field, means[order], device=dev)
+    clip, dino, clip_scales = bake(field, means[order], device=dev, with_scales=True)
     info(f"field evaluated at {len(order):,} Gaussians in {time.time() - t0:.1f} s")
     # which Gaussians the training cameras saw: the lift table's weights when it is for this checkpoint,
     # otherwise the same blend-weight pass the lift runs
@@ -405,10 +424,12 @@ def step_bake(c):
         torch.cuda.empty_cache() if torch.cuda.is_available() else None
     clip[w <= 0] = 0
     dino[w <= 0] = 0
+    if clip_scales is not None:
+        clip_scales[w <= 0] = 0
     if c.a.backend == "fmgs_c":
         dino = None                  # F-C never trained its DINO head: no DINO rows in its table
     ckpt = c.run.checkpoint
-    index = write_table(c.backend_dir, clip=clip, dino=dino, weight=w, geom=_geom(means, scales, opac, order),
+    index = write_table(c.backend_dir, clip=clip, dino=dino, clip_scales=clip_scales, weight=w, geom=_geom(means, scales, opac, order),
                         order=order, meta={
         "scene": c.a.scene, "run": c.run.run, "checkpoint": ckpt.name, "checkpoint_mtime": int(ckpt.stat().st_mtime),
         "key": c.a.key, "backend": c.a.backend, "teacher_tag": tj.get("teacher_tag"), "n_total": int(len(means)),
@@ -494,6 +515,7 @@ def run_step_child(c, name):
             "--scene", c.a.scene, "--backend", c.a.backend, "--in-step", name]
     if getattr(c.a, "table_suffix", None):
         argv += ["--table-suffix", c.a.table_suffix]
+    argv += ["--clip-mode", c.a.clip_mode, "--clip-model", c.a.clip_model, "--clip-pretrained", c.a.clip_pretrained]
     env = os.environ.copy()
     env.setdefault("PYTORCH_CUDA_ALLOC_CONF", "max_split_size_mb:128")
     env["PYTHONUNBUFFERED"] = "1"
@@ -577,6 +599,7 @@ def main(argv=None):
 
     cfg_path = c.state / "config.json"
     saved = json.loads(cfg_path.read_text()) if cfg_path.exists() else {}
+    explicit_mode = a.clip_mode is not None
     for k, dflt in DEFAULTS.items():
         v = getattr(a, k)
         if v is None:
@@ -584,6 +607,8 @@ def main(argv=None):
         elif k in LISTS:
             v = [x.strip() for x in v.split(",") if x.strip()]
         setattr(a, k, v)
+    if not explicit_mode:
+        a.clip_mode = default_clip_mode(a.backend)
     if not set(a.teachers) <= {"clip", "dino"} or "clip" not in a.teachers:
         ap.error("--teachers: clip (required) and optionally dino")
     if a.in_step:

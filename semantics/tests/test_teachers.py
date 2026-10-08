@@ -127,3 +127,16 @@ def test_clip_regions_paints_each_segment_with_its_own_embedding():
     assert np.allclose(np.linalg.norm(left), 1, atol=1e-5) and np.allclose(grid[1, 0].numpy(), left, atol=1e-6)
     assert float(left @ right) < 0.99                      # the two segments keep different embeddings
     assert float(grid[-1, -1].abs().sum()) == 0.0          # bottom-right: nothing covers it
+
+
+def test_scales_mode_writes_one_map_per_group_and_their_mean(tmp_path):
+    """Variant A: clip_s0..2 per crop-scale group (small / medium / large), 'clip' still the overall mean."""
+    sd = make_scene(tmp_path, n=1, H=80, W=128)
+    s = T.TeacherSettings(scales=[0.1, 0.3, 0.5], cell_frac=0.1, min_tile=4, dino_width=28, batch=64,
+                          clip_mode="scales", teachers=("clip",))
+    T.extract(sd, tmp_path / "teachers", s, device="cpu", encoders={"clip": colour_encoder}, log=lambda m: None)
+    m = T.load_maps(tmp_path / "teachers" / s.tag(), "frame_00000")
+    assert sorted(m) == ["clip", "clip_s0", "clip_s1", "clip_s2"]
+    assert all(m[k].shape == m["clip"].shape for k in m)
+    assert np.allclose((m["clip_s0"] + m["clip_s1"] + m["clip_s2"]) / 3, m["clip"], atol=2e-3)   # one scale per group
+    assert [T.scale_group(x) for x in (0.05, 0.125, 0.2, 0.35, 0.425, 0.5)] == [0, 0, 1, 1, 2, 2]

@@ -1,0 +1,62 @@
+{
+    "waypoints": {
+        "Nco": 6,
+        "keyframes": {
+            "start": {
+                "t": 0.0,
+                "fo": [
+                    [-4.2, 0.0],
+                    [-1.16, 0.0],
+                    [-1.2, 0.0],
+                    [0.0, 0.0]
+                ]
+            },
+            "k1": {
+                "t": 3.0,
+                "fo": [
+                    [2.94, null, null, null],
+                    [-1.16, null, null, null],
+                    [-1.2, null, null, null],
+                    [1.571, null, null, null]
+                ]
+            },
+            "k2": {
+                "t": 6.0,
+                "fo": [
+                    [2.94, null, null, null],
+                    [1.46, null, null, null],
+                    [-1.2, null, null, null],
+                    [3.142, null, null, null]
+                ]
+            },
+            "k3": {
+                "t": 9.0,
+                "fo": [
+                    [-4.2, null, null, null],
+                    [1.46, null, null, null],
+                    [-1.2, null, null, null],
+                    [4.712, null, null, null]
+                ]
+            },
+            "k5": {
+                "t": 10.5,
+                "fo": [
+                    [-0.178, null, null, null],
+                    [-3.429, null, null, null],
+                    [-1.2, null, null, null],
+                    [5.498, null, null, null]
+                ]
+            },
+            "end": {
+                "t": 12.0,
+                "fo": [
+                    [-4.2, 0.0],
+                    [-1.16, 0.0],
+                    [-1.2, 0.0],
+                    [6.283, 0.0]
+                ]
+            }
+        }
+    },
+    "forces": null
+}

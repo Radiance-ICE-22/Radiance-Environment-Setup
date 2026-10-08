@@ -1,0 +1,74 @@
+{
+    "waypoints": {
+        "Nco": 6,
+        "keyframes": {
+            "start": {
+                "t": 0.0,
+                "fo": [
+                    [-0.503, 0.0],
+                    [1.035, 0.0],
+                    [-0.973, 0.0],
+                    [-1.671, 0.0]
+                ]
+            },
+            "ponit_1": {
+                "t": 5.548,
+                "fo": [
+                    [1.154, null, null, null],
+                    [-1.14, null, null, null],
+                    [-1.588, null, null, null],
+                    [-2.131, null, null, null]
+                ]
+            },
+            "point_2": {
+                "t": 11.097,
+                "fo": [
+                    [1.427, null, null, null],
+                    [-4.164, null, null, null],
+                    [-0.8, null, null, null],
+                    [-1.601, null, null, null]
+                ]
+            },
+            "point_3": {
+                "t": 17.737,
+                "fo": [
+                    [1.268, null, null, null],
+                    [-6.378, null, null, null],
+                    [-1.064, null, null, null],
+                    [-3.052, null, null, null]
+                ]
+            },
+            "point_4": {
+                "t": 21.057,
+                "fo": [
+                    [-0.361, null, null, null],
+                    [-6.887, null, null, null],
+                    [-1.205, null, null, null],
+                    [-3.282, null, null, null]
+                ]
+            },
+            "goal": {
+                "t": 28.0,
+                "fo": [
+                    [-1.108, 0.0],
+                    [-4.967, 0.0],
+                    [-0.973, 0.0],
+                    [-3.513, 0.0]
+                ]
+            }
+        }
+    },
+    "forces": null,
+    "semantic_goal": {
+        "label": "cart",
+        "position": [-2.049, -4.601, -0.577],
+        "query": "cart",
+        "backend": "lift",
+        "score": 12.3649,
+        "extent": {
+            "lo": [-2.165, -4.872, -0.649],
+            "hi": [-2.007, -4.246, -0.358]
+        },
+        "approach": [-1.108, -4.967, -0.973]
+    }
+}

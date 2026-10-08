@@ -1,0 +1,71 @@
+{
+    "waypoints": {
+        "Nco": 6,
+        "keyframes": {
+            "start": {
+                "t": 0.0,
+                "fo": [
+                    [-0.971, 0.0],
+                    [-5.398, 0.0],
+                    [-1.272, 0.0],
+                    [0.0, 0.0]
+                ]
+            },
+            "k5": {
+                "t": 1.5,
+                "fo": [
+                    [-0.994, null, null, null],
+                    [-6.149, null, null, null],
+                    [-1.399, null, null, null],
+                    [0.786, null, null, null]
+                ]
+            },
+            "k1": {
+                "t": 3.0,
+                "fo": [
+                    [0.772, null, null, null],
+                    [-5.921, null, null, null],
+                    [-1.424, null, null, null],
+                    [1.087, null, null, null]
+                ]
+            },
+            "k6": {
+                "t": 4.5,
+                "fo": [
+                    [1.362, null, null, null],
+                    [-3.22, null, null, null],
+                    [-1.244, null, null, null],
+                    [2.115, null, null, null]
+                ]
+            },
+            "k2": {
+                "t": 6.0,
+                "fo": [
+                    [0.96, null, null, null],
+                    [-0.51, null, null, null],
+                    [-1.2, null, null, null],
+                    [3.142, null, null, null]
+                ]
+            },
+            "k3": {
+                "t": 9.0,
+                "fo": [
+                    [-1.037, null, null, null],
+                    [-0.555, null, null, null],
+                    [-1.253, null, null, null],
+                    [4.712, null, null, null]
+                ]
+            },
+            "end": {
+                "t": 12.0,
+                "fo": [
+                    [-0.637, 0.0],
+                    [-5.331, 0.0],
+                    [-1.494, 0.0],
+                    [4.925, 0.0]
+                ]
+            }
+        }
+    },
+    "forces": null
+}
