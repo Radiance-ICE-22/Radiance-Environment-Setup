@@ -24,40 +24,29 @@ host itself** — run the tests, the probes and the gates yourself, read the log
 
 Read only the sections you need; they are long.
 
-## Where we left off (6 Oct 2026)
+## Where we left off (12 Oct 2026) — start with `docs/HANDOVER.md`
+
+`docs/HANDOVER.md` is the hand-over: current state, decisions waiting for Suhan, what is on the host, which document
+holds what. Full history with every problem and fix: `docs/report/project_chronicle.pdf`.
 
 | Semantics phase | State |
 | --- | --- |
 | P0 env + poses | DONE (refined poses +4.22 dB PSNR over raw → lift and FMGS use refined poses) |
-| P1 teachers + lift + CLI query | DONE, 5/5 on backroom |
+| P1 teachers + lift + CLI query | DONE, 5/5 on backroom (dev set) |
 | P2 Galley backend + CPU query worker | DONE (warm query ~0.74 s, cold 5.8 s) |
 | P3 splat editor `#/splat/<scene>` | DONE (query → Send to course → flight) |
-| P4 FMGS backend | DONE — gate PASSED 6 Oct 13:31 (run 3, 7344e7a) |
-| P5 evaluation (L-C, L-CD, F-C, F-CD × backroom, flightroom) | DONE — `docs/SEMANTICS.md` §13–15; multi-scale CLIP teachers (variant A) merged 8 Oct and the default lift (22/29 vs 20/29 hits) |
-| P6 instruction → semantic-course → SV-Net cohorts | Not started (experiment waits on SV-Net flying) |
+| P4 FMGS backend | DONE — gate PASSED 6 Oct (7344e7a): split tcnn grid, expandable segments, GradScaler |
+| P5 evaluation + teacher study | DONE (SEMANTICS.md §13–16). Default lift = multi-scale A (22/29); B2 21, C2 19, Old 20 at floor 0.55, but A's lead is a floor effect — at equal false positives B2 flat is best (24/29). Open: browser check of View ▸ Compare |
+| P6 instruction → semantic-course → SV-Net | Not started (experiment waits on SV-Net flying) |
 
-**Phase 4 gate, run 3** (6 Oct, intellisense08, `7344e7a`) — PASSED; details in `docs/SEMANTICS.md` §3e and §11.
-Default config, no fallback: 4,200 steps in 31.4 min, peak 5.5 GB PyTorch / 7.95 GB device, Gaussians and
-checkpoint unchanged, dev queries FMGS 4/5 (garden cart misses) vs lift 5/5. What it took:
-- OOM: PyTorch's cache starved tiny-cuda-nn's own allocator, and the ladder missed tcnn's `RuntimeError`.
-  → expandable segments, tcnn OOM recognised, a failed step retried once, shorter tensor lifetimes.
-- Then NaN at step 11: CLIP gradients underflowed in tcnn's fp16, and pixel alignment's normalize of ~0
-  vectors overflowed. → GradScaler when a part is tcnn, 1e-3 norm floor in pixel alignment.
-- pytest 9.1.1 (+ iniconfig, pluggy) added to kitchen on 6 Oct with `--no-deps` and the constraints file
-  (frozen copy: `~/Radiance/kitchen_constraints_2026-10-06.txt`); torch re-checked. Gates now run the 68 semantics tests.
-- Still to do by hand: View ▸ Compare in the browser on the new FMGS table.
-- Planned by Suhan (6 Oct): a separate branch that extends nerfstudio to handle semantics (the
-  `ns-train` route the plan first had). `main` keeps the standalone trainer until that branch is ready.
+Next (Suhan to choose, HANDOVER.md §2): per-table floor calibration, then decide the default lift; query-time fusion /
+ViT-L re-ranker / FMGS baking fixes; merging B2/C2 (branches pushed, unmerged); disk cleanup of variant teachers and
+tables (ask first). Separate thread: the SV-Net student (Maverick, cohort `p4_smoke`) does not fly; next is cohort
+`p4_beta` (`docs/GALLEY_UI.md` §6). Node 22 for frontend builds: `export PATH=~/Radiance/tools/node/bin:$PATH`.
 
-Next: Phase 5 is complete apart from a browser check (results in `docs/phase5_results/`). Node 22 for
-frontend builds: `export PATH=~/Radiance/tools/node/bin:$PATH`. GTN_lab_v1 is
-folded (SEMANTICS.md §12); the intellisense lab footage could become our own extra scene. Phase 6 parts that don't need SV-Net (parser, `semantic-course`,
-feasibility loop). Separate open thread: the SV-Net student (Maverick, cohort `p4_smoke`) does not fly the
-course yet; next is cohort `p4_beta` (data_beta) — see `docs/GALLEY_UI.md` §6.
-
-Open questions for Suhan (don't decide these alone): which 15+ objects per scene for the frozen Phase 5 set;
-whether to add a larger CLIP (ViT-L/14) to the comparison if 8 GB allows; rule-based vs LLM instruction
-parser in Phase 6; whether sparse-point clearance is good enough for the collision metric.
+Open questions for Suhan (don't decide these alone): the default lift (A vs a calibrated Old/B2-flat); rule-based vs
+LLM instruction parser in Phase 6; whether sparse-point clearance is good enough for the collision metric; a re-shoot
+of the intellisense lab with the ArUco marker as our own scene.
 
 ## Machines
 
