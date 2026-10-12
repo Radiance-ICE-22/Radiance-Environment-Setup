@@ -142,3 +142,17 @@ python figs/semantic_pipeline.py --scene backroom --backend lift --table-suffix 
   ask first.
 - **Shared account:** stay inside `~/Radiance` and `~/.local/share/galley`.
 - **Evaluation:** settings must not be tuned on the evaluation sets. Report any post-hoc sweep as post-hoc.
+
+## 7. Project website (12 Oct 2026)
+
+- Live at **https://radiance-ice-22.github.io/** (repo `Radiance-ICE-22/radiance-ice-22.github.io`, cloned at
+  `~/Radiance/radiance-ice-22.github.io`; Pages source = GitHub Actions, deploys on every push to `main`). The poster's QR
+  code should point here.
+- Static HTML, no build. Phrase demo, approach, results (numbers from SEMANTICS.md §15–16), Galley feature clips,
+  expert flights, SV-Net status (student not flying), drone CAD viewer and the prop-guard modal study (PropGuard v9,
+  first mode 259 Hz; the poster still shows 219 → 263 → 284 Hz).
+- Clips were recorded on intellisense08 by driving Galley in headless Chrome (`~/Radiance/tools/recorder/`: `lib.mjs`
+  places the 3D camera through the R3F store, CDP screencast → ffmpeg). Re-record with e.g.
+  `node rec_phrases.mjs` (Node 22 on PATH, Galley idle). Unused clips: `~/Radiance/site_unused/`.
+- Drone GLB: `~/Radiance/tools/drone/decimate.py` (kitchen's trimesh/open3d, CPU, 15 s) from
+  `~/Radiance/site_assets/Drone/Drone_5_2205.obj`; FEA images from Savinu's Fusion study report.
