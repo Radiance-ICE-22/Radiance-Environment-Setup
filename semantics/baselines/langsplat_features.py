@@ -17,8 +17,9 @@ Three execution changes, no change to the result:
     skipped on a re-run;
   * SAM decodes 16 prompt points per batch instead of 64 (each point is decoded independently; the batches are
     merged before any filtering across points), which keeps 1080p images within 8 GB;
-  * `mask_nms` runs on the GPU: upstream builds full-resolution boolean masks on the CPU and compares them pairwise
-    in Python loops (minutes per image at 1080p); the same tensors on CUDA give the same selection.
+  * `mask_nms` is computed from a pairwise-intersection matrix (mask_nms_matrix below) instead of a Python loop over
+    all mask pairs, which is infeasible here (one image has ~2,500 masks; a GPU copy of them is 5 GB). Same
+    arithmetic and rules; verified to select the same masks as upstream's function on real images.
 """
 
 import argparse
@@ -29,6 +30,54 @@ import time
 from pathlib import Path
 
 THIRD_PARTY = Path(os.environ.get("THIRD_PARTY", Path.home() / "Radiance/third_party"))
+
+
+def mask_nms_matrix(masks, scores, iou_thr=0.7, score_thr=0.1, inner_thr=0.2, chunk=1 << 17, **kwargs):
+    """LangSplat's mask_nms with the same arithmetic, vectorised. Upstream compares every pair of full-resolution
+    masks in a Python double loop (one image here has ~2,500 masks: ~3 M pairs); this computes all pairwise
+    intersections as integer counts, summed over pixel chunks on the GPU, then applies upstream's rules
+    elementwise in the same order: iou = I / U; for j ≥ i, inner[i, j] = 1 − (I/A_j)(I/A_i) when I/A_i < 0.5 and
+    I/A_j ≥ 0.85, and inner[j, i] = the same value when I/A_i ≥ 0.85 and I/A_j < 0.5; then upstream's thresholds
+    and top-3 fall-backs. Checked against upstream on real images (test_langsplat_nms in the run log)."""
+    import torch
+    scores, idx = scores.sort(0, descending=True)
+    M = idx.shape[0]
+    flat = masks.reshape(masks.shape[0], -1)[idx.view(-1)]                    # masks_ord, [M, P] bool (CPU)
+    inter = torch.zeros((M, M), dtype=torch.float64, device="cuda")
+    for c0 in range(0, flat.shape[1], chunk):
+        x = flat[:, c0:c0 + chunk].to("cuda", non_blocking=True).float()
+        inter += (x @ x.T).double()                                           # exact: counts ≤ chunk < 2^24
+    area = torch.diagonal(inter).clone()
+    inter, area = inter.float(), area.float()                                 # upstream sums are float32
+    union = area[:, None] + area[None, :] - inter
+    iou = inter / union
+    ri = inter / area[:, None]                                                # I / A_i  (row i)
+    rj = inter / area[None, :]                                                # I / A_j  (column j)
+    val = 1 - rj * ri
+    upper = torch.triu(torch.ones((M, M), dtype=torch.bool, device="cuda"))  # pairs j ≥ i, as upstream's loop
+    inner = torch.zeros((M, M), dtype=torch.float, device="cuda")
+    c1 = upper & (ri < 0.5) & (rj >= 0.85)
+    inner[c1] = val[c1]
+    c2 = upper & (ri >= 0.85) & (rj < 0.5)
+    inner.T[c2] = val[c2]                                                     # inner[j, i]
+    iou_matrix = iou * upper
+    iou_matrix.triu_(diagonal=1)
+    iou_max, _ = iou_matrix.max(dim=0)
+    inner_iou_max_u, _ = torch.triu(inner, diagonal=1).max(dim=0)
+    inner_iou_max_l, _ = torch.tril(inner, diagonal=1).max(dim=0)
+    scores_c = scores.to("cuda")
+    keep = iou_max <= iou_thr
+    keep_conf = scores_c > score_thr
+    keep_inner_u = inner_iou_max_u <= 1 - inner_thr
+    keep_inner_l = inner_iou_max_l <= 1 - inner_thr
+    if keep_conf.sum() == 0:
+        keep_conf[scores_c.topk(3).indices] = True
+    if keep_inner_u.sum() == 0:
+        keep_inner_u[scores_c.topk(3).indices] = True
+    if keep_inner_l.sum() == 0:
+        keep_inner_l[scores_c.topk(3).indices] = True
+    keep = keep & keep_conf & keep_inner_u & keep_inner_l
+    return idx[keep.cpu()]
 
 
 def main():
@@ -65,11 +114,7 @@ def main():
         crop_n_layers=1, crop_n_points_downscale_factor=1, min_mask_region_area=100,
         points_per_batch=a.points_per_batch)
 
-    _nms = P.mask_nms                           # same function, tensors on the GPU
-
-    def mask_nms_cuda(masks, scores, **kw):
-        return _nms(masks.cuda(), scores.cuda(), **kw).cpu()
-    P.mask_nms = mask_nms_cuda
+    P.mask_nms = mask_nms_matrix
 
     t_all = time.time()
     done = 0
@@ -90,7 +135,7 @@ def main():
     (out / "meta.json").write_text(json.dumps({
         "scene": a.scene, "images": len(cams), "computed_now": done, "seconds": round(time.time() - t_all, 1),
         "sam": "vit_h (sam_vit_h_4b8939)", "clip": "ViT-B-16 laion2b_s34b_b88k",
-        "source": "LangSplat preprocess.py (create, sam_encoder, masks_update; mask_nms on CUDA)"}, indent=1) + "\n")
+        "source": "LangSplat preprocess.py (create, sam_encoder, masks_update; mask_nms vectorised, verified identical)"}, indent=1) + "\n")
     print(f"done: {done} images in {time.time() - t_all:.0f} s → {out}")
 
 
