@@ -17,5 +17,5 @@ BUILD_NO_CUDA=0 MAX_JOBS=4 pip install --no-build-isolation -e ./gsplat
 pip install --no-build-isolation ./simple-knn
 python - <<'PY'
 import torch, gsplat, simple_knn
-print("torch", torch.__version__, "cuda", torch.version.cuda, "gpu", torch.cuda.is_available(), "gsplat", gsplat.__version__)
+print("torch", torch.__version__, "cuda", torch.version.cuda, "gpu", torch.cuda.is_available(), "gsplat", gsplat.__file__)
 PY
