@@ -842,3 +842,6 @@ Report and raw results: `Research notes/experiment results/2026-10-13_lift_basel
 - Note: `evaluate.py` writes `eval/<variant>.json` without the query set in the name; a dev-set run (`--set
   phase1_gate`) overwrites the Phase 5 file. Backroom `L-C.json` was overwritten once on 13 Oct and regenerated
   (identical to the 8 Oct CSV: 9/13, 0.211 m, AUROC 0.872); dev results are in `eval_dev_baselines_2026-10-13/`.
+  **Fixed 13 Oct:** any `--set` other than `phase5` now writes (and `--report` / `--sweep` read)
+  `eval/<set>/<variant>.json`; the phase5 path is unchanged. Galley lists only top-level `eval/*.json` with
+  `set == phase5`. Tests: `test_evaluate.py` (eval_dir, run_variants on phase1_gate), Galley `test_semantics.py`.

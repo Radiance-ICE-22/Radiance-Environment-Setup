@@ -181,8 +181,8 @@ def status(s: Settings, scene: str) -> dict:
         if p.name.startswith("sweep_"):
             continue
         d = _json(p, {})
-        if not d.get("metrics"):
-            continue
+        if not d.get("metrics") or d.get("set", "phase5") != "phase5":
+            continue                 # other query sets live in eval/<set>/ (a stray top-level one is skipped too)
         evals.append({"variant": d.get("variant"), "backend": d.get("backend"), "set": d.get("set"),
                       "stale": d.get("key") != key, "evaluated": d.get("evaluated"), "metrics": d["metrics"],
                       "failed": [{"text": r["text"], "failure": r.get("failure"), "error": r.get("error"),
