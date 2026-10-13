@@ -1,0 +1,29 @@
+\paragraph{Why the lifts barely matter here.} The Phase~5 diagnostic (SEMANTICS.md \S14) found that lifting into 3D
+loses almost nothing: relevancy near an annotated object is 0.007 lower in the table than in the 2D teacher grid. This
+experiment confirms it from the other side. Two quite different estimators, a footprint-weighted average over every
+pixel and a single-pixel sample per view, produce near-identical tables (CLIP cosine $\geq0.997$ in median) and the
+same localisation within $\pm2$ of 29 queries. The CLIP teacher grid is coarse ($\approx71\times40$ cells per image), so
+at Gaussian scale it is almost constant across a footprint, and how the footprint is sampled hardly changes the result.
+The paper-level claims match this: Occam's LGS reports its estimator as the maximum-likelihood solution under
+negligible Gaussian overlap, and LUDVIG reports that further optimisation steps do not improve its features.
+
+\paragraph{Statistical caveat.} 29 positives and 6 absent objects over two scenes. A difference of one or two queries
+is not significant (exact sign test on the discordant queries, $p\geq0.6$ for every pair). The development-set result (Occam's 4/5 vs 5/5) is one cluster of
+81 Gaussians landing 0.99\,m from the garden cart (Old) and one mat-like region chosen over the green foam mats (A),
+both near the edge of the query's cluster rules.
+
+\paragraph{What this means for the next steps.}
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item \textbf{Keep the all-pixel lift as the reference.} It is LUDVIG's lift, now verified against the authors' code.
+        It sees the most Gaussians and averages each one over its whole footprint.
+  \item \textbf{Use centre-pixel lifting where speed matters.} At 30--120\,s per scene it makes many more teacher
+        maps affordable: more crop-scale groups, SAM levels (B2), or per-query re-lifts. It is a natural building block
+        for \code{semantic/new}.
+  \item \textbf{Put the effort into the 2D side and the query.} This is where queries are won or lost: the floor
+        calibration (HANDOVER \S2.1), per-query scale or region choice, recognition of thin objects (tripod, keyboard,
+        floor lamp), and the two persistent "absent" detections.
+  \item \textbf{Still to run, the faithful pipelines.} This report isolates the lift. The papers' full pipelines
+        differ in more than the lift: LUDVIG's DINOv2 ViT-g features with registers, PCA and logistic-regression graph
+        diffusion; Occam's SAM-based LangSplat feature maps. Those are the next comparisons on these branches. LUDVIG's
+        diffusion is the part most likely to change outcomes, because our simplified L-CD diffusion changed no hit.
+\end{itemize}

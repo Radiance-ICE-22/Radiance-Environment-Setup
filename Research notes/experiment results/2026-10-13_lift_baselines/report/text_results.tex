@@ -1,0 +1,23 @@
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item \textbf{LUDVIG = ours, query for query.} The two lifts agree on all 29 positives and 6 absent objects, in both
+        query modes and with both teacher sets. Median errors are identical, and the 90th-percentile errors differ by
+        at most 1\,mm. Only the query times differ (0.53--3.2\,s), which is CPU noise: the tables hold the same numbers.
+  \item \textbf{Occam's LGS: $\pm1$--2 queries, in both directions.} With CLIP alone (L-C), Occam's Old table gains the
+        flightroom \emph{armchair} (21 vs 20/29). Occam's A table swaps \emph{office chair} (lost) for \emph{camera tripod}
+        (gained, the first hit on this query by any lift or teacher), so it ties at 22/29. With DINO at query time
+        (L-CD), Occam's loses \emph{water bottle} (Old, 19/29) and \emph{swivel chair}, \emph{upholstered chair} and
+        \emph{water bottle} while gaining \emph{water jug} (A, 20/29). Its DINO rows differ most from the all-pixel
+        lift (\S\ref{sec:verify}), and L-CD's diffusion and split use exactly those rows.
+  \item \textbf{The teachers move as many queries as the lift, or more.} Going from Old to A changes 3--4 L-C outcomes
+        for every lift: \emph{hose reel} is lost, \emph{upholstered chair} and \emph{water jug} are gained, and so is
+        \emph{armchair} for ours and LUDVIG's (Occam's already had it with Old). Going from our lift to Occam's on the same
+        teachers changes one L-C outcome (Old) or two (A), and one (Old) or four (A) L-CD outcomes. The scale-group
+        choice of A recovers the same occluded chairs and the water jug whichever lift produced the table.
+  \item \textbf{Localisation.} Occam's median errors are equal or smaller with the Old teachers (0.18 vs 0.19\,m
+        backroom, 0.18 vs 0.22\,m flightroom) and mixed with A (0.26 vs 0.21\,m backroom, 0.18 vs 0.25\,m flightroom).
+        Backroom A has two "bad position" misses with Occam's against one with ours.
+  \item \textbf{Absent objects.} AUROC is equal or higher with Occam's (flightroom 0.917 vs 0.896). At floor 0.55,
+        however, Occam's A table fires on both \emph{bicycle} and \emph{ceiling fan} in backroom (2/3 vs 1/3). With the Old
+        teachers, sampling one pixel instead of averaging the footprint raises peaks slightly (dev-set peaks +0.003 to
+        +0.018), absent objects included; with A the shifts are mixed ($-0.010$ to $+0.012$).
+\end{itemize}

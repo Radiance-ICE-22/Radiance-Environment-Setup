@@ -813,3 +813,32 @@ floor 0.55 was fixed on ViT-B/16's scale-averaged rows. Hits / absent objects wi
 Full analysis and proposals: `docs/report/semantic_embedding_report.pdf` (prerequisites: `docs/report/semantics_primer.pdf`).
 Decision pending (Suhan): A stays the default for now; B2 and C2 stay on their branches (pushed 8 Oct). The B2 teacher caches
 (`d869f497f5`, 37 GB over both scenes) can be deleted once no further B2 runs are planned.
+
+## 17. Lift baselines: the original LUDVIG and Occam's LGS code (13 Oct, intellisense08)
+
+Decision (Suhan, 13 Oct): FMGS is too heavy for the lab machine; the project continues with the training-free lift.
+Branches `semantic/LUDVIG`, `semantic/LGS`, `semantic/new` (the last for our own architecture, later).
+
+Controlled comparison: the authors' own code (naver/ludvig, insait-institute/OccamLGS, cloned unmodified in
+`~/Radiance/third_party/`, own conda envs `ludvig` / `occamlgs`, never kitchen) lifted **our** Gaussians, refined
+cameras and cached teachers (Old `d7a30d7264`, A `9c437cce68`); our export step, query and evaluator scored the tables
+(`lift_{ludvig,occam}{pyr,ms}`, variants `L-C@ludvigpyr` etc.). Code: `semantics/baselines/` on the two branches.
+Report and raw results: `Research notes/experiment results/2026-10-13_lift_baselines/`.
+
+| Lift | L-C hits Old / A (of 29) | L-CD Old / A | Lift time backroom (Old / A) |
+| --- | --- | --- | --- |
+| Ours | 20 / 22 | 20 / 22 | 181 s / 1064 s |
+| LUDVIG original | 20 / 22 | 20 / 22 | 369 s / 784 s |
+| Occam's LGS original | 21 / 22 | 19 / 20 | 28 s / 124 s |
+
+- **LUDVIG's lift is ours**: per-Gaussian cosine 1.0000 on every row of both scenes; identical outcomes on every query.
+  (Its kernel adds the blend weight once per channel, so its normaliser is C·Σw; harmless after normalisation.)
+- **Occam's centre-pixel lift**: CLIP cosine median 0.997, DINO 0.98; 4.8 % / 7.3 % of Gaussians never activated
+  (all-pixel: 0.1 % / 0.4 %); 6.5–18× faster than ours. ±1–2 queries either way; floor sweep ceiling 24/29 for all;
+  at equal false positives it is +1 at 3–4 FP and −1/−2 at 2 FP. Dev set: 4/5 (garden cart cluster 0.99 m off with
+  Old; green foam mats → another mat with A) vs 5/5.
+- Conclusion: the lift is not the bottleneck; teachers and query are. Next on these branches: the faithful pipelines
+  (LUDVIG's DINOv2 ViT-g + logistic-regression graph diffusion; Occam's SAM/LangSplat features).
+- Note: `evaluate.py` writes `eval/<variant>.json` without the query set in the name; a dev-set run (`--set
+  phase1_gate`) overwrites the Phase 5 file. Backroom `L-C.json` was overwritten once on 13 Oct and regenerated
+  (identical to the 8 Oct CSV: 9/13, 0.211 m, AUROC 0.872); dev results are in `eval_dev_baselines_2026-10-13/`.

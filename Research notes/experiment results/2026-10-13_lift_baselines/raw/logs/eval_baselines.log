@@ -1,0 +1,523 @@
+  L-C@pyr (lift): 16 queries
+    recycling bin                HIT  0.11 m    peak 0.722  24410 ms
+    blue trash can               HIT  0.13 m    peak 0.694  705 ms
+    office chair                 HIT  0.48 m    peak 0.562  714 ms
+    swivel chair                 MISS           peak 0.536  720 ms
+    grandfather clock            HIT  0.05 m    peak 0.674  708 ms
+    clock                        HIT  0.07 m    peak 0.660  712 ms
+    children's road play mat     HIT  0.19 m    peak 0.757  711 ms
+    camera tripod                MISS           peak 0.510  712 ms
+    purple foam mat              HIT  0.23 m    peak 0.725  762 ms
+    white bucket                 MISS 3.70 m    peak 0.561  726 ms
+    glass door cabinet           HIT  0.19 m    peak 0.650  746 ms
+    hose reel                    HIT  0.07 m    peak 0.630  715 ms
+    moving box                   HIT  0.29 m    peak 0.699  716 ms
+    bicycle                      NEG ok         peak 0.499  719 ms
+    sofa                         NEG ok         peak 0.388  722 ms
+    ceiling fan                  NEG fp         peak 0.657  768 ms
+  L-C@pyr: hits 10/13, median error 0.188 m, negatives fp 0.333, AUROC 0.846 → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/backroom/semantics/2026-09-26_190524/eval/L-C@pyr.json
+  L-CD@pyr (lift, DINO at query time): 16 queries
+    recycling bin                HIT  0.10 m    peak 0.712  21633 ms
+    blue trash can               HIT  0.12 m    peak 0.689  848 ms
+    office chair                 HIT  0.54 m    peak 0.552  838 ms
+    swivel chair                 MISS           peak 0.528  945 ms
+    grandfather clock            HIT  0.04 m    peak 0.663  920 ms
+    clock                        HIT  0.07 m    peak 0.650  961 ms
+    children's road play mat     HIT  0.19 m    peak 0.739  820 ms
+    camera tripod                MISS           peak 0.501  946 ms
+    purple foam mat              HIT  0.23 m    peak 0.701  883 ms
+    white bucket                 MISS 3.91 m    peak 0.551  851 ms
+    glass door cabinet           HIT  0.20 m    peak 0.628  899 ms
+    hose reel                    HIT  0.05 m    peak 0.622  943 ms
+    moving box                   HIT  0.28 m    peak 0.686  1032 ms
+    bicycle                      NEG ok         peak 0.489  863 ms
+    sofa                         NEG ok         peak 0.374  820 ms
+    ceiling fan                  NEG fp         peak 0.649  882 ms
+  L-CD@pyr: hits 10/13, median error 0.186 m, negatives fp 0.333, AUROC 0.846 → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/backroom/semantics/2026-09-26_190524/eval/L-CD@pyr.json
+  L-C@ludvigpyr (lift): 16 queries
+    recycling bin                HIT  0.11 m    peak 0.722  3039 ms
+    blue trash can               HIT  0.13 m    peak 0.694  761 ms
+    office chair                 HIT  0.48 m    peak 0.562  751 ms
+    swivel chair                 MISS           peak 0.536  763 ms
+    grandfather clock            HIT  0.05 m    peak 0.674  742 ms
+    clock                        HIT  0.07 m    peak 0.660  788 ms
+    children's road play mat     HIT  0.19 m    peak 0.757  823 ms
+    camera tripod                MISS           peak 0.510  739 ms
+    purple foam mat              HIT  0.23 m    peak 0.725  887 ms
+    white bucket                 MISS 3.70 m    peak 0.561  767 ms
+    glass door cabinet           HIT  0.19 m    peak 0.650  784 ms
+    hose reel                    HIT  0.07 m    peak 0.630  827 ms
+    moving box                   HIT  0.29 m    peak 0.699  884 ms
+    bicycle                      NEG ok         peak 0.499  742 ms
+    sofa                         NEG ok         peak 0.388  737 ms
+    ceiling fan                  NEG fp         peak 0.657  794 ms
+  L-C@ludvigpyr: hits 10/13, median error 0.188 m, negatives fp 0.333, AUROC 0.846 → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/backroom/semantics/2026-09-26_190524/eval/L-C@ludvigpyr.json
+  L-CD@ludvigpyr (lift, DINO at query time): 16 queries
+    recycling bin                HIT  0.10 m    peak 0.712  14848 ms
+    blue trash can               HIT  0.12 m    peak 0.689  926 ms
+    office chair                 HIT  0.54 m    peak 0.552  836 ms
+    swivel chair                 MISS           peak 0.528  968 ms
+    grandfather clock            HIT  0.04 m    peak 0.663  857 ms
+    clock                        HIT  0.07 m    peak 0.650  844 ms
+    children's road play mat     HIT  0.19 m    peak 0.739  839 ms
+    camera tripod                MISS           peak 0.501  813 ms
+    purple foam mat              HIT  0.23 m    peak 0.701  826 ms
+    white bucket                 MISS 3.91 m    peak 0.551  809 ms
+    glass door cabinet           HIT  0.20 m    peak 0.628  861 ms
+    hose reel                    HIT  0.05 m    peak 0.622  843 ms
+    moving box                   HIT  0.28 m    peak 0.686  861 ms
+    bicycle                      NEG ok         peak 0.489  867 ms
+    sofa                         NEG ok         peak 0.374  856 ms
+    ceiling fan                  NEG fp         peak 0.649  962 ms
+  L-CD@ludvigpyr: hits 10/13, median error 0.186 m, negatives fp 0.333, AUROC 0.846 → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/backroom/semantics/2026-09-26_190524/eval/L-CD@ludvigpyr.json
+  L-C@ludvigms (lift): 16 queries
+    recycling bin                HIT  0.06 m    peak 0.773  3304 ms
+    blue trash can               HIT  0.10 m    peak 0.757  2892 ms
+    office chair                 HIT  0.44 m    peak 0.654  2735 ms
+    swivel chair                 MISS 0.79 m    peak 0.621  2769 ms
+    grandfather clock            HIT  0.03 m    peak 0.714  2776 ms
+    clock                        HIT  0.06 m    peak 0.697  2813 ms
+    children's road play mat     HIT  0.18 m    peak 0.816  2763 ms
+    camera tripod                MISS           peak 0.535  2808 ms
+    purple foam mat              HIT  0.22 m    peak 0.761  2782 ms
+    white bucket                 MISS 1.83 m    peak 0.605  2743 ms
+    glass door cabinet           HIT  0.20 m    peak 0.708  2738 ms
+    hose reel                    MISS 5.60 m    peak 0.685  2800 ms
+    moving box                   HIT  0.27 m    peak 0.762  2700 ms
+    bicycle                      NEG ok         peak 0.534  3215 ms
+    sofa                         NEG ok         peak 0.421  2896 ms
+    ceiling fan                  NEG fp         peak 0.686  2857 ms
+  L-C@ludvigms: hits 9/13, median error 0.211 m, negatives fp 0.333, AUROC 0.872 → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/backroom/semantics/2026-09-26_190524/eval/L-C@ludvigms.json
+  L-CD@ludvigms (lift, DINO at query time): 16 queries
+    recycling bin                HIT  0.06 m    peak 0.764  15427 ms
+    blue trash can               HIT  0.10 m    peak 0.749  2771 ms
+    office chair                 HIT  0.37 m    peak 0.624  2784 ms
+    swivel chair                 HIT  0.46 m    peak 0.591  2756 ms
+    grandfather clock            HIT  0.03 m    peak 0.705  2778 ms
+    clock                        HIT  0.06 m    peak 0.688  2756 ms
+    children's road play mat     HIT  0.17 m    peak 0.782  2772 ms
+    camera tripod                MISS           peak 0.523  2720 ms
+    purple foam mat              HIT  0.23 m    peak 0.740  2778 ms
+    white bucket                 MISS 1.85 m    peak 0.594  2781 ms
+    glass door cabinet           HIT  0.33 m    peak 0.688  2755 ms
+    hose reel                    MISS 5.58 m    peak 0.668  2776 ms
+    moving box                   HIT  0.27 m    peak 0.753  2798 ms
+    bicycle                      NEG ok         peak 0.517  2733 ms
+    sofa                         NEG ok         peak 0.411  2756 ms
+    ceiling fan                  NEG fp         peak 0.678  2915 ms
+  L-CD@ludvigms: hits 10/13, median error 0.249 m, negatives fp 0.333, AUROC 0.872 → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/backroom/semantics/2026-09-26_190524/eval/L-CD@ludvigms.json
+  L-C@occampyr (lift): 16 queries
+    recycling bin                HIT  0.11 m    peak 0.743  1221 ms
+    blue trash can               HIT  0.12 m    peak 0.710  710 ms
+    office chair                 HIT  0.42 m    peak 0.580  726 ms
+    swivel chair                 MISS           peak 0.549  724 ms
+    grandfather clock            HIT  0.06 m    peak 0.685  735 ms
+    clock                        HIT  0.06 m    peak 0.668  711 ms
+    children's road play mat     HIT  0.18 m    peak 0.751  714 ms
+    camera tripod                MISS           peak 0.518  704 ms
+    purple foam mat              HIT  0.27 m    peak 0.715  711 ms
+    white bucket                 MISS 1.79 m    peak 0.570  727 ms
+    glass door cabinet           HIT  0.25 m    peak 0.679  726 ms
+    hose reel                    HIT  0.07 m    peak 0.638  730 ms
+    moving box                   HIT  0.27 m    peak 0.714  722 ms
+    bicycle                      NEG ok         peak 0.521  723 ms
+    sofa                         NEG ok         peak 0.395  710 ms
+    ceiling fan                  NEG fp         peak 0.662  743 ms
+  L-C@occampyr: hits 10/13, median error 0.184 m, negatives fp 0.333, AUROC 0.846 → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/backroom/semantics/2026-09-26_190524/eval/L-C@occampyr.json
+  L-CD@occampyr (lift, DINO at query time): 16 queries
+    recycling bin                HIT  0.11 m    peak 0.729  10965 ms
+    blue trash can               HIT  0.12 m    peak 0.692  802 ms
+    office chair                 HIT  0.42 m    peak 0.554  790 ms
+    swivel chair                 MISS           peak 0.517  796 ms
+    grandfather clock            HIT  0.04 m    peak 0.667  788 ms
+    clock                        HIT  0.07 m    peak 0.653  791 ms
+    children's road play mat     HIT  0.17 m    peak 0.705  806 ms
+    camera tripod                MISS           peak 0.505  785 ms
+    purple foam mat              HIT  0.32 m    peak 0.680  802 ms
+    white bucket                 MISS           peak 0.549  804 ms
+    glass door cabinet           HIT  0.26 m    peak 0.654  809 ms
+    hose reel                    HIT  0.05 m    peak 0.623  795 ms
+    moving box                   HIT  0.27 m    peak 0.687  829 ms
+    bicycle                      NEG ok         peak 0.495  811 ms
+    sofa                         NEG ok         peak 0.372  781 ms
+    ceiling fan                  NEG fp         peak 0.649  864 ms
+  L-CD@occampyr: hits 10/13, median error 0.147 m, negatives fp 0.333, AUROC 0.872 → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/backroom/semantics/2026-09-26_190524/eval/L-CD@occampyr.json
+  L-C@occamms (lift): 16 queries
+    recycling bin                HIT  0.04 m    peak 0.786  7661 ms
+    blue trash can               HIT  0.09 m    peak 0.770  2698 ms
+    office chair                 MISS 0.78 m    peak 0.679  2688 ms
+    swivel chair                 MISS 0.82 m    peak 0.650  2729 ms
+    grandfather clock            HIT  0.05 m    peak 0.723  2700 ms
+    clock                        HIT  0.07 m    peak 0.704  2682 ms
+    children's road play mat     HIT  0.16 m    peak 0.801  2693 ms
+    camera tripod                HIT  0.34 m    peak 0.554  2705 ms
+    purple foam mat              HIT  0.26 m    peak 0.758  2708 ms
+    white bucket                 MISS 1.78 m    peak 0.616  2715 ms
+    glass door cabinet           HIT  0.25 m    peak 0.730  2727 ms
+    hose reel                    MISS 5.62 m    peak 0.692  2704 ms
+    moving box                   HIT  0.27 m    peak 0.764  2703 ms
+    bicycle                      NEG fp         peak 0.556  2686 ms
+    sofa                         NEG ok         peak 0.430  2745 ms
+    ceiling fan                  NEG fp         peak 0.692  2800 ms
+  L-C@occamms: hits 9/13, median error 0.264 m, negatives fp 0.667, AUROC 0.872 → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/backroom/semantics/2026-09-26_190524/eval/L-C@occamms.json
+  L-CD@occamms (lift, DINO at query time): 16 queries
+    recycling bin                HIT  0.05 m    peak 0.778  17875 ms
+    blue trash can               HIT  0.08 m    peak 0.754  2822 ms
+    office chair                 HIT  0.53 m    peak 0.620  2797 ms
+    swivel chair                 MISS 0.81 m    peak 0.572  2822 ms
+    grandfather clock            HIT  0.03 m    peak 0.709  2798 ms
+    clock                        HIT  0.06 m    peak 0.691  2802 ms
+    children's road play mat     HIT  0.13 m    peak 0.713  2818 ms
+    camera tripod                MISS           peak 0.520  2796 ms
+    purple foam mat              HIT  0.31 m    peak 0.721  2784 ms
+    white bucket                 MISS 1.84 m    peak 0.585  2781 ms
+    glass door cabinet           HIT  0.25 m    peak 0.700  2787 ms
+    hose reel                    MISS 5.69 m    peak 0.672  2840 ms
+    moving box                   HIT  0.27 m    peak 0.747  2847 ms
+    bicycle                      NEG ok         peak 0.525  2762 ms
+    sofa                         NEG ok         peak 0.414  2785 ms
+    ceiling fan                  NEG fp         peak 0.678  2870 ms
+  L-CD@occamms: hits 9/13, median error 0.263 m, negatives fp 0.333, AUROC 0.846 → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/backroom/semantics/2026-09-26_190524/eval/L-CD@occamms.json
+  L-C@pyr (lift): 19 queries
+    armchair                     MISS           peak 0.529  9511 ms
+    upholstered chair            MISS           peak 0.506  566 ms
+    whiteboard                   HIT  0.11 m    peak 0.713  601 ms
+    computer monitor             HIT  0.13 m    peak 0.617  527 ms
+    keyboard                     MISS           peak 0.491  533 ms
+    floor lamp                   MISS           peak 0.513  535 ms
+    red cup                      HIT  0.04 m    peak 0.712  530 ms
+    water bottle                 HIT  0.03 m    peak 0.604  526 ms
+    water jug                    MISS 0.76 m    peak 0.590  526 ms
+    round table                  HIT  0.64 m    peak 0.583  532 ms
+    drone gate                   MISS 4.84 m    peak 0.609  537 ms
+    PVC pipe frame               HIT  0.67 m    peak 0.746  589 ms
+    poster                       HIT  0.32 m    peak 0.640  572 ms
+    garden cart                  HIT  0.19 m    peak 0.621  527 ms
+    wheelbarrow                  HIT  0.18 m    peak 0.621  542 ms
+    cardboard box                HIT  0.24 m    peak 0.619  531 ms
+    red tool chest               NEG ok         peak 0.501  527 ms
+    recycling bin                NEG fp         peak 0.544  534 ms
+    bicycle                      NEG ok         peak 0.477  529 ms
+  L-C@pyr: hits 10/16, median error 0.217 m, negatives fp 0.333, AUROC 0.896 → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/flightroom/semantics/2026-09-29_163855/eval/L-C@pyr.json
+  L-CD@pyr (lift, DINO at query time): 19 queries
+    armchair                     MISS           peak 0.514  7505 ms
+    upholstered chair            MISS           peak 0.492  592 ms
+    whiteboard                   HIT  0.11 m    peak 0.703  603 ms
+    computer monitor             HIT  0.14 m    peak 0.609  580 ms
+    keyboard                     MISS           peak 0.488  583 ms
+    floor lamp                   MISS           peak 0.496  589 ms
+    red cup                      HIT  0.04 m    peak 0.701  588 ms
+    water bottle                 HIT  0.03 m    peak 0.590  586 ms
+    water jug                    MISS 0.76 m    peak 0.579  588 ms
+    round table                  HIT  0.63 m    peak 0.576  579 ms
+    drone gate                   MISS 4.80 m    peak 0.602  582 ms
+    PVC pipe frame               HIT  0.68 m    peak 0.740  620 ms
+    poster                       HIT  0.21 m    peak 0.631  588 ms
+    garden cart                  HIT  0.21 m    peak 0.609  590 ms
+    wheelbarrow                  HIT  0.20 m    peak 0.610  582 ms
+    cardboard box                HIT  0.29 m    peak 0.587  600 ms
+    red tool chest               NEG ok         peak 0.491  616 ms
+    recycling bin                NEG ok         peak 0.530  578 ms
+    bicycle                      NEG ok         peak 0.470  591 ms
+  L-CD@pyr: hits 10/16, median error 0.212 m, negatives fp 0.0, AUROC 0.896 → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/flightroom/semantics/2026-09-29_163855/eval/L-CD@pyr.json
+  L-C@ludvigpyr (lift): 19 queries
+    armchair                     MISS           peak 0.529  2350 ms
+    upholstered chair            MISS           peak 0.506  520 ms
+    whiteboard                   HIT  0.11 m    peak 0.713  537 ms
+    computer monitor             HIT  0.13 m    peak 0.617  530 ms
+    keyboard                     MISS           peak 0.491  521 ms
+    floor lamp                   MISS           peak 0.513  522 ms
+    red cup                      HIT  0.04 m    peak 0.712  524 ms
+    water bottle                 HIT  0.03 m    peak 0.604  522 ms
+    water jug                    MISS 0.76 m    peak 0.590  523 ms
+    round table                  HIT  0.64 m    peak 0.583  525 ms
+    drone gate                   MISS 4.84 m    peak 0.609  527 ms
+    PVC pipe frame               HIT  0.67 m    peak 0.746  575 ms
+    poster                       HIT  0.32 m    peak 0.640  562 ms
+    garden cart                  HIT  0.19 m    peak 0.621  534 ms
+    wheelbarrow                  HIT  0.18 m    peak 0.621  546 ms
+    cardboard box                HIT  0.24 m    peak 0.619  528 ms
+    red tool chest               NEG ok         peak 0.501  520 ms
+    recycling bin                NEG fp         peak 0.544  530 ms
+    bicycle                      NEG ok         peak 0.477  531 ms
+  L-C@ludvigpyr: hits 10/16, median error 0.217 m, negatives fp 0.333, AUROC 0.896 → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/flightroom/semantics/2026-09-29_163855/eval/L-C@ludvigpyr.json
+  L-CD@ludvigpyr (lift, DINO at query time): 19 queries
+    armchair                     MISS           peak 0.514  7542 ms
+    upholstered chair            MISS           peak 0.492  578 ms
+    whiteboard                   HIT  0.11 m    peak 0.703  604 ms
+    computer monitor             HIT  0.14 m    peak 0.609  584 ms
+    keyboard                     MISS           peak 0.488  590 ms
+    floor lamp                   MISS           peak 0.496  583 ms
+    red cup                      HIT  0.04 m    peak 0.701  589 ms
+    water bottle                 HIT  0.03 m    peak 0.590  588 ms
+    water jug                    MISS 0.76 m    peak 0.579  580 ms
+    round table                  HIT  0.63 m    peak 0.576  584 ms
+    drone gate                   MISS 4.80 m    peak 0.602  587 ms
+    PVC pipe frame               HIT  0.68 m    peak 0.740  605 ms
+    poster                       HIT  0.21 m    peak 0.631  589 ms
+    garden cart                  HIT  0.21 m    peak 0.609  580 ms
+    wheelbarrow                  HIT  0.20 m    peak 0.610  584 ms
+    cardboard box                HIT  0.29 m    peak 0.587  592 ms
+    red tool chest               NEG ok         peak 0.491  596 ms
+    recycling bin                NEG ok         peak 0.530  579 ms
+    bicycle                      NEG ok         peak 0.470  583 ms
+  L-CD@ludvigpyr: hits 10/16, median error 0.212 m, negatives fp 0.0, AUROC 0.896 → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/flightroom/semantics/2026-09-29_163855/eval/L-CD@ludvigpyr.json
+  L-C@ludvigms (lift): 19 queries
+    armchair                     HIT  0.49 m    peak 0.582  2140 ms
+    upholstered chair            HIT  0.55 m    peak 0.553  1943 ms
+    whiteboard                   HIT  0.05 m    peak 0.762  2014 ms
+    computer monitor             HIT  0.13 m    peak 0.664  1927 ms
+    keyboard                     MISS           peak 0.522  1957 ms
+    floor lamp                   MISS           peak 0.562  1929 ms
+    red cup                      HIT  0.05 m    peak 0.746  1940 ms
+    water bottle                 HIT  0.04 m    peak 0.652  1934 ms
+    water jug                    HIT  0.75 m    peak 0.634  1932 ms
+    round table                  HIT  0.62 m    peak 0.640  1997 ms
+    drone gate                   MISS 4.96 m    peak 0.680  1931 ms
+    PVC pipe frame               HIT  0.65 m    peak 0.823  2054 ms
+    poster                       HIT  0.26 m    peak 0.738  1920 ms
+    garden cart                  HIT  0.21 m    peak 0.701  1932 ms
+    wheelbarrow                  HIT  0.22 m    peak 0.685  1971 ms
+    cardboard box                HIT  0.24 m    peak 0.660  1954 ms
+    red tool chest               NEG ok         peak 0.520  1951 ms
+    recycling bin                NEG fp         peak 0.594  1944 ms
+    bicycle                      NEG ok         peak 0.526  1929 ms
+  L-C@ludvigms: hits 13/16, median error 0.249 m, negatives fp 0.333, AUROC 0.896 → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/flightroom/semantics/2026-09-29_163855/eval/L-C@ludvigms.json
+  L-CD@ludvigms (lift, DINO at query time): 19 queries
+    armchair                     HIT  0.56 m    peak 0.556  8983 ms
+    upholstered chair            HIT  0.67 m    peak 0.538  2002 ms
+    whiteboard                   HIT  0.06 m    peak 0.749  2047 ms
+    computer monitor             HIT  0.14 m    peak 0.655  1981 ms
+    keyboard                     MISS           peak 0.518  2009 ms
+    floor lamp                   MISS           peak 0.536  2019 ms
+    red cup                      HIT  0.05 m    peak 0.733  2014 ms
+    water bottle                 HIT  0.04 m    peak 0.635  2023 ms
+    water jug                    MISS 0.75 m    peak 0.619  2036 ms
+    round table                  HIT  0.64 m    peak 0.623  2027 ms
+    drone gate                   MISS 4.97 m    peak 0.672  2020 ms
+    PVC pipe frame               HIT  0.66 m    peak 0.817  2072 ms
+    poster                       HIT  0.24 m    peak 0.717  1993 ms
+    garden cart                  HIT  0.20 m    peak 0.660  1990 ms
+    wheelbarrow                  HIT  0.18 m    peak 0.658  1990 ms
+    cardboard box                HIT  0.27 m    peak 0.625  1996 ms
+    red tool chest               NEG ok         peak 0.511  1996 ms
+    recycling bin                NEG fp         peak 0.563  2001 ms
+    bicycle                      NEG ok         peak 0.513  2008 ms
+  L-CD@ludvigms: hits 12/16, median error 0.253 m, negatives fp 0.333, AUROC 0.917 → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/flightroom/semantics/2026-09-29_163855/eval/L-CD@ludvigms.json
+  L-C@occampyr (lift): 19 queries
+    armchair                     HIT  0.62 m    peak 0.535  691 ms
+    upholstered chair            MISS           peak 0.511  530 ms
+    whiteboard                   HIT  0.09 m    peak 0.716  579 ms
+    computer monitor             HIT  0.15 m    peak 0.617  543 ms
+    keyboard                     MISS           peak 0.497  535 ms
+    floor lamp                   MISS           peak 0.528  539 ms
+    red cup                      HIT  0.04 m    peak 0.679  536 ms
+    water bottle                 HIT  0.04 m    peak 0.561  540 ms
+    water jug                    MISS 0.75 m    peak 0.560  538 ms
+    round table                  HIT  0.54 m    peak 0.585  549 ms
+    drone gate                   MISS 4.86 m    peak 0.626  548 ms
+    PVC pipe frame               HIT  0.63 m    peak 0.752  556 ms
+    poster                       HIT  0.24 m    peak 0.650  532 ms
+    garden cart                  HIT  0.15 m    peak 0.618  538 ms
+    wheelbarrow                  HIT  0.18 m    peak 0.629  551 ms
+    cardboard box                HIT  0.14 m    peak 0.617  535 ms
+    red tool chest               NEG ok         peak 0.490  530 ms
+    recycling bin                NEG fp         peak 0.541  535 ms
+    bicycle                      NEG ok         peak 0.475  532 ms
+  L-C@occampyr: hits 11/16, median error 0.176 m, negatives fp 0.333, AUROC 0.917 → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/flightroom/semantics/2026-09-29_163855/eval/L-C@occampyr.json
+  L-CD@occampyr (lift, DINO at query time): 19 queries
+    armchair                     MISS           peak 0.510  7551 ms
+    upholstered chair            MISS           peak 0.490  586 ms
+    whiteboard                   HIT  0.10 m    peak 0.687  600 ms
+    computer monitor             HIT  0.20 m    peak 0.607  587 ms
+    keyboard                     MISS           peak 0.491  581 ms
+    floor lamp                   MISS           peak 0.496  584 ms
+    red cup                      HIT  0.04 m    peak 0.659  604 ms
+    water bottle                 MISS           peak 0.534  588 ms
+    water jug                    MISS           peak 0.532  579 ms
+    round table                  HIT  0.54 m    peak 0.567  583 ms
+    drone gate                   MISS 4.77 m    peak 0.610  597 ms
+    PVC pipe frame               HIT  0.66 m    peak 0.739  605 ms
+    poster                       HIT  0.21 m    peak 0.629  606 ms
+    garden cart                  HIT  0.19 m    peak 0.588  583 ms
+    wheelbarrow                  HIT  0.21 m    peak 0.602  582 ms
+    cardboard box                HIT  0.20 m    peak 0.577  592 ms
+    red tool chest               NEG ok         peak 0.471  576 ms
+    recycling bin                NEG ok         peak 0.511  580 ms
+    bicycle                      NEG ok         peak 0.459  590 ms
+  L-CD@occampyr: hits 9/16, median error 0.205 m, negatives fp 0.0, AUROC 0.917 → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/flightroom/semantics/2026-09-29_163855/eval/L-CD@occampyr.json
+  L-C@occamms (lift): 19 queries
+    armchair                     HIT  0.55 m    peak 0.592  9697 ms
+    upholstered chair            HIT  0.56 m    peak 0.560  1970 ms
+    whiteboard                   HIT  0.01 m    peak 0.768  2041 ms
+    computer monitor             HIT  0.14 m    peak 0.671  1949 ms
+    keyboard                     MISS           peak 0.529  1952 ms
+    floor lamp                   MISS           peak 0.584  1964 ms
+    red cup                      HIT  0.06 m    peak 0.713  1956 ms
+    water bottle                 HIT  0.04 m    peak 0.607  1982 ms
+    water jug                    HIT  0.18 m    peak 0.617  1943 ms
+    round table                  HIT  0.65 m    peak 0.642  1960 ms
+    drone gate                   MISS 4.93 m    peak 0.699  1995 ms
+    PVC pipe frame               HIT  0.65 m    peak 0.825  1988 ms
+    poster                       HIT  0.28 m    peak 0.736  1957 ms
+    garden cart                  HIT  0.18 m    peak 0.691  1973 ms
+    wheelbarrow                  HIT  0.16 m    peak 0.691  1987 ms
+    cardboard box                HIT  0.14 m    peak 0.657  1977 ms
+    red tool chest               NEG ok         peak 0.512  1962 ms
+    recycling bin                NEG fp         peak 0.604  1955 ms
+    bicycle                      NEG ok         peak 0.512  1959 ms
+  L-C@occamms: hits 13/16, median error 0.18 m, negatives fp 0.333, AUROC 0.917 → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/flightroom/semantics/2026-09-29_163855/eval/L-C@occamms.json
+  L-CD@occamms (lift, DINO at query time): 19 queries
+    armchair                     HIT  0.56 m    peak 0.551  23097 ms
+    upholstered chair            MISS           peak 0.524  2478 ms
+    whiteboard                   HIT  0.04 m    peak 0.730  2103 ms
+    computer monitor             HIT  0.17 m    peak 0.654  1996 ms
+    keyboard                     MISS           peak 0.521  1993 ms
+    floor lamp                   MISS           peak 0.536  1996 ms
+    red cup                      HIT  0.05 m    peak 0.688  1995 ms
+    water bottle                 MISS 0.93 m    peak 0.569  2000 ms
+    water jug                    HIT  0.17 m    peak 0.580  1998 ms
+    round table                  HIT  0.64 m    peak 0.599  2022 ms
+    drone gate                   MISS 4.93 m    peak 0.672  2016 ms
+    PVC pipe frame               HIT  0.67 m    peak 0.812  2059 ms
+    poster                       HIT  0.23 m    peak 0.709  2005 ms
+    garden cart                  HIT  0.23 m    peak 0.623  1997 ms
+    wheelbarrow                  HIT  0.22 m    peak 0.631  2001 ms
+    cardboard box                HIT  0.19 m    peak 0.608  1990 ms
+    red tool chest               NEG ok         peak 0.499  1988 ms
+    recycling bin                NEG fp         peak 0.554  2019 ms
+    bicycle                      NEG ok         peak 0.485  2010 ms
+  L-CD@occamms: hits 11/16, median error 0.226 m, negatives fp 0.333, AUROC 0.917 → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/flightroom/semantics/2026-09-29_163855/eval/L-CD@occamms.json
+backroom Old floor 0.46: hits 11/13, negatives with a candidate ['bicycle', 'ceiling fan']
+backroom Old floor 0.48: hits 11/13, negatives with a candidate ['bicycle', 'ceiling fan']
+backroom Old floor 0.5: hits 11/13, negatives with a candidate ['bicycle', 'ceiling fan']
+backroom Old floor 0.51: hits 11/13, negatives with a candidate ['ceiling fan']
+backroom Old floor 0.52: hits 11/13, negatives with a candidate ['ceiling fan']
+backroom Old floor 0.525: hits 11/13, negatives with a candidate ['ceiling fan']
+backroom Old floor 0.53: hits 11/13, negatives with a candidate ['ceiling fan']
+backroom Old floor 0.54: hits 11/13, negatives with a candidate ['ceiling fan']
+backroom Old floor 0.55: hits 10/13, negatives with a candidate ['ceiling fan']
+backroom Old floor 0.575: hits 9/13, negatives with a candidate ['ceiling fan']
+backroom Old floor 0.6: hits 9/13, negatives with a candidate ['ceiling fan']
+backroom A floor 0.46: hits 10/13, negatives with a candidate ['bicycle', 'ceiling fan']
+backroom A floor 0.48: hits 10/13, negatives with a candidate ['bicycle', 'ceiling fan']
+backroom A floor 0.5: hits 10/13, negatives with a candidate ['bicycle', 'ceiling fan']
+backroom A floor 0.51: hits 10/13, negatives with a candidate ['bicycle', 'ceiling fan']
+backroom A floor 0.52: hits 10/13, negatives with a candidate ['bicycle', 'ceiling fan']
+backroom A floor 0.525: hits 10/13, negatives with a candidate ['bicycle', 'ceiling fan']
+backroom A floor 0.53: hits 10/13, negatives with a candidate ['bicycle', 'ceiling fan']
+backroom A floor 0.54: hits 10/13, negatives with a candidate ['bicycle', 'ceiling fan']
+backroom A floor 0.55: hits 9/13, negatives with a candidate ['ceiling fan']
+backroom A floor 0.575: hits 9/13, negatives with a candidate ['ceiling fan']
+backroom A floor 0.6: hits 8/13, negatives with a candidate ['ceiling fan']
+backroom LUDVIG-Old floor 0.46: hits 11/13, negatives with a candidate ['bicycle', 'ceiling fan']
+backroom LUDVIG-Old floor 0.48: hits 11/13, negatives with a candidate ['bicycle', 'ceiling fan']
+backroom LUDVIG-Old floor 0.5: hits 11/13, negatives with a candidate ['bicycle', 'ceiling fan']
+backroom LUDVIG-Old floor 0.51: hits 11/13, negatives with a candidate ['ceiling fan']
+backroom LUDVIG-Old floor 0.52: hits 11/13, negatives with a candidate ['ceiling fan']
+backroom LUDVIG-Old floor 0.525: hits 11/13, negatives with a candidate ['ceiling fan']
+backroom LUDVIG-Old floor 0.53: hits 11/13, negatives with a candidate ['ceiling fan']
+backroom LUDVIG-Old floor 0.54: hits 11/13, negatives with a candidate ['ceiling fan']
+backroom LUDVIG-Old floor 0.55: hits 10/13, negatives with a candidate ['ceiling fan']
+backroom LUDVIG-Old floor 0.575: hits 9/13, negatives with a candidate ['ceiling fan']
+backroom LUDVIG-Old floor 0.6: hits 9/13, negatives with a candidate ['ceiling fan']
+backroom LUDVIG-A floor 0.46: hits 10/13, negatives with a candidate ['bicycle', 'ceiling fan']
+backroom LUDVIG-A floor 0.48: hits 10/13, negatives with a candidate ['bicycle', 'ceiling fan']
+backroom LUDVIG-A floor 0.5: hits 10/13, negatives with a candidate ['bicycle', 'ceiling fan']
+backroom LUDVIG-A floor 0.51: hits 10/13, negatives with a candidate ['bicycle', 'ceiling fan']
+backroom LUDVIG-A floor 0.52: hits 10/13, negatives with a candidate ['bicycle', 'ceiling fan']
+backroom LUDVIG-A floor 0.525: hits 10/13, negatives with a candidate ['bicycle', 'ceiling fan']
+backroom LUDVIG-A floor 0.53: hits 10/13, negatives with a candidate ['bicycle', 'ceiling fan']
+backroom LUDVIG-A floor 0.54: hits 10/13, negatives with a candidate ['bicycle', 'ceiling fan']
+backroom LUDVIG-A floor 0.55: hits 9/13, negatives with a candidate ['ceiling fan']
+backroom LUDVIG-A floor 0.575: hits 9/13, negatives with a candidate ['ceiling fan']
+backroom LUDVIG-A floor 0.6: hits 8/13, negatives with a candidate ['ceiling fan']
+backroom Occam-Old floor 0.46: hits 11/13, negatives with a candidate ['bicycle', 'ceiling fan']
+backroom Occam-Old floor 0.48: hits 11/13, negatives with a candidate ['bicycle', 'ceiling fan']
+backroom Occam-Old floor 0.5: hits 11/13, negatives with a candidate ['bicycle', 'ceiling fan']
+backroom Occam-Old floor 0.51: hits 11/13, negatives with a candidate ['bicycle', 'ceiling fan']
+backroom Occam-Old floor 0.52: hits 11/13, negatives with a candidate ['bicycle', 'ceiling fan']
+backroom Occam-Old floor 0.525: hits 11/13, negatives with a candidate ['bicycle', 'ceiling fan']
+backroom Occam-Old floor 0.53: hits 11/13, negatives with a candidate ['bicycle', 'ceiling fan']
+backroom Occam-Old floor 0.54: hits 10/13, negatives with a candidate ['ceiling fan']
+backroom Occam-Old floor 0.55: hits 10/13, negatives with a candidate ['ceiling fan']
+backroom Occam-Old floor 0.575: hits 9/13, negatives with a candidate ['ceiling fan']
+backroom Occam-Old floor 0.6: hits 9/13, negatives with a candidate ['ceiling fan']
+backroom Occam-A floor 0.46: hits 10/13, negatives with a candidate ['bicycle', 'ceiling fan']
+backroom Occam-A floor 0.48: hits 10/13, negatives with a candidate ['bicycle', 'ceiling fan']
+backroom Occam-A floor 0.5: hits 10/13, negatives with a candidate ['bicycle', 'ceiling fan']
+backroom Occam-A floor 0.51: hits 10/13, negatives with a candidate ['bicycle', 'ceiling fan']
+backroom Occam-A floor 0.52: hits 10/13, negatives with a candidate ['bicycle', 'ceiling fan']
+backroom Occam-A floor 0.525: hits 10/13, negatives with a candidate ['bicycle', 'ceiling fan']
+backroom Occam-A floor 0.53: hits 10/13, negatives with a candidate ['bicycle', 'ceiling fan']
+backroom Occam-A floor 0.54: hits 10/13, negatives with a candidate ['bicycle', 'ceiling fan']
+backroom Occam-A floor 0.55: hits 9/13, negatives with a candidate ['bicycle', 'ceiling fan']
+backroom Occam-A floor 0.575: hits 8/13, negatives with a candidate ['ceiling fan']
+backroom Occam-A floor 0.6: hits 8/13, negatives with a candidate ['ceiling fan']
+flightroom Old floor 0.46: hits 13/16, negatives with a candidate ['red tool chest', 'recycling bin', 'bicycle']
+flightroom Old floor 0.48: hits 13/16, negatives with a candidate ['red tool chest', 'recycling bin', 'bicycle']
+flightroom Old floor 0.5: hits 12/16, negatives with a candidate ['red tool chest', 'recycling bin']
+flightroom Old floor 0.51: hits 12/16, negatives with a candidate ['recycling bin']
+flightroom Old floor 0.52: hits 11/16, negatives with a candidate ['recycling bin']
+flightroom Old floor 0.525: hits 11/16, negatives with a candidate ['recycling bin']
+flightroom Old floor 0.53: hits 11/16, negatives with a candidate ['recycling bin']
+flightroom Old floor 0.54: hits 11/16, negatives with a candidate ['recycling bin']
+flightroom Old floor 0.55: hits 10/16, negatives with a candidate ['recycling bin']
+flightroom Old floor 0.575: hits 10/16, negatives with a candidate []
+flightroom Old floor 0.6: hits 9/16, negatives with a candidate []
+flightroom A floor 0.46: hits 14/16, negatives with a candidate ['red tool chest', 'recycling bin', 'bicycle']
+flightroom A floor 0.48: hits 14/16, negatives with a candidate ['red tool chest', 'recycling bin', 'bicycle']
+flightroom A floor 0.5: hits 14/16, negatives with a candidate ['red tool chest', 'recycling bin', 'bicycle']
+flightroom A floor 0.51: hits 14/16, negatives with a candidate ['red tool chest', 'recycling bin', 'bicycle']
+flightroom A floor 0.52: hits 14/16, negatives with a candidate ['red tool chest', 'recycling bin', 'bicycle']
+flightroom A floor 0.525: hits 14/16, negatives with a candidate ['red tool chest', 'recycling bin', 'bicycle']
+flightroom A floor 0.53: hits 13/16, negatives with a candidate ['recycling bin', 'bicycle']
+flightroom A floor 0.54: hits 13/16, negatives with a candidate ['recycling bin']
+flightroom A floor 0.55: hits 13/16, negatives with a candidate ['recycling bin']
+flightroom A floor 0.575: hits 12/16, negatives with a candidate ['recycling bin']
+flightroom A floor 0.6: hits 11/16, negatives with a candidate []
+flightroom LUDVIG-Old floor 0.46: hits 13/16, negatives with a candidate ['red tool chest', 'recycling bin', 'bicycle']
+flightroom LUDVIG-Old floor 0.48: hits 13/16, negatives with a candidate ['red tool chest', 'recycling bin', 'bicycle']
+flightroom LUDVIG-Old floor 0.5: hits 12/16, negatives with a candidate ['red tool chest', 'recycling bin']
+flightroom LUDVIG-Old floor 0.51: hits 12/16, negatives with a candidate ['recycling bin']
+flightroom LUDVIG-Old floor 0.52: hits 11/16, negatives with a candidate ['recycling bin']
+flightroom LUDVIG-Old floor 0.525: hits 11/16, negatives with a candidate ['recycling bin']
+flightroom LUDVIG-Old floor 0.53: hits 11/16, negatives with a candidate ['recycling bin']
+flightroom LUDVIG-Old floor 0.54: hits 11/16, negatives with a candidate ['recycling bin']
+flightroom LUDVIG-Old floor 0.55: hits 10/16, negatives with a candidate ['recycling bin']
+flightroom LUDVIG-Old floor 0.575: hits 10/16, negatives with a candidate []
+flightroom LUDVIG-Old floor 0.6: hits 9/16, negatives with a candidate []
+flightroom LUDVIG-A floor 0.46: hits 14/16, negatives with a candidate ['red tool chest', 'recycling bin', 'bicycle']
+flightroom LUDVIG-A floor 0.48: hits 14/16, negatives with a candidate ['red tool chest', 'recycling bin', 'bicycle']
+flightroom LUDVIG-A floor 0.5: hits 14/16, negatives with a candidate ['red tool chest', 'recycling bin', 'bicycle']
+flightroom LUDVIG-A floor 0.51: hits 14/16, negatives with a candidate ['red tool chest', 'recycling bin', 'bicycle']
+flightroom LUDVIG-A floor 0.52: hits 14/16, negatives with a candidate ['red tool chest', 'recycling bin', 'bicycle']
+flightroom LUDVIG-A floor 0.525: hits 14/16, negatives with a candidate ['red tool chest', 'recycling bin', 'bicycle']
+flightroom LUDVIG-A floor 0.53: hits 13/16, negatives with a candidate ['recycling bin', 'bicycle']
+flightroom LUDVIG-A floor 0.54: hits 13/16, negatives with a candidate ['recycling bin']
+flightroom LUDVIG-A floor 0.55: hits 13/16, negatives with a candidate ['recycling bin']
+flightroom LUDVIG-A floor 0.575: hits 12/16, negatives with a candidate ['recycling bin']
+flightroom LUDVIG-A floor 0.6: hits 11/16, negatives with a candidate []
+flightroom Occam-Old floor 0.46: hits 13/16, negatives with a candidate ['red tool chest', 'recycling bin']
+flightroom Occam-Old floor 0.48: hits 13/16, negatives with a candidate ['red tool chest', 'recycling bin']
+flightroom Occam-Old floor 0.5: hits 13/16, negatives with a candidate ['recycling bin']
+flightroom Occam-Old floor 0.51: hits 12/16, negatives with a candidate ['recycling bin']
+flightroom Occam-Old floor 0.52: hits 12/16, negatives with a candidate ['recycling bin']
+flightroom Occam-Old floor 0.525: hits 12/16, negatives with a candidate ['recycling bin']
+flightroom Occam-Old floor 0.53: hits 11/16, negatives with a candidate ['recycling bin']
+flightroom Occam-Old floor 0.54: hits 11/16, negatives with a candidate ['recycling bin']
+flightroom Occam-Old floor 0.55: hits 11/16, negatives with a candidate ['recycling bin']
+flightroom Occam-Old floor 0.575: hits 10/16, negatives with a candidate []
+flightroom Occam-Old floor 0.6: hits 8/16, negatives with a candidate []
+flightroom Occam-A floor 0.46: hits 14/16, negatives with a candidate ['red tool chest', 'recycling bin', 'bicycle']
+flightroom Occam-A floor 0.48: hits 14/16, negatives with a candidate ['red tool chest', 'recycling bin', 'bicycle']
+flightroom Occam-A floor 0.5: hits 14/16, negatives with a candidate ['red tool chest', 'recycling bin']
+flightroom Occam-A floor 0.51: hits 14/16, negatives with a candidate ['red tool chest', 'recycling bin']
+flightroom Occam-A floor 0.52: hits 14/16, negatives with a candidate ['recycling bin']
+flightroom Occam-A floor 0.525: hits 14/16, negatives with a candidate ['recycling bin']
+flightroom Occam-A floor 0.53: hits 14/16, negatives with a candidate ['recycling bin']
+flightroom Occam-A floor 0.54: hits 13/16, negatives with a candidate ['recycling bin']
+flightroom Occam-A floor 0.55: hits 13/16, negatives with a candidate ['recycling bin']
+flightroom Occam-A floor 0.575: hits 13/16, negatives with a candidate ['recycling bin']
+flightroom Occam-A floor 0.6: hits 11/16, negatives with a candidate []
+ALL_DONE

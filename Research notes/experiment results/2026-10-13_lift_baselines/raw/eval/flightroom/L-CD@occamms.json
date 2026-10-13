@@ -1,0 +1,762 @@
+{
+  "scene": "flightroom",
+  "run": "2026-09-29_163855",
+  "key": "2026-09-29_163855-step-000029999-1790681982",
+  "variant": "L-CD@occamms",
+  "backend": "lift",
+  "set": "phase5",
+  "settings": {
+    "threshold": 0.55,
+    "rel_alpha": 0.5,
+    "peak_k": 100,
+    "large_diag": 4.0,
+    "min_opacity": 0.1,
+    "voxel": 0.1,
+    "min_gaussians": 15,
+    "top": 5,
+    "standoff": 1.0,
+    "margin": 0.5,
+    "body_radius": 0.19,
+    "min_gap": 0.15,
+    "clearance_k": 5,
+    "view_cos": 0.82,
+    "ambiguous_margin": 0.25,
+    "negatives": [
+      "object",
+      "things",
+      "stuff",
+      "texture"
+    ],
+    "dino_diffuse": true,
+    "diffuse_k": 16,
+    "diffuse_alpha": 0.5,
+    "diffuse_iters": 2,
+    "dino_split": true,
+    "split_cos": 0.5,
+    "scale_select": true
+  },
+  "metrics": {
+    "n_pos": 16,
+    "n_neg": 3,
+    "hit_rate": 0.688,
+    "hits": 11,
+    "error_median_m": 0.226,
+    "error_p90_m": 0.879,
+    "ambiguous_rate": 0.125,
+    "feasible_rate": 0.727,
+    "neg_fp_rate": 0.333,
+    "neg_auroc": 0.917,
+    "query_ms_median": 2001,
+    "failures": {
+      "no candidate": 3,
+      "bad position": 1,
+      "wrong object": 1
+    },
+    "build_min": 1.2,
+    "peak_vram_gb": 2.63,
+    "table_mb": 1771.0,
+    "teachers_min": null
+  },
+  "records": [
+    {
+      "text": "armchair",
+      "negative": false,
+      "n_candidates": 1,
+      "peak": 0.5508,
+      "tau": 0.5504,
+      "ambiguous": false,
+      "margin": 1.0,
+      "top": {
+        "centroid": [
+          3.537,
+          0.445,
+          -0.307
+        ],
+        "box": {
+          "lo": [
+            3.483,
+            0.226,
+            -0.432
+          ],
+          "hi": [
+            3.569,
+            0.61,
+            -0.167
+          ]
+        },
+        "approach": [
+          2.601,
+          0.092,
+          -0.798
+        ],
+        "gap": -0.117,
+        "gap_ok": false,
+        "n": 41,
+        "score": 0.6569
+      },
+      "gap_ok": false,
+      "ms": 23097,
+      "hit": true,
+      "error": 0.56,
+      "inside_box": false,
+      "rank_of_hit": 1,
+      "instance": 0,
+      "failure": null
+    },
+    {
+      "text": "upholstered chair",
+      "negative": false,
+      "n_candidates": 0,
+      "peak": 0.5236,
+      "tau": 0.55,
+      "ambiguous": false,
+      "margin": null,
+      "top": null,
+      "gap_ok": null,
+      "ms": 2478,
+      "hit": false,
+      "error": null,
+      "rank_of_hit": null,
+      "instance": null,
+      "failure": "no candidate"
+    },
+    {
+      "text": "whiteboard",
+      "negative": false,
+      "n_candidates": 5,
+      "peak": 0.7301,
+      "tau": 0.6401,
+      "ambiguous": false,
+      "margin": 0.978,
+      "top": {
+        "centroid": [
+          2.668,
+          0.044,
+          -0.939
+        ],
+        "box": {
+          "lo": [
+            2.637,
+            -0.384,
+            -1.431
+          ],
+          "hi": [
+            2.704,
+            0.515,
+            -0.348
+          ]
+        },
+        "approach": [
+          1.675,
+          -0.073,
+          -0.939
+        ],
+        "gap": 0.208,
+        "gap_ok": true,
+        "n": 6250,
+        "score": 264.2133
+      },
+      "gap_ok": true,
+      "ms": 2103,
+      "hit": true,
+      "error": 0.041,
+      "inside_box": true,
+      "rank_of_hit": 1,
+      "instance": 0,
+      "failure": null
+    },
+    {
+      "text": "computer monitor",
+      "negative": false,
+      "n_candidates": 1,
+      "peak": 0.6542,
+      "tau": 0.6021,
+      "ambiguous": false,
+      "margin": 1.0,
+      "top": {
+        "centroid": [
+          3.178,
+          -0.237,
+          -0.802
+        ],
+        "box": {
+          "lo": [
+            2.965,
+            -0.314,
+            -0.964
+          ],
+          "hi": [
+            3.488,
+            -0.049,
+            -0.674
+          ]
+        },
+        "approach": [
+          2.196,
+          -0.424,
+          -0.802
+        ],
+        "gap": 0.175,
+        "gap_ok": true,
+        "n": 758,
+        "score": 15.2533
+      },
+      "gap_ok": true,
+      "ms": 1996,
+      "hit": true,
+      "error": 0.174,
+      "inside_box": true,
+      "rank_of_hit": 1,
+      "instance": 0,
+      "failure": null
+    },
+    {
+      "text": "keyboard",
+      "negative": false,
+      "n_candidates": 0,
+      "peak": 0.5214,
+      "tau": 0.55,
+      "ambiguous": false,
+      "margin": null,
+      "top": null,
+      "gap_ok": null,
+      "ms": 1993,
+      "hit": false,
+      "error": null,
+      "rank_of_hit": null,
+      "instance": null,
+      "failure": "no candidate"
+    },
+    {
+      "text": "floor lamp",
+      "negative": false,
+      "n_candidates": 0,
+      "peak": 0.5356,
+      "tau": 0.55,
+      "ambiguous": false,
+      "margin": null,
+      "top": null,
+      "gap_ok": null,
+      "ms": 1996,
+      "hit": false,
+      "error": null,
+      "rank_of_hit": null,
+      "instance": null,
+      "failure": "no candidate"
+    },
+    {
+      "text": "red cup",
+      "negative": false,
+      "n_candidates": 1,
+      "peak": 0.6876,
+      "tau": 0.6188,
+      "ambiguous": false,
+      "margin": 1.0,
+      "top": {
+        "centroid": [
+          -0.218,
+          -1.553,
+          -0.764
+        ],
+        "box": {
+          "lo": [
+            -0.303,
+            -1.644,
+            -0.827
+          ],
+          "hi": [
+            -0.163,
+            -1.486,
+            -0.692
+          ]
+        },
+        "approach": [
+          -0.399,
+          -0.569,
+          -0.798
+        ],
+        "gap": 0.149,
+        "gap_ok": false,
+        "n": 492,
+        "score": 12.636
+      },
+      "gap_ok": false,
+      "ms": 1995,
+      "hit": true,
+      "error": 0.052,
+      "inside_box": true,
+      "rank_of_hit": 1,
+      "instance": 0,
+      "failure": null
+    },
+    {
+      "text": "water bottle",
+      "negative": false,
+      "n_candidates": 2,
+      "peak": 0.569,
+      "tau": 0.5595,
+      "ambiguous": true,
+      "margin": 0.22,
+      "top": {
+        "centroid": [
+          0.353,
+          -2.121,
+          -0.146
+        ],
+        "box": {
+          "lo": [
+            0.319,
+            -2.197,
+            -0.252
+          ],
+          "hi": [
+            0.374,
+            -2.077,
+            -0.067
+          ]
+        },
+        "approach": [
+          -0.033,
+          -1.199,
+          -0.798
+        ],
+        "gap": -0.001,
+        "gap_ok": false,
+        "n": 36,
+        "score": 0.503
+      },
+      "gap_ok": false,
+      "ms": 2000,
+      "hit": false,
+      "error": 0.93,
+      "inside_box": false,
+      "rank_of_hit": 2,
+      "instance": 0,
+      "failure": "bad position"
+    },
+    {
+      "text": "water jug",
+      "negative": false,
+      "n_candidates": 1,
+      "peak": 0.5802,
+      "tau": 0.5651,
+      "ambiguous": false,
+      "margin": 1.0,
+      "top": {
+        "centroid": [
+          0.348,
+          -2.12,
+          -0.153
+        ],
+        "box": {
+          "lo": [
+            0.287,
+            -2.21,
+            -0.301
+          ],
+          "hi": [
+            0.371,
+            -2.051,
+            -0.066
+          ]
+        },
+        "approach": [
+          -0.038,
+          -1.197,
+          -0.798
+        ],
+        "gap": 0.003,
+        "gap_ok": false,
+        "n": 64,
+        "score": 1.2044
+      },
+      "gap_ok": false,
+      "ms": 1998,
+      "hit": true,
+      "error": 0.175,
+      "inside_box": true,
+      "rank_of_hit": 1,
+      "instance": 0,
+      "failure": null
+    },
+    {
+      "text": "round table",
+      "negative": false,
+      "n_candidates": 5,
+      "peak": 0.5986,
+      "tau": 0.5743,
+      "ambiguous": true,
+      "margin": 0.066,
+      "top": {
+        "centroid": [
+          -0.641,
+          -1.739,
+          -0.619
+        ],
+        "box": {
+          "lo": [
+            -0.763,
+            -1.816,
+            -0.692
+          ],
+          "hi": [
+            -0.548,
+            -1.682,
+            -0.596
+          ]
+        },
+        "approach": [
+          -0.851,
+          -0.761,
+          -0.798
+        ],
+        "gap": 0.251,
+        "gap_ok": true,
+        "n": 109,
+        "score": 1.0617
+      },
+      "gap_ok": true,
+      "ms": 2022,
+      "hit": true,
+      "error": 0.637,
+      "inside_box": false,
+      "rank_of_hit": 1,
+      "instance": 1,
+      "failure": null
+    },
+    {
+      "text": "drone gate",
+      "negative": false,
+      "n_candidates": 4,
+      "peak": 0.6718,
+      "tau": 0.6109,
+      "ambiguous": false,
+      "margin": 0.998,
+      "top": {
+        "centroid": [
+          -7.523,
+          3.506,
+          -1.558
+        ],
+        "box": {
+          "lo": [
+            -8.112,
+            2.929,
+            -2.563
+          ],
+          "hi": [
+            -6.87,
+            4.025,
+            -0.985
+          ]
+        },
+        "approach": [
+          -6.586,
+          2.327,
+          -1.558
+        ],
+        "gap": 0.099,
+        "gap_ok": false,
+        "n": 3681,
+        "score": 76.7179
+      },
+      "gap_ok": false,
+      "ms": 2016,
+      "hit": false,
+      "error": 4.931,
+      "inside_box": false,
+      "rank_of_hit": null,
+      "instance": 0,
+      "failure": "wrong object"
+    },
+    {
+      "text": "PVC pipe frame",
+      "negative": false,
+      "n_candidates": 4,
+      "peak": 0.812,
+      "tau": 0.681,
+      "ambiguous": false,
+      "margin": 0.998,
+      "top": {
+        "centroid": [
+          -5.059,
+          0.186,
+          0.024
+        ],
+        "box": {
+          "lo": [
+            -5.669,
+            -0.553,
+            -0.865
+          ],
+          "hi": [
+            -4.492,
+            0.86,
+            0.338
+          ]
+        },
+        "approach": [
+          -4.092,
+          0.438,
+          -0.798
+        ],
+        "gap": 0.181,
+        "gap_ok": true,
+        "n": 9018,
+        "score": 510.2902
+      },
+      "gap_ok": true,
+      "ms": 2059,
+      "hit": true,
+      "error": 0.673,
+      "inside_box": true,
+      "rank_of_hit": 1,
+      "instance": 0,
+      "failure": null
+    },
+    {
+      "text": "poster",
+      "negative": false,
+      "n_candidates": 2,
+      "peak": 0.7085,
+      "tau": 0.6292,
+      "ambiguous": false,
+      "margin": 0.996,
+      "top": {
+        "centroid": [
+          -4.925,
+          -2.933,
+          -1.048
+        ],
+        "box": {
+          "lo": [
+            -5.426,
+            -3.726,
+            -1.437
+          ],
+          "hi": [
+            -4.435,
+            -2.723,
+            -0.589
+          ]
+        },
+        "approach": [
+          -4.28,
+          -2.031,
+          -1.048
+        ],
+        "gap": 0.285,
+        "gap_ok": true,
+        "n": 3310,
+        "score": 105.2187
+      },
+      "gap_ok": true,
+      "ms": 2005,
+      "hit": true,
+      "error": 0.231,
+      "inside_box": true,
+      "rank_of_hit": 1,
+      "instance": 0,
+      "failure": null
+    },
+    {
+      "text": "garden cart",
+      "negative": false,
+      "n_candidates": 2,
+      "peak": 0.6231,
+      "tau": 0.5866,
+      "ambiguous": false,
+      "margin": 0.955,
+      "top": {
+        "centroid": [
+          -6.656,
+          -2.272,
+          -0.426
+        ],
+        "box": {
+          "lo": [
+            -6.941,
+            -2.456,
+            -0.651
+          ],
+          "hi": [
+            -6.408,
+            -2.156,
+            -0.168
+          ]
+        },
+        "approach": [
+          -5.832,
+          -1.705,
+          -0.798
+        ],
+        "gap": 0.284,
+        "gap_ok": true,
+        "n": 175,
+        "score": 3.8781
+      },
+      "gap_ok": true,
+      "ms": 1997,
+      "hit": true,
+      "error": 0.226,
+      "inside_box": true,
+      "rank_of_hit": 1,
+      "instance": 0,
+      "failure": null
+    },
+    {
+      "text": "wheelbarrow",
+      "negative": false,
+      "n_candidates": 3,
+      "peak": 0.6314,
+      "tau": 0.5907,
+      "ambiguous": false,
+      "margin": 0.851,
+      "top": {
+        "centroid": [
+          -6.617,
+          -2.244,
+          -0.388
+        ],
+        "box": {
+          "lo": [
+            -6.96,
+            -2.421,
+            -0.56
+          ],
+          "hi": [
+            -6.305,
+            -2.152,
+            -0.105
+          ]
+        },
+        "approach": [
+          -5.793,
+          -1.678,
+          -0.798
+        ],
+        "gap": 0.29,
+        "gap_ok": true,
+        "n": 244,
+        "score": 4.725
+      },
+      "gap_ok": true,
+      "ms": 2001,
+      "hit": true,
+      "error": 0.216,
+      "inside_box": true,
+      "rank_of_hit": 1,
+      "instance": 0,
+      "failure": null
+    },
+    {
+      "text": "cardboard box",
+      "negative": false,
+      "n_candidates": 1,
+      "peak": 0.6083,
+      "tau": 0.5791,
+      "ambiguous": false,
+      "margin": 1.0,
+      "top": {
+        "centroid": [
+          -6.624,
+          -2.64,
+          -1.013
+        ],
+        "box": {
+          "lo": [
+            -6.677,
+            -2.887,
+            -1.751
+          ],
+          "hi": [
+            -6.556,
+            -2.417,
+            -0.56
+          ]
+        },
+        "approach": [
+          -5.813,
+          -2.031,
+          -1.013
+        ],
+        "gap": 0.305,
+        "gap_ok": true,
+        "n": 125,
+        "score": 2.559
+      },
+      "gap_ok": true,
+      "ms": 1990,
+      "hit": true,
+      "error": 0.19,
+      "inside_box": true,
+      "rank_of_hit": 1,
+      "instance": 0,
+      "failure": null
+    },
+    {
+      "text": "red tool chest",
+      "negative": true,
+      "n_candidates": 0,
+      "peak": 0.4989,
+      "tau": 0.55,
+      "ambiguous": false,
+      "margin": null,
+      "top": null,
+      "gap_ok": null,
+      "ms": 1988
+    },
+    {
+      "text": "recycling bin",
+      "negative": true,
+      "n_candidates": 1,
+      "peak": 0.5539,
+      "tau": 0.5519,
+      "ambiguous": false,
+      "margin": 1.0,
+      "top": {
+        "centroid": [
+          -6.68,
+          -2.434,
+          -0.565
+        ],
+        "box": {
+          "lo": [
+            -6.734,
+            -2.638,
+            -0.855
+          ],
+          "hi": [
+            -6.648,
+            -2.394,
+            -0.502
+          ]
+        },
+        "approach": [
+          -5.863,
+          -1.858,
+          -0.798
+        ],
+        "gap": 0.195,
+        "gap_ok": true,
+        "n": 21,
+        "score": 0.1001
+      },
+      "gap_ok": true,
+      "ms": 2019
+    },
+    {
+      "text": "bicycle",
+      "negative": true,
+      "n_candidates": 0,
+      "peak": 0.4855,
+      "tau": 0.55,
+      "ambiguous": false,
+      "margin": null,
+      "top": null,
+      "gap_ok": null,
+      "ms": 2010
+    }
+  ],
+  "evaluated": "2026-10-13T16:16:45"
+}
