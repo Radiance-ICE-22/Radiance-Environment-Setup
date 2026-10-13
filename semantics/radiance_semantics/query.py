@@ -26,6 +26,7 @@ import time
 from dataclasses import dataclass, field
 
 import numpy as np
+from pathlib import Path
 
 NEGATIVES = ["object", "things", "stuff", "texture"]      # LERF's canonical phrases
 TEMPERATURE = 10.0
@@ -131,6 +132,11 @@ class Settings:
     # variant A (tables with clip_scales): use the crop-scale group whose relevancy peaks highest for this
     # query (LERF picks the scale per query the same way); False = the scale-averaged 'clip' rows
     scale_select: bool = True
+    # LUDVIG's full pipeline (semantic/LUDVIG, variant L-CL): select Gaussians by LUDVIG's DINOv2 graph-diffused
+    # relevancy (table file ludvig_diffused.npz, semantics/baselines/ludvig_diffuse.py), thresholded in 3D by
+    # Otsu over its positive values (LUDVIG's segmentation rule, cutoff 0); the floor still gates on the raw
+    # CLIP relevancy peak, so absent objects are rejected as in every other variant
+    ludvig_diffusion: bool = False
 
 
 def pose_inliers(P, k=4.0):
@@ -295,6 +301,40 @@ def gap(point, scene, s):
     return float(np.atleast_1d(dk)[-1] - s.body_radius)
 
 
+def otsu(x, nbins=256):
+    """Otsu threshold of a 1-D array (skimage.filters.threshold_otsu's rule, 256-bin histogram, bin centres)."""
+    x = np.asarray(x, np.float64)
+    if x.size == 0 or x.min() == x.max():
+        return float(x.min()) if x.size else 0.0
+    hist, edges = np.histogram(x, bins=nbins)
+    centres = (edges[:-1] + edges[1:]) / 2
+    w1 = np.cumsum(hist)
+    w2 = np.cumsum(hist[::-1])[::-1]
+    m1 = np.cumsum(hist * centres) / np.maximum(w1, 1)
+    m2 = (np.cumsum((hist * centres)[::-1]) / np.maximum(w2[::-1], 1))[::-1]
+    var = w1[:-1] * w2[1:] * (m1[:-1] - m2[1:]) ** 2
+    return float(centres[:-1][np.argmax(var)])
+
+
+def ludvig_diffused(table, text):
+    """LUDVIG's diffused relevancy for `text` from the table's ludvig_diffused.npz (cached on the table)."""
+    cache = getattr(table, "_ludvig", None)
+    if cache is None:
+        p = Path(table.path) / "ludvig_diffused.npz"
+        if not p.exists():
+            raise ValueError(f"{table.path}: no ludvig_diffused.npz (run semantics/baselines/ludvig_diffuse.py)")
+        d = np.load(p)
+        cache = ({str(t): i for i, t in enumerate(d["texts"])}, d["diffused"])
+        try:
+            object.__setattr__(table, "_ludvig", cache)
+        except Exception:                                              # noqa: BLE001
+            pass
+    idx, D = cache
+    if text not in idx:
+        raise ValueError(f"'{text}' was not among the diffused prompts of {table.path}")
+    return np.asarray(D[idx[text]], np.float32)
+
+
 def run_query(table, scene, text, encoder, s=None, return_relevancy=False):
     """Full query. Returns a JSON-ready dict; positions in the course frame unless noted.
     With return_relevancy, returns (dict, rel) where rel is the per-row relevancy array."""
@@ -330,8 +370,15 @@ def run_query(table, scene, text, encoder, s=None, return_relevancy=False):
     peak = float(np.partition(rv, len(rv) - k)[len(rv) - k:].mean()) if k else 0.0
     tau = s.threshold + s.rel_alpha * max(0.0, peak - s.threshold)
     sel = valid & (rel >= tau)
+    scores_all = rel - tau
+    if s.ludvig_diffusion:
+        d = ludvig_diffused(table, text)
+        d = np.where(d > 0, d / max(float(d.max()), 1e-12), 0.0)
+        cut = otsu(d[d > 0]) if (d > 0).any() else 1.0
+        sel = (opac >= s.min_opacity) & (d > cut) & (peak >= s.threshold)
+        scores_all = d - cut
     pts = geom[sel, :3].astype(np.float64)
-    scores = ((rel[sel] - tau) * opac[sel]).astype(np.float64)
+    scores = (scores_all[sel] * opac[sel]).astype(np.float64)
     dsel = np.asarray(table.dino[np.flatnonzero(sel)], np.float32) if (s.dino_split and table.dino is not None) else None
     cands, vox = cluster_candidates(pts, scores, s, dsel)
     res = []

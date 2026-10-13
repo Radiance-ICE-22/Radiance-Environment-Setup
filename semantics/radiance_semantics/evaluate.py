@@ -37,6 +37,7 @@ from .query import Scene, Settings, run_query, score_against
 VARIANTS = {
     "L-C": ("lift", {}),
     "L-CD": ("lift", {"dino_diffuse": True, "dino_split": True}),
+    "L-CL": ("lift", {"ludvig_diffusion": True}),        # LUDVIG's graph diffusion (semantic/LUDVIG)
     "F-C": ("fmgs_c", {}),
     "F-CD": ("fmgs", {}),
 }

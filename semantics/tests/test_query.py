@@ -231,3 +231,32 @@ def test_scale_select_uses_the_group_where_the_query_peaks():
     res = Q.run_query(tab, Q.Scene(cam_c2w=np.tile(np.eye(4), (5, 1, 1))), "x", enc, Q.Settings(min_gaussians=10))
     assert res["scale_group"] == 0 and res["scale_peaks"][0] > max(res["scale_peaks"][1:])
     assert res["candidates"] and np.linalg.norm(np.asarray(res["candidates"][0]["centroid_splat"]) - [1, 1, 0.5]) < 0.2
+
+
+def test_otsu_matches_skimage_rule():
+    rng = np.random.default_rng(0)
+    x = np.concatenate([rng.normal(0.2, 0.05, 5000), rng.normal(0.7, 0.1, 800)])
+    t = Q.otsu(x)
+    assert 0.35 < t < 0.55
+    try:
+        from skimage.filters import threshold_otsu
+    except ImportError:
+        return
+    assert abs(t - threshold_otsu(x)) < 1e-9
+
+
+def test_ludvig_diffusion_selects_by_diffused_relevancy(tmp_path):
+    """L-CL: the floor gates on the raw CLIP peak; the Gaussians come from LUDVIG's diffused relevancy (Otsu in 3D)."""
+    tab = synthetic_table()
+    n = len(tab.geom)
+    d = np.zeros(n, np.float32)
+    d[300:360] = 1.0                                       # diffusion picks the SMALL object, not the big one
+    d[360:] = 0.1                                          # and leaks weakly into the background
+    tab.path = tmp_path
+    np.savez(tmp_path / "ludvig_diffused.npz", texts=np.array(["big thing"]), diffused=d[None])
+    s = Q.Settings(ludvig_diffusion=True)
+    res = Q.run_query(tab, Q.Scene(cam_c2w=cams()), "big thing", FakeEncoder(), s)
+    assert len(res["candidates"]) == 1
+    assert np.allclose(res["candidates"][0]["centroid"], [-2.0, -1.0, -0.5], atol=0.05)
+    with pytest.raises(ValueError):
+        Q.run_query(tab, Q.Scene(cam_c2w=cams()), "not diffused", FakeEncoder(), s)
