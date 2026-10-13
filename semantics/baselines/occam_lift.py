@@ -36,7 +36,9 @@ THIRD_PARTY = Path(os.environ.get("THIRD_PARTY", Path.home() / "Radiance/third_p
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--scene", required=True)
-    ap.add_argument("--teachers", required=True, help="teacher cache tag, e.g. d7a30d7264 (Old) or 9c437cce68 (A)")
+    ap.add_argument("--teachers", help="teacher cache tag, e.g. d7a30d7264 (Old) or 9c437cce68 (A)")
+    ap.add_argument("--langsplat", help="Occam's full pipeline: LangSplat feature dir (langsplat_features.py output); "
+                    "lifts levels s, m, l (Occam's feature_level 1-3) as clip_s0..2, rendered at the seg-map size")
     ap.add_argument("--suffix", required=True, help="table suffix, e.g. _occam_pyr → lift_occam_pyr")
     ap.add_argument("--names", nargs="*", help="teachers to lift (default: dino + clip, or dino + clip_s* for A)")
     ap.add_argument("--width", type=int, default=960, help="render width (our lift's default 960)")
@@ -56,14 +58,21 @@ def main():
     cams = json.loads((ex / "cameras.json").read_text())
     if a.limit:
         cams = cams[:a.limit]
-    tdir = Path(man["semantics_dir"]) / "teachers" / a.teachers
-    names = a.names or (["dino"] + (sorted(p.name for p in tdir.glob("clip_s*") if p.is_dir()) or ["clip"]))
+    if bool(a.teachers) == bool(a.langsplat):
+        ap.error("give exactly one of --teachers and --langsplat")
+    if a.langsplat:
+        ldir = Path(a.langsplat) / a.scene
+        names = ["clip_s0", "clip_s1", "clip_s2"]                # LangSplat levels s, m, l
+    else:
+        tdir = Path(man["semantics_dir"]) / "teachers" / a.teachers
+        names = a.names or (["dino"] + (sorted(p.name for p in tdir.glob("clip_s*") if p.is_dir()) or ["clip"]))
     raw = Path(man["semantics_dir"]) / man["run"] / f"lift{a.suffix}_raw"
     raw.mkdir(parents=True, exist_ok=True)
 
-    def camera(c):
-        W = a.width
-        H = max(1, int(round(c["height"] * W / c["width"])))
+    def camera(c, W=None, H=None):
+        if W is None:
+            W = a.width
+            H = max(1, int(round(c["height"] * W / c["width"])))
         wv = torch.tensor(getWorld2View2(np.asarray(c["R"]), np.asarray(c["T"]))).transpose(0, 1).cuda()
         return SimpleNamespace(FoVx=c["fovx"], FoVy=c["fovy"], image_width=W, image_height=H,
                                world_view_transform=wv), H, W
@@ -82,18 +91,30 @@ def main():
             print(f"{a.scene}: {N:,} Gaussians, {len(cams)} views, teachers {a.teachers} {names}, "
                   f"render {a.width} px → {raw}")
         for k, c in enumerate(cams):
-            cam, H, W = camera(c)
-            grid = np.load(tdir / name / f"{c['stem']}.npy").astype(np.float32)        # [gh, gw, C]
-            t = torch.from_numpy(grid).cuda().permute(2, 0, 1)[None]
-            feat = F.interpolate(t, size=(H, W), mode="bilinear", align_corners=False)[0]   # [C, H, W]
+            if a.langsplat:
+                # Occam's Camera.get_language_feature: per-pixel feature = feature_map[seg_map[level]], mask = seg != -1
+                seg = torch.from_numpy(np.load(ldir / f"{c['stem']}_s.npy")).cuda().long()     # [4, H, W]
+                fmap = torch.from_numpy(np.load(ldir / f"{c['stem']}_f.npy")).cuda().half()    # [n, 512], stored fp16
+                level = 1 + names.index(name)
+                H, W = seg.shape[1:]
+                cam, H, W = camera(c, W, H)
+                lv = seg[level]
+                pixmask = lv != -1
+                feat = fmap[lv.clamp_min(0)].permute(2, 0, 1)                                   # [512, H, W]
+                t = None
+            else:
+                cam, H, W = camera(c)
+                grid = np.load(tdir / name / f"{c['stem']}.npy").astype(np.float32)        # [gh, gw, C]
+                t = torch.from_numpy(grid).cuda().permute(2, 0, 1)[None]
+                feat = F.interpolate(t, size=(H, W), mode="bilinear", align_corners=False)[0]   # [C, H, W]
+                pixmask = torch.ones((H, W), dtype=torch.bool, device="cuda")   # our teachers cover every pixel
             with torch.no_grad():
                 pkg = render(cam, g, None, bg, override_color=torch.ones_like(g.get_xyz))
                 info = pkg["info"]
                 activated, significance, means2D = info["activated"], info["significance"], info["means2d"]
                 mask = activated[0] > 0
-                ones = torch.ones((H, W), dtype=torch.bool, device="cuda")   # our teachers cover every pixel
                 # --- Occam's code (gaussian_feature_extractor.extract_gaussian_features) ---
-                g.accumulate_gaussian_feature_per_view(feat.permute(1, 2, 0), ones, mask, significance[0, mask],
+                g.accumulate_gaussian_feature_per_view(feat.permute(1, 2, 0), pixmask, mask, significance[0, mask],
                                                        means2D[0, mask], feature_dim=feat.shape[0])
             del feat, t, pkg, info
             if k == 0 or (k + 1) % 50 == 0 or k == len(cams) - 1:
@@ -106,8 +127,7 @@ def main():
             feats[~seen] = 0
             w = g._language_feature_weight[:, 0].clone()
             w[~seen] = 0
-        if weight is None:
-            weight = w
+        weight = w if weight is None else torch.maximum(weight, w)   # LangSplat levels cover different pixels
         np.save(raw / f"{name}.npy", feats.detach().cpu().numpy().astype(np.float16))
         print(f"  {name}: done in {time.time() - t0:.0f} s, {int(seen.sum()):,} activated")
         del g, feats
@@ -115,7 +135,8 @@ def main():
     np.save(raw / "weight.npy", weight.cpu().numpy().astype(np.float32))
     seen = int((weight > 0).sum())
     stats = {"views": len(cams), "seconds": round(time.time() - t_all, 1), "seen": seen, "n": N,
-             "seen_frac": round(seen / N, 4), "render_width": a.width, "teacher_tag": a.teachers, "key": man["key"],
+             "seen_frac": round(seen / N, 4), "render_width": "seg-map" if a.langsplat else a.width,
+             "teacher_tag": "langsplat" if a.langsplat else a.teachers, "key": man["key"],
              "impl": "Occam's LGS original (OccamLGS accumulate_gaussian_feature_per_view, gsplat fork)",
              "peak_vram_mib": int(torch.cuda.max_memory_allocated() / 2**20)}
     (raw / "lift.json").write_text(json.dumps(stats, indent=2) + "\n")

@@ -19,3 +19,9 @@ python - <<'PY'
 import torch, gsplat, simple_knn
 print("torch", torch.__version__, "cuda", torch.version.cuda, "gpu", torch.cuda.is_available(), "gsplat", gsplat.__file__)
 PY
+
+# Occam's full pipeline: LangSplat's preprocessing (SAM ViT-H at levels default / s / m / l + OpenCLIP per mask)
+#   ~/Radiance/third_party/LangSplat                     (git clone https://github.com/minghanqin/LangSplat)
+#   ~/Radiance/third_party/segment-anything-langsplat    (git clone https://github.com/minghanqin/segment-anything-langsplat)
+#   ~/Radiance/third_party/checkpoints/sam_vit_h_4b8939.pth
+pip install --no-deps -e "$THIRD_PARTY/segment-anything-langsplat"
