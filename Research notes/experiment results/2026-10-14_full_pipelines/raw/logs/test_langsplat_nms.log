@@ -1,0 +1,14 @@
+# 13 Oct 2026, intellisense08: mask_nms_matrix vs LangSplat's mask_nms (upstream function, tensors on CUDA),
+# real SAM ViT-H masks (LangSplat generator settings) on backroom training images 0, 1, 18; NMS args iou 0.8, score 0.7, inner 0.5
+img 0 default masks  180 kept mine 58 upstream 58 identical=True  0.2s vs 4.0s
+img 0 s       masks  143 kept mine 109 upstream 109 identical=True  0.2s vs 2.5s
+img 0 m       masks   89 kept mine 46 upstream 46 identical=True  0.1s vs 1.0s
+img 0 l       masks   27 kept mine 22 upstream 22 identical=True  0.0s vs 0.1s
+img 1 default masks  305 kept mine 101 upstream 101 identical=True  0.4s vs 11.3s
+img 1 s       masks  240 kept mine 168 upstream 168 identical=True  0.2s vs 7.0s
+img 1 m       masks  160 kept mine 98 upstream 98 identical=True  0.2s vs 3.1s
+img 1 l       masks   60 kept mine 39 upstream 39 identical=True  0.1s vs 0.5s
+img 18 default masks  647 kept mine 247 (upstream loop skipped: too many masks)  1.0s
+img 18 s       masks  496 kept mine 319 (upstream loop skipped: too many masks)  0.5s
+img 18 m       masks  336 kept mine 209 upstream 209 identical=True  0.3s vs 13.7s
+img 18 l       masks  142 kept mine 101 upstream 101 identical=True  0.1s vs 2.5s

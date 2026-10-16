@@ -1,0 +1,34 @@
+{
+ "config": "LUDVIG-full",
+ "table": "lift_ludvigfull",
+ "rows": 379684,
+ "lift": {
+  "dino_seconds": 463.1,
+  "dino_pca_explained": 0.6178,
+  "dino_tokens": [
+   51,
+   91
+  ],
+  "views": 450,
+  "seen": 378208,
+  "n": 379684,
+  "seen_frac": 0.9961,
+  "render_width": 1280,
+  "teacher_tag": "ludvig-full",
+  "key": "2026-09-29_163855-step-000029999-1790681982",
+  "impl": "LUDVIG original: DINOv2 ViT-g (released loader) PCA-40 + CLIPDataset 7-scale, uplifting()",
+  "peak_vram_mib": 3520,
+  "seconds": 2238.0,
+  "clip_seconds": 1774.9,
+  "diffusion_seconds": 145.4,
+  "diffusion_prompts": 19,
+  "diffusion_cfg": {
+   "num_neighbors": 200,
+   "num_iterations": 200,
+   "feature_bandwidth": 0.5,
+   "reg_bandwidth": 2,
+   "logreg": 0.001
+  },
+  "diffusion_peak_vram_mib": 4517
+ }
+}

@@ -1,0 +1,9 @@
+{
+ "scene": "backroom",
+ "images": 270,
+ "computed_now": 252,
+ "seconds": 18524.5,
+ "sam": "vit_h (sam_vit_h_4b8939)",
+ "clip": "ViT-B-16 laion2b_s34b_b88k",
+ "source": "LangSplat preprocess.py (create, sam_encoder, masks_update; mask_nms vectorised, verified identical)"
+}
