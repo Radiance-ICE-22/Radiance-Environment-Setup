@@ -1,0 +1,13 @@
+method,teachers,mode,hits,n_pos,neg_fp,n_neg
+Ours,Old,L-C,20,29,2,6
+Ours,Old,L-CD,20,29,1,6
+LUDVIG,Old,L-C,20,29,2,6
+LUDVIG,Old,L-CD,20,29,1,6
+Occam,Old,L-C,21,29,2,6
+Occam,Old,L-CD,19,29,1,6
+Ours,A,L-C,22,29,2,6
+Ours,A,L-CD,22,29,2,6
+LUDVIG,A,L-C,22,29,2,6
+LUDVIG,A,L-CD,22,29,2,6
+Occam,A,L-C,22,29,3,6
+Occam,A,L-CD,20,29,2,6

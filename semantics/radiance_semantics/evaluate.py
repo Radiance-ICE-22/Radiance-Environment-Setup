@@ -18,7 +18,9 @@ positive) AND a threshold-free separation: the AUROC of the query's peak relevan
     python -m radiance_semantics.evaluate --scene backroom                    # all four variants, set phase5
     python -m radiance_semantics.evaluate --report out/ --scenes backroom GTN_lab_v1   # CSV + LaTeX table
 
-Writes semantics/<run>/eval/<variant>.json (records + metrics) per scene. Settings are the query defaults,
+Writes semantics/<run>/eval/<variant>.json (records + metrics) per scene for the phase5 set, and
+semantics/<run>/eval/<set>/<variant>.json for any other --set (e.g. phase1_gate), so a run on another set never
+overwrites a Phase 5 result; Galley and --report read only the phase5 files. Settings are the query defaults,
 never tuned on this set (the five Phase 1 queries were the development set).
 """
 
@@ -50,6 +52,19 @@ def parse_variant(v):
         raise ValueError(f"unknown variant {v!r} ({', '.join(VARIANTS)}, optionally @<width> or @<suffix>)")
     backend, over = VARIANTS[name]
     return backend, over, (f"_w{tag}" if tag.isdigit() else f"_{tag}") if tag else ""
+
+
+DEFAULT_SET = "phase5"
+
+
+def eval_dir(run, set_name=DEFAULT_SET):
+    """Where the eval files of `set_name` live: <run>/eval for phase5 (the path Galley and --report read),
+    <run>/eval/<set> for any other set (the readers glob eval/*.json, so they never see these)."""
+    import re
+    if not re.fullmatch(r"[A-Za-z0-9_.-]{1,64}", set_name) or set_name in (".", ".."):
+        raise ValueError(f"bad query set name {set_name!r}")
+    d = run.semantics_dir / run.run / "eval"
+    return d if set_name == DEFAULT_SET else d / set_name
 
 
 NEAR = 1.5          # m: a miss whose top centroid is this close to an instance is "bad position"
@@ -164,7 +179,7 @@ def evaluate(table, scene, queries, encoder, settings=None, log=print):
     return recs
 
 
-def run_variants(project_root, scene, variants, set_name="phase5", log=print):
+def run_variants(project_root, scene, variants, set_name=DEFAULT_SET, log=print):
     from .annotations import load, path_for
     from .paths import find_scene_run
     from .query import TextEncoder
@@ -176,7 +191,7 @@ def run_variants(project_root, scene, variants, set_name="phase5", log=print):
         raise SystemExit(f"no annotated '{set_name}' queries in {path_for(run)}")
     sc = load_scene(run.scene_dir)
     enc = TextEncoder()
-    outdir = run.semantics_dir / run.run / "eval"
+    outdir = eval_dir(run, set_name)
     outdir.mkdir(parents=True, exist_ok=True)
     tmeta = None
     tdirs = sorted((run.semantics_dir / "teachers").glob("*/meta.json"), key=lambda p: p.stat().st_mtime)
@@ -218,7 +233,7 @@ SWEEPS = {"threshold": [0.50, 0.525, 0.55, 0.575, 0.60],
           "voxel": [0.05, 0.1, 0.2, 0.3]}
 
 
-def sweep(project_root, scene, variant="L-C", set_name="phase5", sweeps=None, log=print):
+def sweep(project_root, scene, variant="L-C", set_name=DEFAULT_SET, sweeps=None, log=print):
     """Sensitivity of one variant to the query settings, one parameter at a time around the defaults.
     Reported as sensitivity only: the defaults were fixed on the development set and stay fixed."""
     from .annotations import load, path_for
@@ -241,7 +256,8 @@ def sweep(project_root, scene, variant="L-C", set_name="phase5", sweeps=None, lo
                              "hit_rate", "hits", "n_pos", "error_median_m", "ambiguous_rate", "neg_fp_rate")}})
             log(f"  {variant} {param}={val}{' (default)' if rows[-1]['default'] else ''}: hits {m['hits']}/{m['n_pos']}, "
                 f"median {m['error_median_m']} m, neg FP {m['neg_fp_rate']}, ambiguous {m['ambiguous_rate']}")
-    out = run.semantics_dir / run.run / "eval" / f"sweep_{variant}.json"
+    out = eval_dir(run, set_name) / f"sweep_{variant}.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(rows, indent=2) + "\n")
     return rows
 
@@ -252,13 +268,13 @@ COLUMNS = [("scene", "Scene"), ("variant", "Variant"), ("hit_rate", "Top-1 hit")
            ("peak_vram_gb", "VRAM (GB)"), ("table_mb", "Table (MB)"), ("query_ms_median", "Query (ms)")]
 
 
-def report_rows(project_root, scenes, variants=tuple(VARIANTS)):
+def report_rows(project_root, scenes, variants=tuple(VARIANTS), set_name=DEFAULT_SET):
     from .paths import find_scene_run
     rows = []
     for scene in scenes:
         run = find_scene_run(project_root, scene)
         for v in variants:
-            p = run.semantics_dir / run.run / "eval" / f"{v}.json"
+            p = eval_dir(run, set_name) / f"{v}.json"
             if p.exists():
                 m = json.loads(p.read_text())["metrics"]
                 rows.append({"scene": scene, "variant": v, **m})
@@ -302,7 +318,8 @@ def main(argv=None):
     ap.add_argument("--project-root")
     ap.add_argument("--scene", help="evaluate this scene's variants")
     ap.add_argument("--variants", nargs="+", default=list(VARIANTS), help="L-C L-CD F-C F-CD, optionally @<width> (e.g. L-C@480)")
-    ap.add_argument("--set", default="phase5", help="query set in queries.json (default phase5)")
+    ap.add_argument("--set", default=DEFAULT_SET,
+                    help="query set in queries.json (default phase5; other sets write and read eval/<set>/)")
     ap.add_argument("--report", metavar="DIR", help="write variants.csv and variants.tex from the eval files")
     ap.add_argument("--sweep", metavar="VARIANT", choices=list(VARIANTS),
                     help="sensitivity of VARIANT to threshold / rel_alpha / voxel (with --scene)")
@@ -314,7 +331,7 @@ def main(argv=None):
     elif a.scene:
         run_variants(root, a.scene, a.variants, a.set)
     if a.report:
-        rows = report_rows(root, a.scenes or ([a.scene] if a.scene else []), a.variants)
+        rows = report_rows(root, a.scenes or ([a.scene] if a.scene else []), a.variants, a.set)
         out = Path(a.report)
         out.mkdir(parents=True, exist_ok=True)
         write_csv(rows, out / "variants.csv")
@@ -326,7 +343,7 @@ def main(argv=None):
         for sc_ in a.scenes or [a.scene]:
             from .paths import find_scene_run
             r = find_scene_run(root, sc_)
-            p = r.semantics_dir / r.run / "eval" / f"sweep_{a.sweep}.json"
+            p = eval_dir(r, a.set) / f"sweep_{a.sweep}.json"
             rows += json.loads(p.read_text()) if p.exists() else []
         with open(Path(a.report) / f"sweep_{a.sweep}.csv", "w", newline="") as f:
             w = csv.DictWriter(f, fieldnames=list(rows[0]) if rows else ["scene"])

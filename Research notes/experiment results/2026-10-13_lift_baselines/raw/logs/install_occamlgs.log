@@ -1,0 +1,535 @@
+2 channel Terms of Service accepted
+Channels:
+ - defaults
+Platform: linux-64
+Collecting package metadata (repodata.json): ...working... done
+Solving environment: ...working... done
+
+
+==> WARNING: A newer version of conda exists. <==
+    current version: 26.7.1
+    latest version: 26.9.2
+
+Please update conda by running
+
+    $ conda self update
+
+
+
+## Package Plan ##
+
+  environment location: /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs
+
+  added / updated specs:
+    - python=3.10
+
+
+The following packages will be downloaded:
+
+    package                    |            build
+    ---------------------------|-----------------
+    ca-certificates-2026.9.25  |       h06a4308_0         107 KB
+    libexpat-2.9.0             |       h7354ed3_0         131 KB
+    openssl-3.5.9              |       h1b28b03_0         5.7 MB
+    packaging-26.3             |  py310h06a4308_0         329 KB
+    python-3.10.22             |       hd9cb797_0        24.4 MB
+    setuptools-84.0.0          |  py310h06a4308_0         968 KB
+    wheel-0.47.0               |  py310h06a4308_0          56 KB
+    ------------------------------------------------------------
+                                           Total:        31.6 MB
+
+The following NEW packages will be INSTALLED:
+
+  _libgcc_mutex      pkgs/main/linux-64::_libgcc_mutex-0.1-main 
+  _openmp_mutex      pkgs/main/linux-64::_openmp_mutex-5.1-52_gnu 
+  bzip2              pkgs/main/linux-64::bzip2-1.0.8-h5eee18b_6 
+  ca-certificates    pkgs/main/linux-64::ca-certificates-2026.9.25-h06a4308_0 
+  ld_impl_linux-64   pkgs/main/linux-64::ld_impl_linux-64-2.44-h9e0c5a2_3 
+  libexpat           pkgs/main/linux-64::libexpat-2.9.0-h7354ed3_0 
+  libffi             pkgs/main/linux-64::libffi-3.4.8-h06d3fd0_3 
+  libgcc             pkgs/main/linux-64::libgcc-15.2.0-h69a1729_8 
+  libgcc-ng          pkgs/main/linux-64::libgcc-ng-15.2.0-h166f726_8 
+  libnsl             pkgs/main/linux-64::libnsl-2.0.0-h5eee18b_0 
+  libstdcxx          pkgs/main/linux-64::libstdcxx-15.2.0-h39759b7_8 
+  libuuid            pkgs/main/linux-64::libuuid-1.41.5-h5eee18b_0 
+  libxcb             pkgs/main/linux-64::libxcb-1.17.0-h9b100fa_0 
+  libzlib            pkgs/main/linux-64::libzlib-1.3.2-h47b2149_0 
+  ncurses            pkgs/main/linux-64::ncurses-6.6-hfaaeb4e_0 
+  openssl            pkgs/main/linux-64::openssl-3.5.9-h1b28b03_0 
+  packaging          pkgs/main/linux-64::packaging-26.3-py310h06a4308_0 
+  pip                pkgs/main/noarch::pip-26.2.1-pyhc872135_0 
+  pthread-stubs      pkgs/main/linux-64::pthread-stubs-0.3-h47b2149_2 
+  python             pkgs/main/linux-64::python-3.10.22-hd9cb797_0 
+  readline           pkgs/main/linux-64::readline-8.3-hc2a1206_0 
+  setuptools         pkgs/main/linux-64::setuptools-84.0.0-py310h06a4308_0 
+  sqlite             pkgs/main/linux-64::sqlite-3.53.4-h795bf6d_0 
+  tk                 pkgs/main/linux-64::tk-8.6.15-h54e0aa7_0 
+  tzdata             pkgs/main/noarch::tzdata-2026c-he532380_0 
+  wheel              pkgs/main/linux-64::wheel-0.47.0-py310h06a4308_0 
+  xorg-libx11        pkgs/main/linux-64::xorg-libx11-1.8.13-h65de747_0 
+  xorg-libxau        pkgs/main/linux-64::xorg-libxau-1.0.12-h9b100fa_0 
+  xorg-libxdmcp      pkgs/main/linux-64::xorg-libxdmcp-1.1.5-h9b100fa_0 
+  xorg-xorgproto     pkgs/main/linux-64::xorg-xorgproto-2025.1-h47b2149_0 
+  xz                 pkgs/main/linux-64::xz-5.8.4-h140a991_0 
+  zlib               pkgs/main/linux-64::zlib-1.3.2-h47b2149_0 
+
+
+
+Downloading and Extracting Packages: ...working... done
+Preparing transaction: ...working... done
+Verifying transaction: ...working... done
+Executing transaction: ...working... done
+WARNING conda.conda_pypi.main:notify_externally_managed_future(156): 
+  Did you know? You can install many PyPI packages with conda
+  using the conda-pypi beta. Get started:
+    https://docs.conda.io/projects/conda/en/stable/new-features.html
+
+#
+# To activate this environment, use
+#
+#     $ conda activate occamlgs
+#
+# To deactivate an active environment, use
+#
+#     $ conda deactivate
+
+2 channel Terms of Service accepted
+Channels:
+ - nvidia/label/cuda-11.8.0
+ - defaults
+Platform: linux-64
+Collecting package metadata (repodata.json): ...working... done
+Solving environment: ...working... done
+
+
+==> WARNING: A newer version of conda exists. <==
+    current version: 26.7.1
+    latest version: 26.9.2
+
+Please update conda by running
+
+    $ conda self update
+
+
+
+## Package Plan ##
+
+  environment location: /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs
+
+  added / updated specs:
+    - cuda-cudart-dev
+    - cuda-libraries-dev
+    - cuda-nvcc
+
+
+The following NEW packages will be INSTALLED:
+
+  cuda-cccl          nvidia/label/cuda-11.8.0/linux-64::cuda-cccl-11.8.89-0 
+  cuda-cudart        nvidia/label/cuda-11.8.0/linux-64::cuda-cudart-11.8.89-0 
+  cuda-cudart-dev    nvidia/label/cuda-11.8.0/linux-64::cuda-cudart-dev-11.8.89-0 
+  cuda-driver-dev    nvidia/label/cuda-11.8.0/linux-64::cuda-driver-dev-11.8.89-0 
+  cuda-libraries-dev nvidia/label/cuda-11.8.0/linux-64::cuda-libraries-dev-11.8.0-0 
+  cuda-nvcc          nvidia/label/cuda-11.8.0/linux-64::cuda-nvcc-11.8.89-0 
+  cuda-nvrtc         nvidia/label/cuda-11.8.0/linux-64::cuda-nvrtc-11.8.89-0 
+  cuda-nvrtc-dev     nvidia/label/cuda-11.8.0/linux-64::cuda-nvrtc-dev-11.8.89-0 
+  cuda-profiler-api  nvidia/label/cuda-11.8.0/linux-64::cuda-profiler-api-11.8.86-0 
+  libcublas          nvidia/label/cuda-11.8.0/linux-64::libcublas-11.11.3.6-0 
+  libcublas-dev      nvidia/label/cuda-11.8.0/linux-64::libcublas-dev-11.11.3.6-0 
+  libcufft           nvidia/label/cuda-11.8.0/linux-64::libcufft-10.9.0.58-0 
+  libcufft-dev       nvidia/label/cuda-11.8.0/linux-64::libcufft-dev-10.9.0.58-0 
+  libcufile          nvidia/label/cuda-11.8.0/linux-64::libcufile-1.4.0.31-0 
+  libcufile-dev      nvidia/label/cuda-11.8.0/linux-64::libcufile-dev-1.4.0.31-0 
+  libcurand          nvidia/label/cuda-11.8.0/linux-64::libcurand-10.3.0.86-0 
+  libcurand-dev      nvidia/label/cuda-11.8.0/linux-64::libcurand-dev-10.3.0.86-0 
+  libcusolver        nvidia/label/cuda-11.8.0/linux-64::libcusolver-11.4.1.48-0 
+  libcusolver-dev    nvidia/label/cuda-11.8.0/linux-64::libcusolver-dev-11.4.1.48-0 
+  libcusparse        nvidia/label/cuda-11.8.0/linux-64::libcusparse-11.7.5.86-0 
+  libcusparse-dev    nvidia/label/cuda-11.8.0/linux-64::libcusparse-dev-11.7.5.86-0 
+  libnpp             nvidia/label/cuda-11.8.0/linux-64::libnpp-11.8.0.86-0 
+  libnpp-dev         nvidia/label/cuda-11.8.0/linux-64::libnpp-dev-11.8.0.86-0 
+  libnvjpeg          nvidia/label/cuda-11.8.0/linux-64::libnvjpeg-11.9.0.86-0 
+  libnvjpeg-dev      nvidia/label/cuda-11.8.0/linux-64::libnvjpeg-dev-11.9.0.86-0 
+
+
+
+Downloading and Extracting Packages: ...working... done
+Preparing transaction: ...working... done
+Verifying transaction: ...working... done
+Executing transaction: ...working... done
+WARNING conda.conda_pypi.main:notify_externally_managed_future(156): 
+  Did you know? You can install many PyPI packages with conda
+  using the conda-pypi beta. Get started:
+    https://docs.conda.io/projects/conda/en/stable/new-features.html
+
+Looking in indexes: https://download.pytorch.org/whl/cu118
+Collecting torch==2.2.2
+  Downloading torch-2.2.2%2Bcu118-cp310-cp310-linux_x86_64.whl (819.2 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 819.2/819.2 MB 8.4 MB/s  0:01:26
+Collecting torchvision==0.17.2
+  Downloading torchvision-0.17.2%2Bcu118-cp310-cp310-linux_x86_64.whl (6.2 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.2/6.2 MB 7.3 MB/s  0:00:00
+Collecting filelock (from torch==2.2.2)
+  Using cached filelock-3.32.3-py3-none-any.whl.metadata (2.0 kB)
+Collecting typing-extensions>=4.8.0 (from torch==2.2.2)
+  Using cached typing_extensions-4.16.0-py3-none-any.whl.metadata (3.3 kB)
+Collecting sympy (from torch==2.2.2)
+  Using cached sympy-1.14.0-py3-none-any.whl.metadata (12 kB)
+Collecting networkx (from torch==2.2.2)
+  Downloading networkx-3.4.2-py3-none-any.whl.metadata (6.3 kB)
+Collecting jinja2 (from torch==2.2.2)
+  Using cached jinja2-3.1.6-py3-none-any.whl.metadata (2.9 kB)
+Collecting fsspec (from torch==2.2.2)
+  Using cached fsspec-2026.7.0-py3-none-any.whl.metadata (10 kB)
+Collecting nvidia-cuda-nvrtc-cu11==11.8.89 (from torch==2.2.2)
+  Using cached nvidia_cuda_nvrtc_cu11-11.8.89-py3-none-manylinux1_x86_64.whl (23.2 MB)
+Collecting nvidia-cuda-runtime-cu11==11.8.89 (from torch==2.2.2)
+  Using cached nvidia_cuda_runtime_cu11-11.8.89-py3-none-manylinux1_x86_64.whl (875 kB)
+Collecting nvidia-cuda-cupti-cu11==11.8.87 (from torch==2.2.2)
+  Using cached nvidia_cuda_cupti_cu11-11.8.87-py3-none-manylinux1_x86_64.whl (13.1 MB)
+Collecting nvidia-cudnn-cu11==8.7.0.84 (from torch==2.2.2)
+  Downloading nvidia_cudnn_cu11-8.7.0.84-py3-none-manylinux1_x86_64.whl (728.5 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 728.5/728.5 MB 7.9 MB/s  0:01:14
+Collecting nvidia-cublas-cu11==11.11.3.6 (from torch==2.2.2)
+  Using cached nvidia_cublas_cu11-11.11.3.6-py3-none-manylinux1_x86_64.whl (417.9 MB)
+Collecting nvidia-cufft-cu11==10.9.0.58 (from torch==2.2.2)
+  Using cached nvidia_cufft_cu11-10.9.0.58-py3-none-manylinux1_x86_64.whl (168.4 MB)
+Collecting nvidia-curand-cu11==10.3.0.86 (from torch==2.2.2)
+  Using cached nvidia_curand_cu11-10.3.0.86-py3-none-manylinux1_x86_64.whl (58.1 MB)
+Collecting nvidia-cusolver-cu11==11.4.1.48 (from torch==2.2.2)
+  Using cached nvidia_cusolver_cu11-11.4.1.48-py3-none-manylinux1_x86_64.whl (128.2 MB)
+Collecting nvidia-cusparse-cu11==11.7.5.86 (from torch==2.2.2)
+  Using cached nvidia_cusparse_cu11-11.7.5.86-py3-none-manylinux1_x86_64.whl (204.1 MB)
+Collecting nvidia-nccl-cu11==2.19.3 (from torch==2.2.2)
+  Downloading nvidia_nccl_cu11-2.19.3-py3-none-manylinux1_x86_64.whl (135.3 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 135.3/135.3 MB 10.2 MB/s  0:00:13
+Collecting nvidia-nvtx-cu11==11.8.86 (from torch==2.2.2)
+  Using cached nvidia_nvtx_cu11-11.8.86-py3-none-manylinux1_x86_64.whl (99 kB)
+Collecting triton==2.2.0 (from torch==2.2.2)
+  Downloading triton-2.2.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (167.9 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 167.9/167.9 MB 6.6 MB/s  0:00:25
+Collecting numpy (from torchvision==0.17.2)
+  Downloading numpy-2.2.6-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (62 kB)
+Collecting pillow!=8.3.*,>=5.3.0 (from torchvision==0.17.2)
+  Downloading pillow-12.3.0-cp310-cp310-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.metadata (9.1 kB)
+Collecting MarkupSafe>=2.0 (from jinja2->torch==2.2.2)
+  Downloading markupsafe-3.0.3-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (2.7 kB)
+Collecting mpmath<1.4,>=1.1.0 (from sympy->torch==2.2.2)
+  Using cached mpmath-1.3.0-py3-none-any.whl.metadata (8.6 kB)
+Downloading pillow-12.3.0-cp310-cp310-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (6.9 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.9/6.9 MB 1.4 MB/s  0:00:05
+Using cached typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+Using cached filelock-3.32.3-py3-none-any.whl (98 kB)
+Using cached fsspec-2026.7.0-py3-none-any.whl (206 kB)
+Using cached jinja2-3.1.6-py3-none-any.whl (134 kB)
+Downloading markupsafe-3.0.3-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (20 kB)
+Downloading networkx-3.4.2-py3-none-any.whl (1.7 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.7/1.7 MB 2.2 MB/s  0:00:00
+Downloading numpy-2.2.6-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (16.8 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 16.8/16.8 MB 2.9 MB/s  0:00:05
+Using cached sympy-1.14.0-py3-none-any.whl (6.3 MB)
+Using cached mpmath-1.3.0-py3-none-any.whl (536 kB)
+Installing collected packages: mpmath, typing-extensions, sympy, pillow, nvidia-nvtx-cu11, nvidia-nccl-cu11, nvidia-cusparse-cu11, nvidia-curand-cu11, nvidia-cufft-cu11, nvidia-cuda-runtime-cu11, nvidia-cuda-nvrtc-cu11, nvidia-cuda-cupti-cu11, nvidia-cublas-cu11, numpy, networkx, MarkupSafe, fsspec, filelock, triton, nvidia-cusolver-cu11, nvidia-cudnn-cu11, jinja2, torch, torchvision
+
+Successfully installed MarkupSafe-3.0.3 filelock-3.32.3 fsspec-2026.7.0 jinja2-3.1.6 mpmath-1.3.0 networkx-3.4.2 numpy-2.2.6 nvidia-cublas-cu11-11.11.3.6 nvidia-cuda-cupti-cu11-11.8.87 nvidia-cuda-nvrtc-cu11-11.8.89 nvidia-cuda-runtime-cu11-11.8.89 nvidia-cudnn-cu11-8.7.0.84 nvidia-cufft-cu11-10.9.0.58 nvidia-curand-cu11-10.3.0.86 nvidia-cusolver-cu11-11.4.1.48 nvidia-cusparse-cu11-11.7.5.86 nvidia-nccl-cu11-2.19.3 nvidia-nvtx-cu11-11.8.86 pillow-12.3.0 sympy-1.14.0 torch-2.2.2+cu118 torchvision-0.17.2+cu118 triton-2.2.0 typing-extensions-4.16.0
+Collecting numpy<2
+  Downloading numpy-1.26.4-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (61 kB)
+Collecting open-clip-torch
+  Using cached open_clip_torch-3.3.0-py3-none-any.whl.metadata (32 kB)
+Collecting plyfile
+  Using cached plyfile-1.1.5-py3-none-any.whl.metadata (43 kB)
+Collecting tqdm
+  Using cached tqdm-4.70.1-py3-none-any.whl.metadata (57 kB)
+Collecting opencv-python-headless
+  Using cached opencv_python_headless-5.0.0.93-cp37-abi3-manylinux_2_28_x86_64.whl.metadata (19 kB)
+Collecting tensorboard
+  Using cached tensorboard-2.21.0-py3-none-any.whl.metadata (1.8 kB)
+Collecting jaxtyping
+  Using cached jaxtyping-0.3.7-py3-none-any.whl.metadata (7.3 kB)
+Collecting matplotlib
+  Downloading matplotlib-3.10.9-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (52 kB)
+Collecting mediapy
+  Using cached mediapy-1.2.7-py3-none-any.whl.metadata (4.8 kB)
+Collecting scikit-learn
+  Using cached scikit_learn-1.7.2-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (11 kB)
+Collecting ninja
+  Using cached ninja-1.13.2-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (5.4 kB)
+Requirement already satisfied: torch>=2.0 in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from open-clip-torch) (2.2.2+cu118)
+Requirement already satisfied: torchvision in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from open-clip-torch) (0.17.2+cu118)
+Collecting regex (from open-clip-torch)
+  Downloading regex-2026.9.29-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (40 kB)
+Collecting ftfy (from open-clip-torch)
+  Using cached ftfy-6.3.1-py3-none-any.whl.metadata (7.3 kB)
+Collecting huggingface-hub (from open-clip-torch)
+  Using cached huggingface_hub-2.2.0-py3-none-any.whl.metadata (16 kB)
+Collecting safetensors (from open-clip-torch)
+  Using cached safetensors-0.8.0-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (4.2 kB)
+Collecting timm>=1.0.17 (from open-clip-torch)
+  Using cached timm-1.0.30-py3-none-any.whl.metadata (33 kB)
+INFO: pip is looking at multiple versions of plyfile to determine which version is compatible with other requirements. This could take a while.
+Collecting plyfile
+  Using cached plyfile-1.1.4-py3-none-any.whl.metadata (43 kB)
+  Using cached plyfile-1.1.3-py3-none-any.whl.metadata (43 kB)
+INFO: pip is looking at multiple versions of opencv-python-headless to determine which version is compatible with other requirements. This could take a while.
+Collecting opencv-python-headless
+  Using cached opencv_python_headless-4.14.0.94-cp37-abi3-manylinux_2_28_x86_64.whl.metadata (19 kB)
+  Using cached opencv_python_headless-4.13.0.92-cp37-abi3-manylinux_2_28_x86_64.whl.metadata (19 kB)
+  Using cached opencv_python_headless-4.13.0.90-cp37-abi3-manylinux_2_28_x86_64.whl.metadata (19 kB)
+  Using cached opencv_python_headless-4.12.0.88-cp37-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (19 kB)
+  Using cached opencv_python_headless-4.11.0.86-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (20 kB)
+Collecting absl-py>=0.4 (from tensorboard)
+  Downloading absl_py-2.5.1-py3-none-any.whl.metadata (3.3 kB)
+Collecting grpcio<2.0,>=1.74.0 (from tensorboard)
+  Using cached grpcio-1.84.0-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (3.8 kB)
+Collecting markdown>=2.6.8 (from tensorboard)
+  Using cached markdown-3.10.3-py3-none-any.whl.metadata (5.1 kB)
+Requirement already satisfied: packaging in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from tensorboard) (26.3)
+Requirement already satisfied: pillow in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from tensorboard) (12.3.0)
+Collecting protobuf<8.0.0,>=6.31.1 (from tensorboard)
+  Downloading protobuf-7.36.2-cp310-abi3-manylinux2014_x86_64.whl.metadata (595 bytes)
+Requirement already satisfied: setuptools>=41.0.0 in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from tensorboard) (84.0.0)
+Collecting tensorboard-data-server<0.8.0,>=0.7.0 (from tensorboard)
+  Using cached tensorboard_data_server-0.7.2-py3-none-manylinux_2_31_x86_64.whl.metadata (1.1 kB)
+Collecting werkzeug>=1.0.1 (from tensorboard)
+  Downloading werkzeug-3.1.9-py3-none-any.whl.metadata (4.1 kB)
+Requirement already satisfied: typing-extensions~=4.12 in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from grpcio<2.0,>=1.74.0->tensorboard) (4.16.0)
+Collecting wadler-lindig>=0.1.3 (from jaxtyping)
+  Using cached wadler_lindig-0.1.7-py3-none-any.whl.metadata (17 kB)
+Collecting contourpy>=1.0.1 (from matplotlib)
+  Downloading contourpy-1.3.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (5.5 kB)
+Collecting cycler>=0.10 (from matplotlib)
+  Using cached cycler-0.12.1-py3-none-any.whl.metadata (3.8 kB)
+Collecting fonttools>=4.22.0 (from matplotlib)
+  Downloading fonttools-4.65.0-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (125 kB)
+Collecting kiwisolver>=1.3.1 (from matplotlib)
+  Downloading kiwisolver-1.5.1-cp310-cp310-manylinux_2_12_x86_64.manylinux2010_x86_64.whl.metadata (5.2 kB)
+Collecting pyparsing>=3 (from matplotlib)
+  Using cached pyparsing-3.3.3-py3-none-any.whl.metadata (5.9 kB)
+Collecting python-dateutil>=2.7 (from matplotlib)
+  Using cached python_dateutil-2.9.0.post0-py2.py3-none-any.whl.metadata (8.4 kB)
+Collecting ipython (from mediapy)
+  Downloading ipython-8.39.0-py3-none-any.whl.metadata (5.1 kB)
+Collecting scipy>=1.8.0 (from scikit-learn)
+  Downloading scipy-1.15.3-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (61 kB)
+Collecting joblib>=1.2.0 (from scikit-learn)
+  Using cached joblib-1.6.0-py3-none-any.whl.metadata (6.5 kB)
+Collecting threadpoolctl>=3.1.0 (from scikit-learn)
+  Using cached threadpoolctl-3.7.0-py3-none-any.whl.metadata (24 kB)
+Collecting cloudpickle>=3.0 (from joblib>=1.2.0->scikit-learn)
+  Using cached cloudpickle-3.1.2-py3-none-any.whl.metadata (7.1 kB)
+Collecting six>=1.5 (from python-dateutil>=2.7->matplotlib)
+  Using cached six-1.17.0-py2.py3-none-any.whl.metadata (1.7 kB)
+Collecting pyyaml (from timm>=1.0.17->open-clip-torch)
+  Downloading pyyaml-6.0.3-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (2.4 kB)
+Requirement already satisfied: filelock in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from torch>=2.0->open-clip-torch) (3.32.3)
+Requirement already satisfied: sympy in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from torch>=2.0->open-clip-torch) (1.14.0)
+Requirement already satisfied: networkx in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from torch>=2.0->open-clip-torch) (3.4.2)
+Requirement already satisfied: jinja2 in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from torch>=2.0->open-clip-torch) (3.1.6)
+Requirement already satisfied: fsspec in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from torch>=2.0->open-clip-torch) (2026.7.0)
+Requirement already satisfied: nvidia-cuda-nvrtc-cu11==11.8.89 in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from torch>=2.0->open-clip-torch) (11.8.89)
+Requirement already satisfied: nvidia-cuda-runtime-cu11==11.8.89 in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from torch>=2.0->open-clip-torch) (11.8.89)
+Requirement already satisfied: nvidia-cuda-cupti-cu11==11.8.87 in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from torch>=2.0->open-clip-torch) (11.8.87)
+Requirement already satisfied: nvidia-cudnn-cu11==8.7.0.84 in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from torch>=2.0->open-clip-torch) (8.7.0.84)
+Requirement already satisfied: nvidia-cublas-cu11==11.11.3.6 in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from torch>=2.0->open-clip-torch) (11.11.3.6)
+Requirement already satisfied: nvidia-cufft-cu11==10.9.0.58 in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from torch>=2.0->open-clip-torch) (10.9.0.58)
+Requirement already satisfied: nvidia-curand-cu11==10.3.0.86 in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from torch>=2.0->open-clip-torch) (10.3.0.86)
+Requirement already satisfied: nvidia-cusolver-cu11==11.4.1.48 in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from torch>=2.0->open-clip-torch) (11.4.1.48)
+Requirement already satisfied: nvidia-cusparse-cu11==11.7.5.86 in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from torch>=2.0->open-clip-torch) (11.7.5.86)
+Requirement already satisfied: nvidia-nccl-cu11==2.19.3 in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from torch>=2.0->open-clip-torch) (2.19.3)
+Requirement already satisfied: nvidia-nvtx-cu11==11.8.86 in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from torch>=2.0->open-clip-torch) (11.8.86)
+Requirement already satisfied: triton==2.2.0 in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from torch>=2.0->open-clip-torch) (2.2.0)
+Requirement already satisfied: markupsafe>=2.1.1 in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from werkzeug>=1.0.1->tensorboard) (3.0.3)
+Collecting wcwidth (from ftfy->open-clip-torch)
+  Using cached wcwidth-0.9.2-cp310-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (23 kB)
+Collecting click<9.0.0,>=8.4.2 (from huggingface-hub->open-clip-torch)
+  Using cached click-8.5.0-py3-none-any.whl.metadata (2.6 kB)
+Collecting hf-xet<2.0.0,>=1.6.0 (from huggingface-hub->open-clip-torch)
+  Using cached hf_xet-1.7.0-cp38-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (4.9 kB)
+Collecting httpx2<3,>=2.0.0 (from huggingface-hub->open-clip-torch)
+  Using cached httpx2-2.13.1-py3-none-any.whl.metadata (9.8 kB)
+Collecting tomli>=1.1.0 (from huggingface-hub->open-clip-torch)
+  Downloading tomli-2.5.0-py3-none-any.whl.metadata (10 kB)
+Collecting anyio>=4.10 (from httpx2<3,>=2.0.0->huggingface-hub->open-clip-torch)
+  Using cached anyio-4.15.1-py3-none-any.whl.metadata (4.7 kB)
+Collecting httpcore2==2.13.1 (from httpx2<3,>=2.0.0->huggingface-hub->open-clip-torch)
+  Using cached httpcore2-2.13.1-py3-none-any.whl.metadata (26 kB)
+Collecting idna>=3.18 (from httpx2<3,>=2.0.0->huggingface-hub->open-clip-torch)
+  Using cached idna-3.20-py3-none-any.whl.metadata (7.2 kB)
+Collecting truststore>=0.10 (from httpx2<3,>=2.0.0->huggingface-hub->open-clip-torch)
+  Using cached truststore-0.10.5-py3-none-any.whl.metadata (4.5 kB)
+Collecting h11>=0.16 (from httpcore2==2.13.1->httpx2<3,>=2.0.0->huggingface-hub->open-clip-torch)
+  Using cached h11-0.16.0-py3-none-any.whl.metadata (8.3 kB)
+Collecting exceptiongroup>=1.0.2 (from anyio>=4.10->httpx2<3,>=2.0.0->huggingface-hub->open-clip-torch)
+  Using cached exceptiongroup-1.3.1-py3-none-any.whl.metadata (6.7 kB)
+Collecting decorator (from ipython->mediapy)
+  Downloading decorator-5.3.1-py3-none-any.whl.metadata (3.9 kB)
+Collecting jedi>=0.16 (from ipython->mediapy)
+  Downloading jedi-0.20.1-py2.py3-none-any.whl.metadata (23 kB)
+Collecting matplotlib-inline (from ipython->mediapy)
+  Downloading matplotlib_inline-0.2.2-py3-none-any.whl.metadata (2.4 kB)
+Collecting pexpect>4.3 (from ipython->mediapy)
+  Downloading pexpect-4.9.0-py2.py3-none-any.whl.metadata (2.5 kB)
+Collecting prompt_toolkit<3.1.0,>=3.0.41 (from ipython->mediapy)
+  Downloading prompt_toolkit-3.0.53-py3-none-any.whl.metadata (6.4 kB)
+Collecting pygments>=2.4.0 (from ipython->mediapy)
+  Downloading pygments-2.21.0-py3-none-any.whl.metadata (2.5 kB)
+Collecting stack_data (from ipython->mediapy)
+  Downloading stack_data-0.6.3-py3-none-any.whl.metadata (18 kB)
+Collecting traitlets>=5.13.0 (from ipython->mediapy)
+  Downloading traitlets-5.16.1-py3-none-any.whl.metadata (10 kB)
+Collecting parso<0.9.0,>=0.8.7 (from jedi>=0.16->ipython->mediapy)
+  Downloading parso-0.8.7-py2.py3-none-any.whl.metadata (8.2 kB)
+Collecting ptyprocess>=0.5 (from pexpect>4.3->ipython->mediapy)
+  Downloading ptyprocess-0.7.0-py2.py3-none-any.whl.metadata (1.3 kB)
+Collecting executing>=1.2.0 (from stack_data->ipython->mediapy)
+  Downloading executing-2.3.0-py3-none-any.whl.metadata (9.1 kB)
+Collecting asttokens>=2.1.0 (from stack_data->ipython->mediapy)
+  Downloading asttokens-3.0.2-py3-none-any.whl.metadata (5.7 kB)
+Collecting pure-eval (from stack_data->ipython->mediapy)
+  Downloading pure_eval-0.2.4-py3-none-any.whl.metadata (6.4 kB)
+Requirement already satisfied: mpmath<1.4,>=1.1.0 in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from sympy->torch>=2.0->open-clip-torch) (1.3.0)
+Downloading numpy-1.26.4-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (18.2 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 18.2/18.2 MB 1.0 MB/s  0:00:18
+Using cached open_clip_torch-3.3.0-py3-none-any.whl (1.5 MB)
+Using cached plyfile-1.1.3-py3-none-any.whl (36 kB)
+Using cached tqdm-4.70.1-py3-none-any.whl (80 kB)
+Using cached opencv_python_headless-4.11.0.86-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (50.0 MB)
+Downloading tensorboard-2.21.0-py3-none-any.whl (5.5 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5.5/5.5 MB 583.5 kB/s  0:00:09
+Using cached grpcio-1.84.0-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (7.2 MB)
+Downloading protobuf-7.36.2-cp310-abi3-manylinux2014_x86_64.whl (343 kB)
+Using cached tensorboard_data_server-0.7.2-py3-none-manylinux_2_31_x86_64.whl (6.6 MB)
+Using cached jaxtyping-0.3.7-py3-none-any.whl (56 kB)
+Downloading matplotlib-3.10.9-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (8.8 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 8.8/8.8 MB 336.4 kB/s  0:00:25
+Using cached mediapy-1.2.7-py3-none-any.whl (28 kB)
+Using cached scikit_learn-1.7.2-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (9.7 MB)
+Using cached ninja-1.13.2-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (183 kB)
+Downloading absl_py-2.5.1-py3-none-any.whl (137 kB)
+Downloading contourpy-1.3.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (325 kB)
+Using cached cycler-0.12.1-py3-none-any.whl (8.3 kB)
+Downloading fonttools-4.65.0-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (5.3 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5.3/5.3 MB 1.5 MB/s  0:00:03
+Using cached joblib-1.6.0-py3-none-any.whl (306 kB)
+Using cached cloudpickle-3.1.2-py3-none-any.whl (22 kB)
+Downloading kiwisolver-1.5.1-cp310-cp310-manylinux_2_12_x86_64.manylinux2010_x86_64.whl (1.6 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.6/1.6 MB 1.9 MB/s  0:00:00
+Using cached markdown-3.10.3-py3-none-any.whl (110 kB)
+Using cached pyparsing-3.3.3-py3-none-any.whl (126 kB)
+Using cached python_dateutil-2.9.0.post0-py2.py3-none-any.whl (229 kB)
+Downloading scipy-1.15.3-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (37.7 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 37.7/37.7 MB 4.6 MB/s  0:00:08
+Using cached six-1.17.0-py2.py3-none-any.whl (11 kB)
+Using cached threadpoolctl-3.7.0-py3-none-any.whl (26 kB)
+Using cached timm-1.0.30-py3-none-any.whl (2.7 MB)
+Using cached wadler_lindig-0.1.7-py3-none-any.whl (20 kB)
+Downloading werkzeug-3.1.9-py3-none-any.whl (228 kB)
+Using cached ftfy-6.3.1-py3-none-any.whl (44 kB)
+Using cached huggingface_hub-2.2.0-py3-none-any.whl (839 kB)
+Using cached click-8.5.0-py3-none-any.whl (125 kB)
+Using cached hf_xet-1.7.0-cp38-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (4.2 MB)
+Using cached httpx2-2.13.1-py3-none-any.whl (95 kB)
+Using cached httpcore2-2.13.1-py3-none-any.whl (83 kB)
+Using cached anyio-4.15.1-py3-none-any.whl (132 kB)
+Using cached exceptiongroup-1.3.1-py3-none-any.whl (16 kB)
+Using cached h11-0.16.0-py3-none-any.whl (37 kB)
+Using cached idna-3.20-py3-none-any.whl (69 kB)
+Downloading pyyaml-6.0.3-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (770 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 770.3/770.3 kB 2.0 MB/s  0:00:00
+Downloading tomli-2.5.0-py3-none-any.whl (14 kB)
+Using cached truststore-0.10.5-py3-none-any.whl (19 kB)
+Downloading ipython-8.39.0-py3-none-any.whl (831 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 831.8/831.8 kB 1.9 MB/s  0:00:00
+Downloading prompt_toolkit-3.0.53-py3-none-any.whl (392 kB)
+Downloading jedi-0.20.1-py2.py3-none-any.whl (4.9 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.9/4.9 MB 2.8 MB/s  0:00:01
+Downloading parso-0.8.7-py2.py3-none-any.whl (107 kB)
+Downloading pexpect-4.9.0-py2.py3-none-any.whl (63 kB)
+Downloading ptyprocess-0.7.0-py2.py3-none-any.whl (13 kB)
+Downloading pygments-2.21.0-py3-none-any.whl (1.3 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 2.0 MB/s  0:00:00
+Downloading traitlets-5.16.1-py3-none-any.whl (86 kB)
+Using cached wcwidth-0.9.2-cp310-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (769 kB)
+Downloading decorator-5.3.1-py3-none-any.whl (10 kB)
+Downloading matplotlib_inline-0.2.2-py3-none-any.whl (9.5 kB)
+Downloading regex-2026.9.29-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (797 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 797.6/797.6 kB 1.2 MB/s  0:00:00
+Using cached safetensors-0.8.0-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (516 kB)
+Downloading stack_data-0.6.3-py3-none-any.whl (24 kB)
+Downloading asttokens-3.0.2-py3-none-any.whl (28 kB)
+Downloading executing-2.3.0-py3-none-any.whl (29 kB)
+Downloading pure_eval-0.2.4-py3-none-any.whl (11 kB)
+Installing collected packages: pure-eval, ptyprocess, werkzeug, wcwidth, wadler-lindig, truststore, traitlets, tqdm, tomli, threadpoolctl, tensorboard-data-server, six, safetensors, regex, pyyaml, pyparsing, pygments, protobuf, pexpect, parso, numpy, ninja, markdown, kiwisolver, idna, hf-xet, h11, grpcio, fonttools, executing, exceptiongroup, decorator, cycler, cloudpickle, click, asttokens, absl-py, tensorboard, stack_data, scipy, python-dateutil, prompt_toolkit, plyfile, opencv-python-headless, matplotlib-inline, joblib, jedi, jaxtyping, httpcore2, ftfy, contourpy, anyio, scikit-learn, matplotlib, ipython, httpx2, mediapy, huggingface-hub, timm, open-clip-torch
+  Attempting uninstall: numpy
+    Found existing installation: numpy 2.2.6
+    Uninstalling numpy-2.2.6:
+      Successfully uninstalled numpy-2.2.6
+
+Successfully installed absl-py-2.5.1 anyio-4.15.1 asttokens-3.0.2 click-8.5.0 cloudpickle-3.1.2 contourpy-1.3.2 cycler-0.12.1 decorator-5.3.1 exceptiongroup-1.3.1 executing-2.3.0 fonttools-4.65.0 ftfy-6.3.1 grpcio-1.84.0 h11-0.16.0 hf-xet-1.7.0 httpcore2-2.13.1 httpx2-2.13.1 huggingface-hub-2.2.0 idna-3.20 ipython-8.39.0 jaxtyping-0.3.7 jedi-0.20.1 joblib-1.6.0 kiwisolver-1.5.1 markdown-3.10.3 matplotlib-3.10.9 matplotlib-inline-0.2.2 mediapy-1.2.7 ninja-1.13.2 numpy-1.26.4 open-clip-torch-3.3.0 opencv-python-headless-4.11.0.86 parso-0.8.7 pexpect-4.9.0 plyfile-1.1.3 prompt_toolkit-3.0.53 protobuf-7.36.2 ptyprocess-0.7.0 pure-eval-0.2.4 pygments-2.21.0 pyparsing-3.3.3 python-dateutil-2.9.0.post0 pyyaml-6.0.3 regex-2026.9.29 safetensors-0.8.0 scikit-learn-1.7.2 scipy-1.15.3 six-1.17.0 stack_data-0.6.3 tensorboard-2.21.0 tensorboard-data-server-0.7.2 threadpoolctl-3.7.0 timm-1.0.30 tomli-2.5.0 tqdm-4.70.1 traitlets-5.16.1 truststore-0.10.5 wadler-lindig-0.1.7 wcwidth-0.9.2 werkzeug-3.1.9
+Obtaining file:///home/yutharsan/Radiance/third_party/OccamLGS/submodules/gsplat
+  Checking if build backend supports build_editable: started
+  Checking if build backend supports build_editable: finished with status 'done'
+  Preparing editable metadata (pyproject.toml): started
+  Preparing editable metadata (pyproject.toml): finished with status 'done'
+Requirement already satisfied: ninja in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from gsplat==1.4.0) (1.13.2)
+Requirement already satisfied: numpy in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from gsplat==1.4.0) (1.26.4)
+Requirement already satisfied: jaxtyping in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from gsplat==1.4.0) (0.3.7)
+Collecting rich>=12 (from gsplat==1.4.0)
+  Using cached rich-15.0.0-py3-none-any.whl.metadata (18 kB)
+Requirement already satisfied: torch in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from gsplat==1.4.0) (2.2.2+cu118)
+Collecting markdown-it-py>=2.2.0 (from rich>=12->gsplat==1.4.0)
+  Using cached markdown_it_py-4.2.0-py3-none-any.whl.metadata (7.4 kB)
+Requirement already satisfied: pygments<3.0.0,>=2.13.0 in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from rich>=12->gsplat==1.4.0) (2.21.0)
+Collecting mdurl~=0.1 (from markdown-it-py>=2.2.0->rich>=12->gsplat==1.4.0)
+  Using cached mdurl-0.1.2-py3-none-any.whl.metadata (1.6 kB)
+Requirement already satisfied: wadler-lindig>=0.1.3 in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from jaxtyping->gsplat==1.4.0) (0.1.7)
+Requirement already satisfied: filelock in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from torch->gsplat==1.4.0) (3.32.3)
+Requirement already satisfied: typing-extensions>=4.8.0 in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from torch->gsplat==1.4.0) (4.16.0)
+Requirement already satisfied: sympy in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from torch->gsplat==1.4.0) (1.14.0)
+Requirement already satisfied: networkx in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from torch->gsplat==1.4.0) (3.4.2)
+Requirement already satisfied: jinja2 in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from torch->gsplat==1.4.0) (3.1.6)
+Requirement already satisfied: fsspec in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from torch->gsplat==1.4.0) (2026.7.0)
+Requirement already satisfied: nvidia-cuda-nvrtc-cu11==11.8.89 in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from torch->gsplat==1.4.0) (11.8.89)
+Requirement already satisfied: nvidia-cuda-runtime-cu11==11.8.89 in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from torch->gsplat==1.4.0) (11.8.89)
+Requirement already satisfied: nvidia-cuda-cupti-cu11==11.8.87 in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from torch->gsplat==1.4.0) (11.8.87)
+Requirement already satisfied: nvidia-cudnn-cu11==8.7.0.84 in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from torch->gsplat==1.4.0) (8.7.0.84)
+Requirement already satisfied: nvidia-cublas-cu11==11.11.3.6 in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from torch->gsplat==1.4.0) (11.11.3.6)
+Requirement already satisfied: nvidia-cufft-cu11==10.9.0.58 in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from torch->gsplat==1.4.0) (10.9.0.58)
+Requirement already satisfied: nvidia-curand-cu11==10.3.0.86 in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from torch->gsplat==1.4.0) (10.3.0.86)
+Requirement already satisfied: nvidia-cusolver-cu11==11.4.1.48 in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from torch->gsplat==1.4.0) (11.4.1.48)
+Requirement already satisfied: nvidia-cusparse-cu11==11.7.5.86 in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from torch->gsplat==1.4.0) (11.7.5.86)
+Requirement already satisfied: nvidia-nccl-cu11==2.19.3 in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from torch->gsplat==1.4.0) (2.19.3)
+Requirement already satisfied: nvidia-nvtx-cu11==11.8.86 in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from torch->gsplat==1.4.0) (11.8.86)
+Requirement already satisfied: triton==2.2.0 in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from torch->gsplat==1.4.0) (2.2.0)
+Requirement already satisfied: MarkupSafe>=2.0 in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from jinja2->torch->gsplat==1.4.0) (3.0.3)
+Requirement already satisfied: mpmath<1.4,>=1.1.0 in /home/yutharsan/Radiance/figs/miniconda3/envs/occamlgs/lib/python3.10/site-packages (from sympy->torch->gsplat==1.4.0) (1.3.0)
+Using cached rich-15.0.0-py3-none-any.whl (310 kB)
+Using cached markdown_it_py-4.2.0-py3-none-any.whl (91 kB)
+Using cached mdurl-0.1.2-py3-none-any.whl (10.0 kB)
+Building wheels for collected packages: gsplat
+  Building editable for gsplat (pyproject.toml): started
+  Building editable for gsplat (pyproject.toml): still running...
+  Building editable for gsplat (pyproject.toml): still running...
+  Building editable for gsplat (pyproject.toml): still running...
+  Building editable for gsplat (pyproject.toml): still running...
+  Building editable for gsplat (pyproject.toml): still running...
+  Building editable for gsplat (pyproject.toml): finished with status 'done'
+  Created wheel for gsplat: filename=gsplat-1.4.0-0.editable-cp310-cp310-linux_x86_64.whl size=7212 sha256=502ffed0f1e21170adcd593d179f46d4bd3e88e9926bf555830be5a13f36a633
+  Stored in directory: /home/yutharsan/Radiance/figs/.tmp/pip-ephem-wheel-cache-0c95g9_y/wheels/db/f8/e0/045f68683cf034f89008cbd509c92942a49748a3864b7ac459
+Successfully built gsplat
+Installing collected packages: mdurl, markdown-it-py, rich, gsplat
+
+Successfully installed gsplat-1.4.0 markdown-it-py-4.2.0 mdurl-0.1.2 rich-15.0.0
+Processing ./simple-knn
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Building wheels for collected packages: simple_knn
+  Building wheel for simple_knn (pyproject.toml): started
+  Building wheel for simple_knn (pyproject.toml): finished with status 'done'
+  Created wheel for simple_knn: filename=simple_knn-0.0.0-cp310-cp310-linux_x86_64.whl size=448923 sha256=7d391f8001f6f5510cdf5f8a493d8f49f782fc5333593ac141cb126aabaa2c67
+  Stored in directory: /home/yutharsan/Radiance/figs/.tmp/pip-ephem-wheel-cache-pcevy3ys/wheels/72/74/fa/c923760056ff172983e011df82f90058812f0a573fb63cdfba
+Successfully built simple_knn
+Installing collected packages: simple_knn
+Successfully installed simple_knn-0.0.0
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+AttributeError: module 'gsplat' has no attribute '__version__'

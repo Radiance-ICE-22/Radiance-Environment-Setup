@@ -86,3 +86,46 @@ def test_parse_variant():
     for bad in ("X", "L-C@Wide!", "L-C@" + "a" * 17):
         with pytest.raises(ValueError):
             E.parse_variant(bad)
+
+
+def test_eval_dir_keeps_other_sets_out_of_the_phase5_path(tmp_path):
+    from types import SimpleNamespace
+    import pytest
+    run = SimpleNamespace(semantics_dir=tmp_path, run="r1")
+    assert E.eval_dir(run) == E.eval_dir(run, "phase5") == tmp_path / "r1" / "eval"
+    assert E.eval_dir(run, "phase1_gate") == tmp_path / "r1" / "eval" / "phase1_gate"
+    for bad in ("", "..", "a/b", "../x"):
+        with pytest.raises(ValueError):
+            E.eval_dir(run, bad)
+
+
+def test_run_variants_on_another_set_leaves_phase5_files_alone(tmp_path, monkeypatch):
+    """--set phase1_gate writes eval/phase1_gate/<variant>.json; eval/<variant>.json and --report are untouched."""
+    import json
+    from types import SimpleNamespace
+    from radiance_semantics import annotations, paths, query, store
+    run = SimpleNamespace(semantics_dir=tmp_path, run="r1", key="k1", scene_dir=tmp_path,
+                          backend_dir=lambda b, s="": tmp_path / "r1" / f"{b}{s}")
+    (tmp_path / "r1" / "lift").mkdir(parents=True)
+    (tmp_path / "r1" / "lift" / "index.json").write_text("{}")
+    phase5 = tmp_path / "r1" / "eval" / "L-C.json"
+    phase5.parent.mkdir(parents=True)
+    phase5.write_text(json.dumps({"set": "phase5", "metrics": {"hits": 22}}))
+    qs = [{"text": "chair", "set": "phase1_gate", "position": [0, 0, 0]},
+          {"text": "sofa", "set": "phase5", "position": [1, 1, 1]}]
+    monkeypatch.setattr(paths, "find_scene_run", lambda root, scene: run)
+    monkeypatch.setattr(annotations, "path_for", lambda r: tmp_path / "queries.json")
+    monkeypatch.setattr(annotations, "load", lambda p: {"queries": qs})
+    monkeypatch.setattr(store, "read_table", lambda d: SimpleNamespace(index={"key": "k1"}))
+    monkeypatch.setattr(query, "TextEncoder", lambda: SimpleNamespace(_key=(None, None)))
+    monkeypatch.setattr(E, "load_scene", lambda d: None)
+    seen = []
+    monkeypatch.setattr(E, "evaluate", lambda t, sc, q, enc, s, log: seen.extend(x["text"] for x in q) or recs())
+    monkeypatch.setattr(E, "build_cost", lambda t, m: {})
+    E.run_variants(tmp_path, "backroom", ["L-C"], "phase1_gate", log=lambda _: None)
+    assert seen == ["chair"]
+    out = json.loads((tmp_path / "r1" / "eval" / "phase1_gate" / "L-C.json").read_text())
+    assert out["set"] == "phase1_gate"
+    assert json.loads(phase5.read_text())["metrics"]["hits"] == 22                 # the Phase 5 result survives
+    assert E.report_rows(tmp_path, ["backroom"], ["L-C"])[0]["hits"] == 22
+    assert E.report_rows(tmp_path, ["backroom"], ["L-C"], "phase1_gate")[0]["hits"] == out["metrics"]["hits"]

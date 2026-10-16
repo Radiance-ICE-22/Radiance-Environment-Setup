@@ -1,0 +1,31 @@
+{
+ "table": "lift_occamms",
+ "method": "Occam",
+ "teachers": "A",
+ "rows": 379684,
+ "table_mb": 1771.0,
+ "lift": {
+  "views": 450,
+  "seconds": 74.0,
+  "seen": 352021,
+  "n": 379684,
+  "seen_frac": 0.9271,
+  "render_width": 960,
+  "teacher_tag": "9c437cce68",
+  "key": "2026-09-29_163855-step-000029999-1790681982",
+  "impl": "Occam's LGS original (OccamLGS accumulate_gaussian_feature_per_view, gsplat fork)",
+  "peak_vram_mib": 2689
+ },
+ "raw_lift_json": {
+  "views": 450,
+  "seconds": 74.0,
+  "seen": 352021,
+  "n": 379684,
+  "seen_frac": 0.9271,
+  "render_width": 960,
+  "teacher_tag": "9c437cce68",
+  "key": "2026-09-29_163855-step-000029999-1790681982",
+  "impl": "Occam's LGS original (OccamLGS accumulate_gaussian_feature_per_view, gsplat fork)",
+  "peak_vram_mib": 2689
+ }
+}

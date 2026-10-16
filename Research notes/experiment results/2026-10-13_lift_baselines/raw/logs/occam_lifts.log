@@ -1,0 +1,123 @@
+backroom: 532,361 Gaussians, 270 views, teachers d7a30d7264 ['dino', 'clip'], render 960 px → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/backroom/semantics/2026-09-26_190524/lift_occampyr_raw
+  dino: 1/270 views, 2 s, peak 1.83 GB
+  dino: 50/270 views, 4 s, peak 2.40 GB
+  dino: 100/270 views, 5 s, peak 2.40 GB
+  dino: 150/270 views, 7 s, peak 2.45 GB
+  dino: 200/270 views, 9 s, peak 2.49 GB
+  dino: 250/270 views, 10 s, peak 2.49 GB
+  dino: 270/270 views, 11 s, peak 2.49 GB
+  dino: done in 13 s, 506,971 activated
+  clip: 1/270 views, 1 s, peak 2.49 GB
+  clip: 50/270 views, 3 s, peak 3.15 GB
+  clip: 100/270 views, 5 s, peak 3.15 GB
+  clip: 150/270 views, 8 s, peak 3.22 GB
+  clip: 200/270 views, 10 s, peak 3.26 GB
+  clip: 250/270 views, 12 s, peak 3.26 GB
+  clip: 270/270 views, 12 s, peak 3.26 GB
+  clip: done in 14 s, 506,971 activated
+lifted ['dino', 'clip'] onto 506,971 of 532,361 Gaussians in 28 s → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/backroom/semantics/2026-09-26_190524/lift_occampyr_raw
+backroom: 532,361 Gaussians, 270 views, teachers 9c437cce68 ['dino', 'clip_s0', 'clip_s1', 'clip_s2'], render 960 px → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/backroom/semantics/2026-09-26_190524/lift_occamms_raw
+  dino: 1/270 views, 1 s, peak 1.83 GB
+  dino: 50/270 views, 2 s, peak 2.40 GB
+  dino: 100/270 views, 3 s, peak 2.40 GB
+  dino: 150/270 views, 4 s, peak 2.45 GB
+  dino: 200/270 views, 6 s, peak 2.49 GB
+  dino: 250/270 views, 8 s, peak 2.49 GB
+  dino: 270/270 views, 8 s, peak 2.49 GB
+  dino: done in 10 s, 506,971 activated
+  clip_s0: 1/270 views, 1 s, peak 2.49 GB
+  clip_s0: 50/270 views, 3 s, peak 3.15 GB
+  clip_s0: 100/270 views, 15 s, peak 3.15 GB
+  clip_s0: 150/270 views, 26 s, peak 3.22 GB
+  clip_s0: 200/270 views, 33 s, peak 3.26 GB
+  clip_s0: 250/270 views, 49 s, peak 3.26 GB
+  clip_s0: 270/270 views, 57 s, peak 3.26 GB
+  clip_s0: done in 60 s, 506,971 activated
+  clip_s1: 1/270 views, 1 s, peak 3.26 GB
+  clip_s1: 50/270 views, 3 s, peak 3.26 GB
+  clip_s1: 100/270 views, 6 s, peak 3.26 GB
+  clip_s1: 150/270 views, 9 s, peak 3.26 GB
+  clip_s1: 200/270 views, 18 s, peak 3.26 GB
+  clip_s1: 250/270 views, 20 s, peak 3.26 GB
+  clip_s1: 270/270 views, 25 s, peak 3.26 GB
+  clip_s1: done in 27 s, 506,971 activated
+  clip_s2: 1/270 views, 1 s, peak 3.26 GB
+  clip_s2: 50/270 views, 3 s, peak 3.26 GB
+  clip_s2: 100/270 views, 7 s, peak 3.26 GB
+  clip_s2: 150/270 views, 10 s, peak 3.26 GB
+  clip_s2: 200/270 views, 16 s, peak 3.26 GB
+  clip_s2: 250/270 views, 19 s, peak 3.26 GB
+  clip_s2: 270/270 views, 24 s, peak 3.26 GB
+  clip_s2: done in 27 s, 506,971 activated
+lifted ['dino', 'clip_s0', 'clip_s1', 'clip_s2'] onto 506,971 of 532,361 Gaussians in 124 s → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/backroom/semantics/2026-09-26_190524/lift_occamms_raw
+flightroom: 379,684 Gaussians, 450 views, teachers d7a30d7264 ['dino', 'clip'], render 960 px → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/flightroom/semantics/2026-09-29_163855/lift_occampyr_raw
+  dino: 1/450 views, 1 s, peak 1.60 GB
+  dino: 50/450 views, 3 s, peak 1.98 GB
+  dino: 100/450 views, 8 s, peak 2.00 GB
+  dino: 150/450 views, 9 s, peak 2.00 GB
+  dino: 200/450 views, 10 s, peak 2.00 GB
+  dino: 250/450 views, 12 s, peak 2.00 GB
+  dino: 300/450 views, 13 s, peak 2.00 GB
+  dino: 350/450 views, 15 s, peak 2.00 GB
+  dino: 400/450 views, 16 s, peak 2.00 GB
+  dino: 450/450 views, 18 s, peak 2.00 GB
+  dino: done in 19 s, 352,021 activated
+  clip: 1/450 views, 0 s, peak 2.09 GB
+  clip: 50/450 views, 3 s, peak 2.60 GB
+  clip: 100/450 views, 5 s, peak 2.62 GB
+  clip: 150/450 views, 7 s, peak 2.62 GB
+  clip: 200/450 views, 9 s, peak 2.62 GB
+  clip: 250/450 views, 10 s, peak 2.62 GB
+  clip: 300/450 views, 12 s, peak 2.62 GB
+  clip: 350/450 views, 14 s, peak 2.62 GB
+  clip: 400/450 views, 16 s, peak 2.62 GB
+  clip: 450/450 views, 17 s, peak 2.63 GB
+  clip: done in 19 s, 352,021 activated
+lifted ['dino', 'clip'] onto 352,021 of 379,684 Gaussians in 38 s → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/flightroom/semantics/2026-09-29_163855/lift_occampyr_raw
+flightroom: 379,684 Gaussians, 450 views, teachers 9c437cce68 ['dino', 'clip_s0', 'clip_s1', 'clip_s2'], render 960 px → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/flightroom/semantics/2026-09-29_163855/lift_occamms_raw
+  dino: 1/450 views, 1 s, peak 1.60 GB
+  dino: 50/450 views, 2 s, peak 1.98 GB
+  dino: 100/450 views, 4 s, peak 2.00 GB
+  dino: 150/450 views, 5 s, peak 2.00 GB
+  dino: 200/450 views, 6 s, peak 2.00 GB
+  dino: 250/450 views, 8 s, peak 2.00 GB
+  dino: 300/450 views, 9 s, peak 2.00 GB
+  dino: 350/450 views, 10 s, peak 2.00 GB
+  dino: 400/450 views, 11 s, peak 2.00 GB
+  dino: 450/450 views, 13 s, peak 2.00 GB
+  dino: done in 14 s, 352,021 activated
+  clip_s0: 1/450 views, 1 s, peak 2.09 GB
+  clip_s0: 50/450 views, 4 s, peak 2.60 GB
+  clip_s0: 100/450 views, 6 s, peak 2.62 GB
+  clip_s0: 150/450 views, 9 s, peak 2.62 GB
+  clip_s0: 200/450 views, 11 s, peak 2.62 GB
+  clip_s0: 250/450 views, 14 s, peak 2.62 GB
+  clip_s0: 300/450 views, 16 s, peak 2.62 GB
+  clip_s0: 350/450 views, 21 s, peak 2.62 GB
+  clip_s0: 400/450 views, 23 s, peak 2.62 GB
+  clip_s0: 450/450 views, 25 s, peak 2.63 GB
+  clip_s0: done in 26 s, 352,021 activated
+  clip_s1: 1/450 views, 0 s, peak 2.63 GB
+  clip_s1: 50/450 views, 2 s, peak 2.63 GB
+  clip_s1: 100/450 views, 6 s, peak 2.63 GB
+  clip_s1: 150/450 views, 7 s, peak 2.63 GB
+  clip_s1: 200/450 views, 9 s, peak 2.63 GB
+  clip_s1: 250/450 views, 10 s, peak 2.63 GB
+  clip_s1: 300/450 views, 12 s, peak 2.63 GB
+  clip_s1: 350/450 views, 13 s, peak 2.63 GB
+  clip_s1: 400/450 views, 15 s, peak 2.63 GB
+  clip_s1: 450/450 views, 16 s, peak 2.63 GB
+  clip_s1: done in 18 s, 352,021 activated
+  clip_s2: 1/450 views, 0 s, peak 2.63 GB
+  clip_s2: 50/450 views, 3 s, peak 2.63 GB
+  clip_s2: 100/450 views, 6 s, peak 2.63 GB
+  clip_s2: 150/450 views, 7 s, peak 2.63 GB
+  clip_s2: 200/450 views, 8 s, peak 2.63 GB
+  clip_s2: 250/450 views, 9 s, peak 2.63 GB
+  clip_s2: 300/450 views, 10 s, peak 2.63 GB
+  clip_s2: 350/450 views, 11 s, peak 2.63 GB
+  clip_s2: 400/450 views, 13 s, peak 2.63 GB
+  clip_s2: 450/450 views, 14 s, peak 2.63 GB
+  clip_s2: done in 15 s, 352,021 activated
+lifted ['dino', 'clip_s0', 'clip_s1', 'clip_s2'] onto 352,021 of 379,684 Gaussians in 74 s → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/flightroom/semantics/2026-09-29_163855/lift_occamms_raw
+ALL_DONE

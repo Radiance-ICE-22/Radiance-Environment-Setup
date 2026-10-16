@@ -1,0 +1,35 @@
+{
+ "table": "lift",
+ "method": "Ours",
+ "teachers": "A",
+ "rows": 379684,
+ "table_mb": 1771.0,
+ "lift": {
+  "views": 450,
+  "passes": 27450,
+  "seconds": 1363.9,
+  "seen": 378173,
+  "n": 379684,
+  "seen_frac": 0.996,
+  "render_width": 960,
+  "step": 29999,
+  "acc_device": "cpu",
+  "peak_vram_mib": 774,
+  "teacher_tag": "9c437cce68",
+  "key": "2026-09-29_163855-step-000029999-1790681982"
+ },
+ "raw_lift_json": {
+  "views": 450,
+  "passes": 27450,
+  "seconds": 1363.9,
+  "seen": 378173,
+  "n": 379684,
+  "seen_frac": 0.996,
+  "render_width": 960,
+  "step": 29999,
+  "acc_device": "cpu",
+  "peak_vram_mib": 774,
+  "teacher_tag": "9c437cce68",
+  "key": "2026-09-29_163855-step-000029999-1790681982"
+ }
+}

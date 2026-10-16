@@ -1,0 +1,22 @@
+{
+ "table": "lift_pyr",
+ "method": "Ours",
+ "teachers": "Old",
+ "rows": 379684,
+ "table_mb": 658.7,
+ "lift": {
+  "views": 450,
+  "passes": 13050,
+  "seconds": 262.3,
+  "seen": 378173,
+  "n": 379684,
+  "seen_frac": 0.996,
+  "render_width": 960,
+  "step": 29999,
+  "acc_device": "cuda:0",
+  "peak_vram_mib": 2470,
+  "teacher_tag": "d7a30d7264",
+  "key": "2026-09-29_163855-step-000029999-1790681982"
+ },
+ "raw_lift_json": null
+}
