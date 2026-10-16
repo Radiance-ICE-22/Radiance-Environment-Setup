@@ -1,0 +1,195 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.17}
+\usepackage[hidelinks]{hyperref}
+
+\definecolor{cours}{HTML}{3B6EA8}
+\definecolor{coccam}{HTML}{3D9A6B}
+\definecolor{cfill}{HTML}{B5532A}
+\definecolor{cgrey}{HTML}{777777}
+\newcommand{\hit}{\textcolor{coccam}{$\bullet$}}
+\newcommand{\miss}{\textcolor{cgrey}{$\circ$}}
+\newcommand{\code}[1]{\texttt{\small #1}}
+\makeatletter\newcommand{\inputtable}[1]{\@@input #1 }\makeatother
+
+\title{\textbf{Region-level teachers in our pipeline}\\[2pt]
+\large \code{--clip-mode langsplat} and the skip-vs-fill test for uncovered pixels}
+\author{Radiance FYP --- semantic embedding, branch \code{semantic/new}\\ \small intellisense08 (RTX 2080, 8\,GB), 16 October 2026}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent Occam's LGS run on LangSplat's features was the best design measured (25/29 objects, 1/6 absent objects firing,
+14 Oct). This report covers two things. First, those region-level features are now a teacher mode of our own pipeline
+(\code{--clip-mode langsplat}), lifted with our all-pixel lift, so they can be built, cached, queried and served like
+every other table. Second, the open question of how to treat pixels no SAM mask covers is tested: \emph{skip} them, as
+LangSplat and Occam do, or \emph{fill} them with the scale-averaged crop feature, as our B2 variant did. With skip, our
+pipeline reaches \textbf{24/29 with 1/6 false positives} (dev set 5/5). That is within one query of Occam's chain, the
+only difference being a cluster offset on one object. \textbf{Skip vs fill differs by one query} (24 vs 23 at the default
+floor, 24 vs 24 at equal false positives), so filling does not explain why B2 reached only 21. The default lift mode is
+unchanged (A); switching it is a decision for Suhan.
+\end{abstract}
+
+\section{What was built}
+\begin{description}[leftmargin=1.2em,style=nextline,itemsep=2pt]
+  \item[Teacher step, \code{--clip-mode langsplat} (cache tag \code{4f4bdb1a08})]
+    \code{teachers.extract\_langsplat} runs LangSplat's preprocessing for every frame as a subprocess in the
+    \code{occamlgs} env, which has LangSplat's SAM fork. That means SAM ViT-H masks at levels default / s / m / l, mask
+    NMS, and one OpenCLIP ViT-B/16 embedding per masked crop, with LangSplat's settings, which are part of the cache tag.
+    It resumes per frame. The 720 training-view feature files from the 13--14 Oct run were moved into the cache
+    (symlinks remain at the old path); only the 30 + 49 evaluation-split frames were extracted (37 + 31\\,min). DINOv2
+    grids are shared with the existing teacher cache (same model and width), so L-CD stays available.
+  \item[Lift, \code{--uncovered skip|fill} (\code{lift.lift\_segment\_views})]
+    Our gsplat lift, run per level $\ell\in\{s,m,l\}$. Each pixel takes the feature of the level-$\ell$ mask covering
+    it; seg maps are sampled at the render's pixel centres. With $m_\ell(p)=1$ where a mask covers $p$:
+    \begin{align*}
+      \textit{skip:}\quad f_i^{(\ell)} &= \frac{\sum_{v,p} w_i(v,p)\,m_\ell(p)\,F_\ell(p)}{\sum_{v,p} w_i(v,p)\,m_\ell(p)}
+        &&\text{(LangSplat / Occam's choice)}\\
+      \textit{fill:}\quad f_i^{(\ell)} &= \frac{\sum_{v,p} w_i(v,p)\,\big[m_\ell F_\ell + (1-m_\ell) F_{\text{pyr}}\big](p)}{\sum_{v,p} w_i(v,p)}
+        &&\text{(our B2's choice)}
+    \end{align*}
+    $F_{\text{pyr}}$ is the scale-averaged crop pyramid (teacher \code{d7a30d7264}). The skip denominator is one extra
+    one-channel pass per level.
+  \item[Table and query] Unchanged. The three levels are the table's three scale groups, so the query picks the level
+    with the highest peak, as LangSplat's evaluation does. \code{--uncovered} is a variant key, so existing lift markers
+    stay valid. The lift default remains \code{scales} (A).
+  \item[Tests] Four new unit tests: skip and fill agree when every pixel is covered; skip never takes the uncovered side;
+    fill mixes it in; seg-map sampling. Semantics suite 89 passed, Galley 116 passed.
+\end{description}
+
+\noindent Build commands (tables \code{lift\_ls} and \code{lift\_lsfill}):
+{\footnotesize
+\begin{verbatim}
+python figs/semantic_pipeline.py --scene backroom --backend lift --clip-mode langsplat \
+       --table-suffix _ls --uncovered skip
+python figs/semantic_pipeline.py --scene backroom --backend lift --clip-mode langsplat \
+       --table-suffix _lsfill --uncovered fill
+\end{verbatim}
+}
+
+\section{Results}
+\begin{table}[h]
+\centering\small
+\caption{Phase 5 sets (29 positives, 6 absent objects), query settings unchanged since Phase 1. Totals, then per scene:
+hits, median localisation error (m), AUROC of peak relevancy.}
+\label{tab:summary}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{llcc ccc ccc}
+\toprule
+& & & & \multicolumn{3}{c}{backroom} & \multicolumn{3}{c}{flightroom}\\
+\cmidrule(lr){5-7}\cmidrule(lr){8-10}
+Configuration & mode & hits & FP & hits & err & AUROC & hits & err & AUROC\\
+\midrule
+\inputtable{tables/summary.tex}
+\bottomrule
+\end{tabular}}
+\end{table}
+
+\begin{table}[h]
+\centering\small
+\caption{The only queries (L-C) on which these configurations differ: hit (\hit) or miss (\miss) and peak relevancy. b =
+backroom, f = flightroom. All other 25 queries have the same outcome in all five.}
+\label{tab:perq}
+\begin{tabular}{l ccccc}
+\toprule
+Query & Ours A & Ours B2 & Occam full & LangSplat, fill & LangSplat, skip\\
+\midrule
+\inputtable{tables/per_query_diff.tex}
+\midrule
+\inputtable{tables/per_query_total.tex}
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\centering\small
+\caption{Floor sweep (0.46--0.60, post-hoc on the evaluation sets): best hits with at most $k$ absent objects firing,
+and hits at the default floor 0.55.}
+\label{tab:env}
+\begin{tabular}{lcccccc}
+\toprule
+$k$ absent objects with a candidate & 1 & 2 & 3 & 4 & 5 & at 0.55\\
+\midrule
+\inputtable{tables/envelope.tex}
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}
+\begin{axis}[width=0.8\linewidth, height=5.4cm, xlabel={relevancy floor}, ylabel={top-1 hits (of 29)}, ymin=14, ymax=27,
+  legend style={font=\scriptsize, at={(0.5,-0.25)}, anchor=north, legend columns=3}, grid=major, grid style={gray!20}]
+  \addplot[cours, thick, dashed, mark=square*, mark size=1.2pt] table[x=floor, y=A_h, col sep=comma] {data/sweep.csv};
+  \addplot[cgrey, very thick, mark=diamond*, mark size=1.4pt] table[x=floor, y=Occamfull_h, col sep=comma] {data/sweep.csv};
+  \addplot[coccam, very thick, mark=*, mark size=1.4pt] table[x=floor, y=LSskip_h, col sep=comma] {data/sweep.csv};
+  \addplot[coccam, thick, dashed, mark=o, mark size=1.4pt] table[x=floor, y=LSskipflat_h, col sep=comma] {data/sweep.csv};
+  \addplot[cfill, thick, mark=triangle*, mark size=1.4pt] table[x=floor, y=LSfill_h, col sep=comma] {data/sweep.csv};
+  \legend{Ours A, Occam's full chain, LangSplat skip, {LangSplat skip, no level choice}, LangSplat fill}
+\end{axis}
+\end{tikzpicture}
+\caption{Hits against the relevancy floor, both scenes combined.}
+\label{fig:sweep}
+\end{figure}
+
+\section{Findings}
+\begin{enumerate}[leftmargin=*,itemsep=3pt]
+  \item \textbf{The region teachers carry over to our pipeline.} With our all-pixel lift and skip, 24/29 with one absent
+        object firing (only backroom's ceiling fan), AUROC 0.92 / 1.00, dev set 5/5. Like Occam's chain, it recovers
+        \emph{swivel chair}, \emph{camera tripod} and \emph{hose reel}, which A misses. The one difference from Occam's
+        chain is flightroom's \emph{water jug}. Both find the jug's neighbourhood, but our cluster centroid lands outside
+        the hit radius ("bad position"). This $\pm1$ between the all-pixel and centre-pixel lifts matches the 13 Oct
+        controlled comparison.
+  \item \textbf{Skip vs fill: one query.} The only query that differs is \emph{camera tripod}: peak 0.588 with skip,
+        0.576 with fill. Filling the 6--17\,\% of uncovered pixels with crop features pulls a thin object's features
+        towards its background and costs this marginal hit. At equal false positives both reach 24/29. The flat
+        variants (no level choice) reach 25 with skip at one false positive and 24 with fill. Skip is the better choice,
+        but the effect is small.
+  \item \textbf{So B2's shortfall is not the fill.} B2 reached 21/29 and misses all three region-level gains. With fill
+        costing at most one query, the gap must come from B2's other choices: SAM ViT-B without a crop layer and with SAM's stricter
+        default thresholds (predicted IoU 0.86 vs 0.7), levels by mask area instead of SAM's own granularities, and
+        no LangSplat mask NMS. All three can now be tested as teacher variants
+        of this mode.
+  \item \textbf{Level choice is not consistently useful.} With Occam's lift, choosing the level per query added two
+        (25 vs 23 at one false positive). With our lift, the flat average is as good or better (25 vs 24). On 29 queries
+        this is noise. The level choice should be kept configurable, and the default decided on a larger query set.
+  \item \textbf{Cost.} The lift takes 18 / 21\,min per scene (three 512-channel levels plus DINO, about the same as A's
+        lift). Occam's centre-pixel lift does the same in 30\,s. Feature extraction is the expensive part: about 5\,h per
+        scene on the RTX 2080 (70\,s per 1080p image), done once and cached. Tables: 2.5 / 1.8\,GB, as A.
+\end{enumerate}
+
+\section{Decisions for Suhan and next steps}
+\begin{enumerate}[leftmargin=*,itemsep=2pt]
+  \item \textbf{Default lift mode.} \code{langsplat} with skip is the strongest mode in our own pipeline (24/29, 1/6;
+        A: 22/29, 2/6), and its features are already cached for both scenes. Switching the default is one line
+        (\code{default\_clip\_mode}). The cost is about 5 GPU-hours of extraction per new scene on the 2080.
+  \item \textbf{Speed the lift} by adding Occam's centre-pixel estimator as an option (30\,s instead of 20\,min; the
+        13 Oct comparison found no accuracy loss).
+  \item \textbf{Close the B2 gap by ablation:} SAM ViT-B vs ViT-H, crop layer on/off, area levels vs SAM levels, NMS
+        on/off. Each needs a new SAM extraction, so they are best run on the RTX 5060 Ti or overnight.
+  \item \textbf{Galley:} \code{langsplat} tables load and query like any multi-scale table; the build should be exposed
+        in Galley's semantics job form once the default is settled.
+\end{enumerate}
+
+\section{Files}
+Raw results: \code{../raw/} (Phase 5 and development-set evaluator JSONs, lift statistics including per-level pixel
+coverage, floor sweep, run log). Derived CSVs: \code{../csv/}. Tables: \code{tables/}, written by
+\code{../scripts/collect.py}. Code: branch \code{semantic/new} (\code{lift.py}, \code{teachers.py},
+\code{semantic\_pipeline.py}, \code{baselines/langsplat\_features.py}, tests).
+
+\end{document}

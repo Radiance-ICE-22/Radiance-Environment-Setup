@@ -1,0 +1,30 @@
+scene,query,A,B2,Occam-full,fill,skip,A_peak,B2_peak,Occam-full_peak,fill_peak,skip_peak
+backroom,recycling bin,1,1,1,1,1,0.7735,0.7404,0.7533,0.745,0.7452
+backroom,blue trash can,1,1,1,1,1,0.7568,0.7512,0.7536,0.7529,0.7533
+backroom,office chair,1,1,1,1,1,0.6545,0.5597,0.677,0.6637,0.6672
+backroom,swivel chair,0,0,1,1,1,0.6207,0.5337,0.6702,0.6541,0.6575
+backroom,grandfather clock,1,1,1,1,1,0.7139,0.6867,0.7224,0.7096,0.7105
+backroom,clock,1,1,1,1,1,0.6973,0.7064,0.7326,0.7245,0.7252
+backroom,children's road play mat,1,1,1,1,1,0.8159,0.7713,0.7975,0.8109,0.8117
+backroom,camera tripod,0,0,1,0,1,0.5353,0.5076,0.5925,0.5764,0.5878
+backroom,purple foam mat,1,1,1,1,1,0.7606,0.7291,0.7573,0.7731,0.7739
+backroom,white bucket,0,0,0,0,0,0.605,0.5869,0.6319,0.6167,0.6198
+backroom,glass door cabinet,1,1,1,1,1,0.7081,0.7131,0.7595,0.7509,0.7515
+backroom,hose reel,0,0,1,1,1,0.685,0.6338,0.6367,0.6169,0.6149
+backroom,moving box,1,1,1,1,1,0.7617,0.6902,0.7062,0.6761,0.6739
+flightroom,armchair,1,1,1,1,1,0.5815,0.6101,0.7077,0.694,0.7003
+flightroom,upholstered chair,1,1,1,1,1,0.5533,0.5562,0.6543,0.6409,0.6465
+flightroom,whiteboard,1,1,1,1,1,0.7625,0.7003,0.7488,0.713,0.7137
+flightroom,computer monitor,1,1,1,1,1,0.6641,0.6145,0.6994,0.6838,0.689
+flightroom,keyboard,0,0,0,0,0,0.5224,0.5024,0.5564,0.5449,0.5496
+flightroom,floor lamp,0,0,0,0,0,0.562,0.5409,0.6637,0.5969,0.6257
+flightroom,red cup,1,1,1,1,1,0.7463,0.7089,0.6713,0.6997,0.6974
+flightroom,water bottle,1,1,1,1,1,0.6525,0.6293,0.6279,0.654,0.6558
+flightroom,water jug,1,0,1,0,0,0.6344,0.6221,0.6176,0.631,0.6326
+flightroom,round table,1,1,1,1,1,0.6402,0.5796,0.5999,0.6009,0.6034
+flightroom,drone gate,0,0,0,0,0,0.6796,0.6074,0.6046,0.5857,0.5877
+flightroom,PVC pipe frame,1,1,1,1,1,0.8227,0.723,0.8551,0.8472,0.8536
+flightroom,poster,1,1,1,1,1,0.7375,0.6443,0.6669,0.6675,0.6679
+flightroom,garden cart,1,1,1,1,1,0.7006,0.626,0.7293,0.7199,0.7351
+flightroom,wheelbarrow,1,1,1,1,1,0.6848,0.6205,0.695,0.6967,0.7026
+flightroom,cardboard box,1,1,1,1,1,0.66,0.6524,0.5996,0.623,0.623

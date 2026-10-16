@@ -1,0 +1,9 @@
+scene,table,seconds,passes,seen,level_rows,pixel_coverage
+backroom,lift_ls,1059.0,17280,531951,"[531911, 531945, 531854]","[0.8303, 0.9358, 0.879]"
+backroom,lift_lsfill,1093.5,16470,531951,"[531951, 531951, 531951]","[0.8303, 0.9358, 0.879]"
+backroom,lift_occamfull,33.7,,498828,,
+backroom,lift,1064.3,16470,531951,,
+flightroom,lift_ls,1285.4,28800,378173,"[378128, 378142, 378138]","[0.8746, 0.9282, 0.86]"
+flightroom,lift_lsfill,1174.8,27450,378173,"[378173, 378173, 378173]","[0.8746, 0.9282, 0.86]"
+flightroom,lift_occamfull,27.7,,348411,,
+flightroom,lift,1363.9,27450,378173,,

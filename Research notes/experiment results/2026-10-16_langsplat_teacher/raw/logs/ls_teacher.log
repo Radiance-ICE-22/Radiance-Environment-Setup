@@ -1,0 +1,712 @@
+  ✔ open_clip 2.24.0, radiance_semantics 0.1.0
+  ✔ GPU: NVIDIA GeForce RTX 2080 7972 MiB
+  ✔ scene backroom: run 2026-09-26_190524, step-000029999.ckpt (key 2026-09-26_190524-step-000029999-1790431381)
+    300 frames at 1920x1080; 3529 CLIP crops per frame (7 scales); teacher tag 4f4bdb1a08 (0 frames already cached)
+    532,361 Gaussians; needs ≈ 3.1 GB (teachers 1.3 GB, lift + table 1.8 GB); 250 GB free
+
+══════════════════════════════════════════════════════════════════════════════
+  Camera check — backroom 2026-09-26_190524
+══════════════════════════════════════════════════════════════════════════════
+[09:13:06] Auto image downscale factor of 1                                                 nerfstudio_dataparser.py:484
+Loading latest checkpoint from load_dir
+✅ Done loading checkpoint from outputs/backroom/splatfacto/2026-09-26_190524/nerfstudio_models/step-000029999.ckpt
+  ✔ loaded step 29999: 532,361 Gaussians, 270 training cameras, camera optimizer SO3xR3
+    pose corrections: translation mean 4.1 mm (max 39.0), rotation mean 0.108° (max 1.992°)
+/home/yutharsan/Radiance/figs/miniconda3/envs/kitchen/lib/python3.10/site-packages/torch/utils/cpp_extension.py:28: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  from pkg_resources import packaging  # type: ignore[attr-defined]
+    #0    frame_00001.png              refined  31.79 dB   raw  26.36 dB
+    #54   frame_00061.png              refined  31.19 dB   raw  25.55 dB
+    #108  frame_00121.png              refined  29.98 dB   raw  25.30 dB
+    #161  frame_00179.png              refined  31.67 dB   raw  27.95 dB
+    #215  frame_00239.png              refined  30.32 dB   raw  20.71 dB
+    #269  frame_00300.png              refined  28.92 dB   raw  26.18 dB
+  ✔ training views: refined 30.64 dB vs raw 25.34 dB (+5.30 dB); held-out (raw pose) 27.06 dB
+    record: /home/yutharsan/Radiance/figs/SousVide/runs/semantics_p0_cameras_backroom_2026-10-16_0913.json
+GALLEY_JSON {"tool": "cameras", "scene": "backroom", "run": "2026-09-26_190524", "checkpoint": "step-000029999.ckpt", "started": "2026-10-16T09:12:59", "step": 29999, "camera_optimizer": "SO3xR3", "n_train": 270, "corrections": {"translation_mean_m": 0.004075312055647373, "translation_max_m": 0.03896095231175423, "rotation_mean_deg": 0.10768749564886093, "rotation_max_deg": 1.991544485092163}, "views": [{"index": 0, "image": "frame_00001.png", "psnr_refined": 31.791, "psnr_raw": 26.364}, {"index": 54, "image": "frame_00061.png", "psnr_refined": 31.188, "psnr_raw": 25.554}, {"index": 108, "image": "frame_00121.png", "psnr_refined": 29.984, "psnr_raw": 25.305}, {"index": 161, "image": "frame_00179.png", "psnr_refined": 31.672, "psnr_raw": 27.95}, {"index": 215, "image": "frame_00239.png", "psnr_refined": 30.315, "psnr_raw": 20.707}, {"index": 269, "image": "frame_00300.png", "psnr_refined": 28.918, "psnr_raw": 26.175}], "eval_psnr": [25.361, 28.285, 26.341, 29.444, 25.878], "peak_device_mib": 894, "psnr_refined_mean": 30.645, "psnr_raw_mean": 25.343, "eval_psnr_mean": 27.062, "ok": true}
+    LangSplat features for 30 of 300 frames (SAM ViT-H, ~40–100 s per frame on an RTX 2080)
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+WARNING:huggingface_hub.utils._http:Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:45, 45.99s/it]                                          1/30 frame_00010: 47.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:11, 71.63s/it]                                          2/30 frame_00020: 72.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:39, 99.28s/it]                                          3/30 frame_00030: 99.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:09, 69.39s/it]                                          4/30 frame_00040: 70.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:20, 80.60s/it]                                          5/30 frame_00050: 81.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:17, 77.23s/it]                                          6/30 frame_00060: 77.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:09, 69.61s/it]                                          7/30 frame_00070: 70.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:33, 93.11s/it]                                          8/30 frame_00080: 93.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:03, 63.01s/it]                                          9/30 frame_00090: 63.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:01, 61.89s/it]                                          10/30 frame_00100: 62.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:51, 51.33s/it]                                          11/30 frame_00110: 52.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:20, 80.72s/it]                                          12/30 frame_00120: 81.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:08, 68.98s/it]                                          13/30 frame_00130: 69.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:06, 66.38s/it]                                          14/30 frame_00140: 67.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:02, 62.77s/it]                                          15/30 frame_00150: 63.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:45, 105.75s/it]                                           16/30 frame_00160: 106.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:05, 65.18s/it]                                          17/30 frame_00170: 65.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:13, 73.70s/it]                                          18/30 frame_00180: 74.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:38, 98.78s/it]                                          19/30 frame_00190: 99.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:26, 86.64s/it]                                          20/30 frame_00200: 87.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:35, 95.24s/it]                                          21/30 frame_00210: 95.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:13, 73.30s/it]                                          22/30 frame_00220: 74.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:53, 53.88s/it]                                          23/30 frame_00230: 54.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:09, 69.39s/it]                                          24/30 frame_00240: 70.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:09, 69.74s/it]                                          25/30 frame_00250: 70.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:19, 79.64s/it]                                          26/30 frame_00260: 80.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:03, 63.96s/it]                                          27/30 frame_00270: 64.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:14, 74.52s/it]                                          28/30 frame_00280: 75.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:54, 54.68s/it]                                          29/30 frame_00290: 55.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:34, 94.43s/it]                                          30/30 frame_00299: 95.1 s, peak 5.87 GB
+done: 30 images in 2241 s → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/backroom/semantics/teachers/4f4bdb1a08/langsplat
+/home/yutharsan/Radiance/figs/.cache/torch/hub/facebookresearch_dinov2_main/dinov2/layers/swiglu_ffn.py:51: UserWarning: xFormers is not available (SwiGLU)
+  warnings.warn("xFormers is not available (SwiGLU)")
+/home/yutharsan/Radiance/figs/.cache/torch/hub/facebookresearch_dinov2_main/dinov2/layers/attention.py:33: UserWarning: xFormers is not available (Attention)
+  warnings.warn("xFormers is not available (Attention)")
+/home/yutharsan/Radiance/figs/.cache/torch/hub/facebookresearch_dinov2_main/dinov2/layers/block.py:40: UserWarning: xFormers is not available (Block)
+  warnings.warn("xFormers is not available (Block)")
+/home/yutharsan/Radiance/figs/miniconda3/envs/kitchen/lib/python3.10/site-packages/torch/_utils.py:831: UserWarning: TypedStorage is deprecated. It will be removed in the future and UntypedStorage will be the only storage class. This should only matter to you if you are using storages directly.  To access UntypedStorage directly, use tensor.untyped_storage() instead of tensor.storage()
+  return self.fget.__get__(instance, owner)()
+    VRAM baseline 15 MiB → peak 6356 MiB
+  ✔ teachers 4f4bdb1a08: 30 frames extracted, 270 already cached, 9831 MB, 37m 45s
+[09:51:16] Auto image downscale factor of 1                                                 nerfstudio_dataparser.py:484
+Loading latest checkpoint from load_dir
+✅ Done loading checkpoint from outputs/backroom/splatfacto/2026-09-26_190524/nerfstudio_models/step-000029999.ckpt
+      532,361 Gaussians, 270 training views, LangSplat levels s/m/l, uncovered pixels: skip, render 960 px wide, accumulators 3.82 GB on cpu
+/home/yutharsan/Radiance/figs/miniconda3/envs/kitchen/lib/python3.10/site-packages/torch/utils/cpp_extension.py:28: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  from pkg_resources import packaging  # type: ignore[attr-defined]
+      segment lift 1/270 views, 5 s
+      segment lift 25/270 views, 97 s
+      segment lift 50/270 views, 194 s
+      segment lift 75/270 views, 292 s
+      segment lift 100/270 views, 390 s
+      segment lift 125/270 views, 487 s
+      segment lift 150/270 views, 587 s
+      segment lift 175/270 views, 684 s
+      segment lift 200/270 views, 785 s
+      segment lift 225/270 views, 881 s
+      segment lift 250/270 views, 978 s
+      segment lift 270/270 views, 1059 s
+    VRAM baseline 15 MiB → peak 846 MiB
+  ✔ lifted clip_s0, clip_s1, clip_s2, dino onto 531,951 of 532,361 Gaussians (100% seen) in 1059 s, 17280 render passes
+  ✔ table: 532,361 rows (.splat order, 22cd5cc9509bc6e5), 531,951 seen, 2483 MB → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/backroom/semantics/2026-09-26_190524/lift_ls
+    record: /home/yutharsan/Radiance/figs/SousVide/runs/semantics_p1_backroom_2026-10-16_1009.json
+Semantic pipeline  scene=backroom  run=2026-09-26_190524  backend=lift  teachers=clip,dino  steps=preflight,cameras,teachers,lift,export
+    state: /home/yutharsan/Radiance/figs/.semantic_pipeline_state/backroom/2026-09-26_190524/table_ls
+
+══════════════════════════════════════════════════════════════════════════════
+  preflight  —  environment, GPU, weights, active run, time and disk estimate
+══════════════════════════════════════════════════════════════════════════════
+    'preflight' completed in 1.6s
+
+══════════════════════════════════════════════════════════════════════════════
+  cameras  —  refined vs raw pose render check
+══════════════════════════════════════════════════════════════════════════════
+    'cameras' completed in 26.5s
+
+══════════════════════════════════════════════════════════════════════════════
+  teachers  —  CLIP pyramid + DINOv2 per frame (LONG, GPU)
+══════════════════════════════════════════════════════════════════════════════
+    'teachers' completed in 37m 45s
+
+══════════════════════════════════════════════════════════════════════════════
+  lift  —  lift teacher features onto the Gaussians (GPU)
+══════════════════════════════════════════════════════════════════════════════
+    'lift' completed in 17m 55s
+
+══════════════════════════════════════════════════════════════════════════════
+  export  —  write the per-Gaussian table in .splat order
+══════════════════════════════════════════════════════════════════════════════
+    'export' completed in 23.5s
+
+══════════════════════════════════════════════════════════════════════════════
+  Done — total 56m 32s
+══════════════════════════════════════════════════════════════════════════════
+  ✔ open_clip 2.24.0, radiance_semantics 0.1.0
+  ✔ GPU: NVIDIA GeForce RTX 2080 7972 MiB
+  ✔ scene backroom: run 2026-09-26_190524, step-000029999.ckpt (key 2026-09-26_190524-step-000029999-1790431381)
+    300 frames at 1920x1080; 3529 CLIP crops per frame (7 scales); teacher tag 4f4bdb1a08 (0 frames already cached)
+    532,361 Gaussians; needs ≈ 3.1 GB (teachers 1.3 GB, lift + table 1.8 GB); 245 GB free
+
+══════════════════════════════════════════════════════════════════════════════
+  Camera check — backroom 2026-09-26_190524
+══════════════════════════════════════════════════════════════════════════════
+[10:09:54] Auto image downscale factor of 1                                                 nerfstudio_dataparser.py:484
+Loading latest checkpoint from load_dir
+✅ Done loading checkpoint from outputs/backroom/splatfacto/2026-09-26_190524/nerfstudio_models/step-000029999.ckpt
+  ✔ loaded step 29999: 532,361 Gaussians, 270 training cameras, camera optimizer SO3xR3
+    pose corrections: translation mean 4.1 mm (max 39.0), rotation mean 0.108° (max 1.992°)
+/home/yutharsan/Radiance/figs/miniconda3/envs/kitchen/lib/python3.10/site-packages/torch/utils/cpp_extension.py:28: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  from pkg_resources import packaging  # type: ignore[attr-defined]
+    #0    frame_00001.png              refined  31.79 dB   raw  26.36 dB
+    #54   frame_00061.png              refined  31.19 dB   raw  25.55 dB
+    #108  frame_00121.png              refined  29.98 dB   raw  25.30 dB
+    #161  frame_00179.png              refined  31.67 dB   raw  27.95 dB
+    #215  frame_00239.png              refined  30.32 dB   raw  20.71 dB
+    #269  frame_00300.png              refined  28.92 dB   raw  26.18 dB
+  ✔ training views: refined 30.64 dB vs raw 25.34 dB (+5.30 dB); held-out (raw pose) 27.06 dB
+    record: /home/yutharsan/Radiance/figs/SousVide/runs/semantics_p0_cameras_backroom_2026-10-16_1010.json
+GALLEY_JSON {"tool": "cameras", "scene": "backroom", "run": "2026-09-26_190524", "checkpoint": "step-000029999.ckpt", "started": "2026-10-16T10:09:31", "step": 29999, "camera_optimizer": "SO3xR3", "n_train": 270, "corrections": {"translation_mean_m": 0.004075312055647373, "translation_max_m": 0.03896095231175423, "rotation_mean_deg": 0.10768749564886093, "rotation_max_deg": 1.991544485092163}, "views": [{"index": 0, "image": "frame_00001.png", "psnr_refined": 31.791, "psnr_raw": 26.364}, {"index": 54, "image": "frame_00061.png", "psnr_refined": 31.188, "psnr_raw": 25.554}, {"index": 108, "image": "frame_00121.png", "psnr_refined": 29.984, "psnr_raw": 25.305}, {"index": 161, "image": "frame_00179.png", "psnr_refined": 31.672, "psnr_raw": 27.95}, {"index": 215, "image": "frame_00239.png", "psnr_refined": 30.315, "psnr_raw": 20.707}, {"index": 269, "image": "frame_00300.png", "psnr_refined": 28.918, "psnr_raw": 26.175}], "eval_psnr": [25.361, 28.285, 26.341, 29.444, 25.878], "peak_device_mib": 894, "psnr_refined_mean": 30.645, "psnr_raw_mean": 25.343, "eval_psnr_mean": 27.062, "ok": true}
+/home/yutharsan/Radiance/figs/.cache/torch/hub/facebookresearch_dinov2_main/dinov2/layers/swiglu_ffn.py:51: UserWarning: xFormers is not available (SwiGLU)
+  warnings.warn("xFormers is not available (SwiGLU)")
+/home/yutharsan/Radiance/figs/.cache/torch/hub/facebookresearch_dinov2_main/dinov2/layers/attention.py:33: UserWarning: xFormers is not available (Attention)
+  warnings.warn("xFormers is not available (Attention)")
+/home/yutharsan/Radiance/figs/.cache/torch/hub/facebookresearch_dinov2_main/dinov2/layers/block.py:40: UserWarning: xFormers is not available (Block)
+  warnings.warn("xFormers is not available (Block)")
+/home/yutharsan/Radiance/figs/miniconda3/envs/kitchen/lib/python3.10/site-packages/torch/_utils.py:831: UserWarning: TypedStorage is deprecated. It will be removed in the future and UntypedStorage will be the only storage class. This should only matter to you if you are using storages directly.  To access UntypedStorage directly, use tensor.untyped_storage() instead of tensor.storage()
+  return self.fget.__get__(instance, owner)()
+    VRAM baseline 15 MiB → peak 15 MiB
+  ✔ teachers 4f4bdb1a08: 0 frames extracted, 300 already cached, 9831 MB, 1.4s
+[10:10:29] Auto image downscale factor of 1                                                 nerfstudio_dataparser.py:484
+Loading latest checkpoint from load_dir
+✅ Done loading checkpoint from outputs/backroom/splatfacto/2026-09-26_190524/nerfstudio_models/step-000029999.ckpt
+      532,361 Gaussians, 270 training views, LangSplat levels s/m/l, uncovered pixels: fill, render 960 px wide, accumulators 3.82 GB on cpu
+/home/yutharsan/Radiance/figs/miniconda3/envs/kitchen/lib/python3.10/site-packages/torch/utils/cpp_extension.py:28: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  from pkg_resources import packaging  # type: ignore[attr-defined]
+      segment lift 1/270 views, 4 s
+      segment lift 25/270 views, 100 s
+      segment lift 50/270 views, 202 s
+      segment lift 75/270 views, 303 s
+      segment lift 100/270 views, 404 s
+      segment lift 125/270 views, 503 s
+      segment lift 150/270 views, 606 s
+      segment lift 175/270 views, 707 s
+      segment lift 200/270 views, 810 s
+      segment lift 225/270 views, 909 s
+      segment lift 250/270 views, 1010 s
+      segment lift 270/270 views, 1093 s
+    VRAM baseline 15 MiB → peak 890 MiB
+  ✔ lifted clip_s0, clip_s1, clip_s2, dino onto 531,951 of 532,361 Gaussians (100% seen) in 1094 s, 16470 render passes
+  ✔ table: 532,361 rows (.splat order, 22cd5cc9509bc6e5), 531,951 seen, 2483 MB → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/backroom/semantics/2026-09-26_190524/lift_lsfill
+    record: /home/yutharsan/Radiance/figs/SousVide/runs/semantics_p1_backroom_2026-10-16_1029.json
+Semantic pipeline  scene=backroom  run=2026-09-26_190524  backend=lift  teachers=clip,dino  steps=preflight,cameras,teachers,lift,export
+    state: /home/yutharsan/Radiance/figs/.semantic_pipeline_state/backroom/2026-09-26_190524/table_lsfill
+
+══════════════════════════════════════════════════════════════════════════════
+  preflight  —  environment, GPU, weights, active run, time and disk estimate
+══════════════════════════════════════════════════════════════════════════════
+    'preflight' completed in 2.2s
+
+══════════════════════════════════════════════════════════════════════════════
+  cameras  —  refined vs raw pose render check
+══════════════════════════════════════════════════════════════════════════════
+    'cameras' completed in 52.0s
+
+══════════════════════════════════════════════════════════════════════════════
+  teachers  —  CLIP pyramid + DINOv2 per frame (LONG, GPU)
+══════════════════════════════════════════════════════════════════════════════
+    'teachers' completed in 1.8s
+
+══════════════════════════════════════════════════════════════════════════════
+  lift  —  lift teacher features onto the Gaussians (GPU)
+══════════════════════════════════════════════════════════════════════════════
+    'lift' completed in 18m 25s
+
+══════════════════════════════════════════════════════════════════════════════
+  export  —  write the per-Gaussian table in .splat order
+══════════════════════════════════════════════════════════════════════════════
+    'export' completed in 21.2s
+
+══════════════════════════════════════════════════════════════════════════════
+  Done — total 19m 43s
+══════════════════════════════════════════════════════════════════════════════
+  ✔ open_clip 2.24.0, radiance_semantics 0.1.0
+  ✔ GPU: NVIDIA GeForce RTX 2080 7972 MiB
+  ✔ scene flightroom: run 2026-09-29_163855, step-000029999.ckpt (key 2026-09-29_163855-step-000029999-1790681982)
+    499 frames at 1280x720; 3529 CLIP crops per frame (7 scales); teacher tag 4f4bdb1a08 (0 frames already cached)
+    379,684 Gaussians; needs ≈ 3.5 GB (teachers 2.2 GB, lift + table 1.3 GB); 240 GB free
+
+══════════════════════════════════════════════════════════════════════════════
+  Camera check — flightroom 2026-09-29_163855
+══════════════════════════════════════════════════════════════════════════════
+[10:29:18] Auto image downscale factor of 1                                                 nerfstudio_dataparser.py:484
+Loading latest checkpoint from load_dir
+✅ Done loading checkpoint from outputs/flightroom/splatfacto/2026-09-29_163855/nerfstudio_models/step-000029999.ckpt
+  ✔ loaded step 29999: 379,684 Gaussians, 450 training cameras, camera optimizer SO3xR3
+    pose corrections: translation mean 8.4 mm (max 30.9), rotation mean 0.136° (max 0.967°)
+/home/yutharsan/Radiance/figs/miniconda3/envs/kitchen/lib/python3.10/site-packages/torch/utils/cpp_extension.py:28: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  from pkg_resources import packaging  # type: ignore[attr-defined]
+    #0    0000.png                     refined  25.64 dB   raw  24.21 dB
+    #90   0099.png                     refined  26.49 dB   raw  25.87 dB
+    #180  0199.png                     refined  27.16 dB   raw  26.08 dB
+    #269  0298.png                     refined  28.02 dB   raw  27.70 dB
+    #359  0398.png                     refined  23.25 dB   raw  22.75 dB
+    #449  0498.png                     refined  24.58 dB   raw  24.41 dB
+  ✔ training views: refined 25.85 dB vs raw 25.17 dB (+0.69 dB); held-out (raw pose) 24.41 dB
+    record: /home/yutharsan/Radiance/figs/SousVide/runs/semantics_p0_cameras_flightroom_2026-10-16_1029.json
+GALLEY_JSON {"tool": "cameras", "scene": "flightroom", "run": "2026-09-29_163855", "checkpoint": "step-000029999.ckpt", "started": "2026-10-16T10:29:15", "step": 29999, "camera_optimizer": "SO3xR3", "n_train": 450, "corrections": {"translation_mean_m": 0.008423295803368092, "translation_max_m": 0.030850617215037346, "rotation_mean_deg": 0.1363351047039032, "rotation_max_deg": 0.9667184352874756}, "views": [{"index": 0, "image": "0000.png", "psnr_refined": 25.645, "psnr_raw": 24.21}, {"index": 90, "image": "0099.png", "psnr_refined": 26.488, "psnr_raw": 25.871}, {"index": 180, "image": "0199.png", "psnr_refined": 27.156, "psnr_raw": 26.08}, {"index": 269, "image": "0298.png", "psnr_refined": 28.016, "psnr_raw": 27.696}, {"index": 359, "image": "0398.png", "psnr_refined": 23.246, "psnr_raw": 22.746}, {"index": 449, "image": "0498.png", "psnr_refined": 24.576, "psnr_raw": 24.407}], "eval_psnr": [24.066, 24.339, 25.77, 25.617, 22.254], "peak_device_mib": 528, "psnr_refined_mean": 25.854, "psnr_raw_mean": 25.168, "eval_psnr_mean": 24.409, "ok": true}
+    LangSplat features for 49 of 499 frames (SAM ViT-H, ~40–100 s per frame on an RTX 2080)
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+WARNING:huggingface_hub.utils._http:Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.87s/it]                                          1/49 0010: 35.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:41, 41.80s/it]                                          2/49 0020: 43.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:45, 45.21s/it]                                          3/49 0030: 46.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.86s/it]                                          4/49 0040: 38.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:34, 34.01s/it]                                          5/49 0050: 34.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.11s/it]                                          6/49 0060: 35.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.07s/it]                                          7/49 0071: 33.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:43, 43.69s/it]                                          8/49 0081: 44.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.53s/it]                                          9/49 0091: 37.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.73s/it]                                          10/49 0101: 37.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.72s/it]                                          11/49 0111: 36.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.25s/it]                                          12/49 0121: 37.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:43, 43.67s/it]                                          13/49 0132: 44.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.84s/it]                                          14/49 0142: 37.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.22s/it]                                          15/49 0152: 36.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.47s/it]                                          16/49 0162: 38.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.21s/it]                                          17/49 0172: 35.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:30, 30.55s/it]                                          18/49 0182: 31.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.94s/it]                                          19/49 0193: 36.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.69s/it]                                          20/49 0203: 38.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:32, 32.31s/it]                                          21/49 0213: 32.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.57s/it]                                          22/49 0223: 37.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.36s/it]                                          23/49 0233: 34.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.62s/it]                                          24/49 0243: 39.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:42, 42.19s/it]                                          25/49 0254: 42.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.73s/it]                                          26/49 0264: 39.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:32, 32.30s/it]                                          27/49 0274: 33.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.16s/it]                                          28/49 0284: 35.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:34, 34.28s/it]                                          29/49 0294: 35.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:34, 34.93s/it]                                          30/49 0304: 35.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.02s/it]                                          31/49 0315: 37.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:45, 45.23s/it]                                          32/49 0325: 45.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.14s/it]                                          33/49 0335: 36.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.20s/it]                                          34/49 0345: 37.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:34, 34.37s/it]                                          35/49 0355: 35.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:34, 34.22s/it]                                          36/49 0365: 34.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.91s/it]                                          37/49 0376: 38.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:32, 32.82s/it]                                          38/49 0386: 33.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.81s/it]                                          39/49 0396: 34.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:34, 34.67s/it]                                          40/49 0406: 35.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:41, 41.35s/it]                                          41/49 0416: 42.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.27s/it]                                          42/49 0426: 37.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.21s/it]                                          43/49 0437: 38.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.71s/it]                                          44/49 0447: 39.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:39, 39.57s/it]                                          45/49 0457: 40.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.52s/it]                                          46/49 0467: 36.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.23s/it]                                          47/49 0477: 37.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:40, 40.72s/it]                                          48/49 0487: 41.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:34, 34.55s/it]                                          49/49 0497: 35.3 s, peak 5.87 GB
+done: 49 images in 1842 s → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/flightroom/semantics/teachers/4f4bdb1a08/langsplat
+/home/yutharsan/Radiance/figs/.cache/torch/hub/facebookresearch_dinov2_main/dinov2/layers/swiglu_ffn.py:51: UserWarning: xFormers is not available (SwiGLU)
+  warnings.warn("xFormers is not available (SwiGLU)")
+/home/yutharsan/Radiance/figs/.cache/torch/hub/facebookresearch_dinov2_main/dinov2/layers/attention.py:33: UserWarning: xFormers is not available (Attention)
+  warnings.warn("xFormers is not available (Attention)")
+/home/yutharsan/Radiance/figs/.cache/torch/hub/facebookresearch_dinov2_main/dinov2/layers/block.py:40: UserWarning: xFormers is not available (Block)
+  warnings.warn("xFormers is not available (Block)")
+/home/yutharsan/Radiance/figs/miniconda3/envs/kitchen/lib/python3.10/site-packages/torch/_utils.py:831: UserWarning: TypedStorage is deprecated. It will be removed in the future and UntypedStorage will be the only storage class. This should only matter to you if you are using storages directly.  To access UntypedStorage directly, use tensor.untyped_storage() instead of tensor.storage()
+  return self.fget.__get__(instance, owner)()
+    VRAM baseline 15 MiB → peak 6238 MiB
+  ✔ teachers 4f4bdb1a08: 49 frames extracted, 450 already cached, 7279 MB, 30m 57s
+[11:00:27] Auto image downscale factor of 1                                                 nerfstudio_dataparser.py:484
+Loading latest checkpoint from load_dir
+✅ Done loading checkpoint from outputs/flightroom/splatfacto/2026-09-29_163855/nerfstudio_models/step-000029999.ckpt
+      379,684 Gaussians, 450 training views, LangSplat levels s/m/l, uncovered pixels: skip, render 960 px wide, accumulators 2.72 GB on cpu
+/home/yutharsan/Radiance/figs/miniconda3/envs/kitchen/lib/python3.10/site-packages/torch/utils/cpp_extension.py:28: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  from pkg_resources import packaging  # type: ignore[attr-defined]
+      segment lift 1/450 views, 5 s
+      segment lift 25/450 views, 82 s
+      segment lift 50/450 views, 156 s
+      segment lift 75/450 views, 224 s
+      segment lift 100/450 views, 296 s
+      segment lift 125/450 views, 366 s
+      segment lift 150/450 views, 438 s
+      segment lift 175/450 views, 509 s
+      segment lift 200/450 views, 580 s
+      segment lift 225/450 views, 653 s
+      segment lift 250/450 views, 722 s
+      segment lift 275/450 views, 788 s
+      segment lift 300/450 views, 863 s
+      segment lift 325/450 views, 933 s
+      segment lift 350/450 views, 1007 s
+      segment lift 375/450 views, 1079 s
+      segment lift 400/450 views, 1148 s
+      segment lift 425/450 views, 1220 s
+      segment lift 450/450 views, 1285 s
+    VRAM baseline 15 MiB → peak 794 MiB
+  ✔ lifted clip_s0, clip_s1, clip_s2, dino onto 378,173 of 379,684 Gaussians (100% seen) in 1285 s, 28800 render passes
+  ✔ table: 379,684 rows (.splat order, 212ed1b97dc232f0), 378,173 seen, 1771 MB → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/flightroom/semantics/2026-09-29_163855/lift_ls
+    record: /home/yutharsan/Radiance/figs/SousVide/runs/semantics_p1_flightroom_2026-10-16_1122.json
+Semantic pipeline  scene=flightroom  run=2026-09-29_163855  backend=lift  teachers=clip,dino  steps=preflight,cameras,teachers,lift,export
+    state: /home/yutharsan/Radiance/figs/.semantic_pipeline_state/flightroom/2026-09-29_163855/table_ls
+
+══════════════════════════════════════════════════════════════════════════════
+  preflight  —  environment, GPU, weights, active run, time and disk estimate
+══════════════════════════════════════════════════════════════════════════════
+    'preflight' completed in 2.9s
+
+══════════════════════════════════════════════════════════════════════════════
+  cameras  —  refined vs raw pose render check
+══════════════════════════════════════════════════════════════════════════════
+    'cameras' completed in 11.9s
+
+══════════════════════════════════════════════════════════════════════════════
+  teachers  —  CLIP pyramid + DINOv2 per frame (LONG, GPU)
+══════════════════════════════════════════════════════════════════════════════
+    'teachers' completed in 30m 57s
+
+══════════════════════════════════════════════════════════════════════════════
+  lift  —  lift teacher features onto the Gaussians (GPU)
+══════════════════════════════════════════════════════════════════════════════
+    'lift' completed in 21m 37s
+
+══════════════════════════════════════════════════════════════════════════════
+  export  —  write the per-Gaussian table in .splat order
+══════════════════════════════════════════════════════════════════════════════
+    'export' completed in 16.6s
+
+══════════════════════════════════════════════════════════════════════════════
+  Done — total 53m 5s
+══════════════════════════════════════════════════════════════════════════════
+  ✔ open_clip 2.24.0, radiance_semantics 0.1.0
+  ✔ GPU: NVIDIA GeForce RTX 2080 7972 MiB
+  ✔ scene flightroom: run 2026-09-29_163855, step-000029999.ckpt (key 2026-09-29_163855-step-000029999-1790681982)
+    499 frames at 1280x720; 3529 CLIP crops per frame (7 scales); teacher tag 4f4bdb1a08 (0 frames already cached)
+    379,684 Gaussians; needs ≈ 3.5 GB (teachers 2.2 GB, lift + table 1.3 GB); 236 GB free
+
+══════════════════════════════════════════════════════════════════════════════
+  Camera check — flightroom 2026-09-29_163855
+══════════════════════════════════════════════════════════════════════════════
+[11:22:22] Auto image downscale factor of 1                                                 nerfstudio_dataparser.py:484
+Loading latest checkpoint from load_dir
+✅ Done loading checkpoint from outputs/flightroom/splatfacto/2026-09-29_163855/nerfstudio_models/step-000029999.ckpt
+  ✔ loaded step 29999: 379,684 Gaussians, 450 training cameras, camera optimizer SO3xR3
+    pose corrections: translation mean 8.4 mm (max 30.9), rotation mean 0.136° (max 0.967°)
+/home/yutharsan/Radiance/figs/miniconda3/envs/kitchen/lib/python3.10/site-packages/torch/utils/cpp_extension.py:28: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  from pkg_resources import packaging  # type: ignore[attr-defined]
+    #0    0000.png                     refined  25.64 dB   raw  24.21 dB
+    #90   0099.png                     refined  26.49 dB   raw  25.87 dB
+    #180  0199.png                     refined  27.16 dB   raw  26.08 dB
+    #269  0298.png                     refined  28.02 dB   raw  27.70 dB
+    #359  0398.png                     refined  23.25 dB   raw  22.75 dB
+    #449  0498.png                     refined  24.58 dB   raw  24.41 dB
+  ✔ training views: refined 25.85 dB vs raw 25.17 dB (+0.69 dB); held-out (raw pose) 24.41 dB
+    record: /home/yutharsan/Radiance/figs/SousVide/runs/semantics_p0_cameras_flightroom_2026-10-16_1122.json
+GALLEY_JSON {"tool": "cameras", "scene": "flightroom", "run": "2026-09-29_163855", "checkpoint": "step-000029999.ckpt", "started": "2026-10-16T11:22:18", "step": 29999, "camera_optimizer": "SO3xR3", "n_train": 450, "corrections": {"translation_mean_m": 0.008423295803368092, "translation_max_m": 0.030850617215037346, "rotation_mean_deg": 0.1363351047039032, "rotation_max_deg": 0.9667184352874756}, "views": [{"index": 0, "image": "0000.png", "psnr_refined": 25.645, "psnr_raw": 24.21}, {"index": 90, "image": "0099.png", "psnr_refined": 26.488, "psnr_raw": 25.871}, {"index": 180, "image": "0199.png", "psnr_refined": 27.156, "psnr_raw": 26.08}, {"index": 269, "image": "0298.png", "psnr_refined": 28.016, "psnr_raw": 27.696}, {"index": 359, "image": "0398.png", "psnr_refined": 23.246, "psnr_raw": 22.746}, {"index": 449, "image": "0498.png", "psnr_refined": 24.576, "psnr_raw": 24.407}], "eval_psnr": [24.066, 24.339, 25.77, 25.617, 22.254], "peak_device_mib": 528, "psnr_refined_mean": 25.854, "psnr_raw_mean": 25.168, "eval_psnr_mean": 24.409, "ok": true}
+/home/yutharsan/Radiance/figs/.cache/torch/hub/facebookresearch_dinov2_main/dinov2/layers/swiglu_ffn.py:51: UserWarning: xFormers is not available (SwiGLU)
+  warnings.warn("xFormers is not available (SwiGLU)")
+/home/yutharsan/Radiance/figs/.cache/torch/hub/facebookresearch_dinov2_main/dinov2/layers/attention.py:33: UserWarning: xFormers is not available (Attention)
+  warnings.warn("xFormers is not available (Attention)")
+/home/yutharsan/Radiance/figs/.cache/torch/hub/facebookresearch_dinov2_main/dinov2/layers/block.py:40: UserWarning: xFormers is not available (Block)
+  warnings.warn("xFormers is not available (Block)")
+/home/yutharsan/Radiance/figs/miniconda3/envs/kitchen/lib/python3.10/site-packages/torch/_utils.py:831: UserWarning: TypedStorage is deprecated. It will be removed in the future and UntypedStorage will be the only storage class. This should only matter to you if you are using storages directly.  To access UntypedStorage directly, use tensor.untyped_storage() instead of tensor.storage()
+  return self.fget.__get__(instance, owner)()
+    VRAM baseline 15 MiB → peak 15 MiB
+  ✔ teachers 4f4bdb1a08: 0 frames extracted, 499 already cached, 7279 MB, 1.5s
+[11:22:35] Auto image downscale factor of 1                                                 nerfstudio_dataparser.py:484
+Loading latest checkpoint from load_dir
+✅ Done loading checkpoint from outputs/flightroom/splatfacto/2026-09-29_163855/nerfstudio_models/step-000029999.ckpt
+      379,684 Gaussians, 450 training views, LangSplat levels s/m/l, uncovered pixels: fill, render 960 px wide, accumulators 2.72 GB on cpu
+/home/yutharsan/Radiance/figs/miniconda3/envs/kitchen/lib/python3.10/site-packages/torch/utils/cpp_extension.py:28: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  from pkg_resources import packaging  # type: ignore[attr-defined]
+      segment lift 1/450 views, 4 s
+      segment lift 25/450 views, 81 s
+      segment lift 50/450 views, 151 s
+      segment lift 75/450 views, 213 s
+      segment lift 100/450 views, 278 s
+      segment lift 125/450 views, 342 s
+      segment lift 150/450 views, 408 s
+      segment lift 175/450 views, 470 s
+      segment lift 200/450 views, 536 s
+      segment lift 225/450 views, 603 s
+      segment lift 250/450 views, 667 s
+      segment lift 275/450 views, 728 s
+      segment lift 300/450 views, 797 s
+      segment lift 325/450 views, 859 s
+      segment lift 350/450 views, 922 s
+      segment lift 375/450 views, 983 s
+      segment lift 400/450 views, 1049 s
+      segment lift 425/450 views, 1115 s
+      segment lift 450/450 views, 1174 s
+    VRAM baseline 15 MiB → peak 774 MiB
+  ✔ lifted clip_s0, clip_s1, clip_s2, dino onto 378,173 of 379,684 Gaussians (100% seen) in 1175 s, 27450 render passes
+  ✔ table: 379,684 rows (.splat order, 212ed1b97dc232f0), 378,173 seen, 1771 MB → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/flightroom/semantics/2026-09-29_163855/lift_lsfill
+    record: /home/yutharsan/Radiance/figs/SousVide/runs/semantics_p1_flightroom_2026-10-16_1142.json
+Semantic pipeline  scene=flightroom  run=2026-09-29_163855  backend=lift  teachers=clip,dino  steps=preflight,cameras,teachers,lift,export
+    state: /home/yutharsan/Radiance/figs/.semantic_pipeline_state/flightroom/2026-09-29_163855/table_lsfill
+
+══════════════════════════════════════════════════════════════════════════════
+  preflight  —  environment, GPU, weights, active run, time and disk estimate
+══════════════════════════════════════════════════════════════════════════════
+    'preflight' completed in 1.5s
+
+══════════════════════════════════════════════════════════════════════════════
+  cameras  —  refined vs raw pose render check
+══════════════════════════════════════════════════════════════════════════════
+    'cameras' completed in 11.2s
+
+══════════════════════════════════════════════════════════════════════════════
+  teachers  —  CLIP pyramid + DINOv2 per frame (LONG, GPU)
+══════════════════════════════════════════════════════════════════════════════
+    'teachers' completed in 1.8s
+
+══════════════════════════════════════════════════════════════════════════════
+  lift  —  lift teacher features onto the Gaussians (GPU)
+══════════════════════════════════════════════════════════════════════════════
+    'lift' completed in 19m 46s
+
+══════════════════════════════════════════════════════════════════════════════
+  export  —  write the per-Gaussian table in .splat order
+══════════════════════════════════════════════════════════════════════════════
+    'export' completed in 16.7s
+
+══════════════════════════════════════════════════════════════════════════════
+  Done — total 20m 17s
+══════════════════════════════════════════════════════════════════════════════
+  L-C@ls (lift): 16 queries
+    recycling bin                HIT  0.13 m    peak 0.745  17747 ms
+    blue trash can               HIT  0.15 m    peak 0.753  2705 ms
+    office chair                 HIT  0.43 m    peak 0.667  2660 ms
+    swivel chair                 HIT  0.42 m    peak 0.657  2686 ms
+    grandfather clock            HIT  0.34 m    peak 0.711  2654 ms
+    clock                        HIT  0.09 m    peak 0.725  2664 ms
+    children's road play mat     HIT  0.26 m    peak 0.812  2688 ms
+    camera tripod                HIT  0.70 m    peak 0.588  2692 ms
+    purple foam mat              HIT  0.20 m    peak 0.774  2719 ms
+    white bucket                 MISS 1.80 m    peak 0.620  2684 ms
+    glass door cabinet           HIT  0.24 m    peak 0.751  2703 ms
+    hose reel                    HIT  0.06 m    peak 0.615  2688 ms
+    moving box                   HIT  0.25 m    peak 0.674  2687 ms
+    bicycle                      NEG ok         peak 0.503  2662 ms
+    sofa                         NEG ok         peak 0.507  2704 ms
+    ceiling fan                  NEG fp         peak 0.642  2704 ms
+  L-C@ls: hits 12/13, median error 0.25 m, negatives fp 0.333, AUROC 0.923 → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/backroom/semantics/2026-09-26_190524/eval/L-C@ls.json
+  L-CD@ls (lift, DINO at query time): 16 queries
+    recycling bin                HIT  0.14 m    peak 0.731  12556 ms
+    blue trash can               HIT  0.16 m    peak 0.745  2741 ms
+    office chair                 HIT  0.44 m    peak 0.650  2724 ms
+    swivel chair                 HIT  0.44 m    peak 0.641  2747 ms
+    grandfather clock            HIT  0.30 m    peak 0.700  2760 ms
+    clock                        HIT  0.03 m    peak 0.717  2747 ms
+    children's road play mat     HIT  0.25 m    peak 0.792  2781 ms
+    camera tripod                HIT  0.69 m    peak 0.580  2716 ms
+    purple foam mat              HIT  0.19 m    peak 0.732  2726 ms
+    white bucket                 MISS 1.83 m    peak 0.605  2730 ms
+    glass door cabinet           HIT  0.24 m    peak 0.745  2844 ms
+    hose reel                    HIT  0.05 m    peak 0.603  2741 ms
+    moving box                   HIT  0.30 m    peak 0.639  2752 ms
+    bicycle                      NEG ok         peak 0.472  2748 ms
+    sofa                         NEG ok         peak 0.459  2800 ms
+    ceiling fan                  NEG fp         peak 0.618  2741 ms
+  L-CD@ls: hits 12/13, median error 0.246 m, negatives fp 0.333, AUROC 0.923 → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/backroom/semantics/2026-09-26_190524/eval/L-CD@ls.json
+  L-C@lsfill (lift): 16 queries
+    recycling bin                HIT  0.12 m    peak 0.745  2807 ms
+    blue trash can               HIT  0.15 m    peak 0.753  2706 ms
+    office chair                 HIT  0.42 m    peak 0.664  2702 ms
+    swivel chair                 HIT  0.42 m    peak 0.654  2679 ms
+    grandfather clock            HIT  0.30 m    peak 0.710  2730 ms
+    clock                        HIT  0.08 m    peak 0.725  2741 ms
+    children's road play mat     HIT  0.26 m    peak 0.811  2753 ms
+    camera tripod                MISS 4.80 m    peak 0.576  2765 ms
+    purple foam mat              HIT  0.20 m    peak 0.773  2739 ms
+    white bucket                 MISS 1.81 m    peak 0.617  2698 ms
+    glass door cabinet           HIT  0.24 m    peak 0.751  2740 ms
+    hose reel                    HIT  0.07 m    peak 0.617  2695 ms
+    moving box                   HIT  0.24 m    peak 0.676  2689 ms
+    bicycle                      NEG ok         peak 0.496  2703 ms
+    sofa                         NEG ok         peak 0.475  2681 ms
+    ceiling fan                  NEG fp         peak 0.648  2835 ms
+  L-C@lsfill: hits 11/13, median error 0.24 m, negatives fp 0.333, AUROC 0.923 → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/backroom/semantics/2026-09-26_190524/eval/L-C@lsfill.json
+  L-CD@lsfill (lift, DINO at query time): 16 queries
+    recycling bin                HIT  0.13 m    peak 0.731  12636 ms
+    blue trash can               HIT  0.16 m    peak 0.744  2788 ms
+    office chair                 HIT  0.43 m    peak 0.647  2774 ms
+    swivel chair                 HIT  0.44 m    peak 0.638  2839 ms
+    grandfather clock            HIT  0.26 m    peak 0.699  2772 ms
+    clock                        HIT  0.03 m    peak 0.717  2777 ms
+    children's road play mat     HIT  0.24 m    peak 0.791  2801 ms
+    camera tripod                MISS 4.82 m    peak 0.565  2773 ms
+    purple foam mat              HIT  0.19 m    peak 0.732  2764 ms
+    white bucket                 MISS 1.82 m    peak 0.603  2779 ms
+    glass door cabinet           HIT  0.24 m    peak 0.744  2879 ms
+    hose reel                    HIT  0.07 m    peak 0.602  2758 ms
+    moving box                   HIT  0.26 m    peak 0.641  2764 ms
+    bicycle                      NEG ok         peak 0.475  2745 ms
+    sofa                         NEG ok         peak 0.459  2765 ms
+    ceiling fan                  NEG fp         peak 0.635  2845 ms
+  L-CD@lsfill: hits 11/13, median error 0.244 m, negatives fp 0.333, AUROC 0.923 → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/backroom/semantics/2026-09-26_190524/eval/L-CD@lsfill.json
+  L-C@ls (lift): 19 queries
+    armchair                     HIT  0.31 m    peak 0.700  6891 ms
+    upholstered chair            HIT  0.28 m    peak 0.646  1942 ms
+    whiteboard                   HIT  0.08 m    peak 0.714  1947 ms
+    computer monitor             HIT  0.12 m    peak 0.689  1948 ms
+    keyboard                     MISS           peak 0.550  1938 ms
+    floor lamp                   MISS 0.83 m    peak 0.626  1955 ms
+    red cup                      HIT  0.03 m    peak 0.697  1940 ms
+    water bottle                 HIT  0.03 m    peak 0.656  1943 ms
+    water jug                    MISS 0.76 m    peak 0.633  1952 ms
+    round table                  HIT  0.45 m    peak 0.603  1971 ms
+    drone gate                   MISS 1.06 m    peak 0.588  1970 ms
+    PVC pipe frame               HIT  0.69 m    peak 0.854  1943 ms
+    poster                       HIT  0.25 m    peak 0.668  1944 ms
+    garden cart                  HIT  0.41 m    peak 0.735  1967 ms
+    wheelbarrow                  HIT  0.38 m    peak 0.703  1961 ms
+    cardboard box                HIT  0.20 m    peak 0.623  1964 ms
+    red tool chest               NEG ok         peak 0.489  1980 ms
+    recycling bin                NEG ok         peak 0.524  1977 ms
+    bicycle                      NEG ok         peak 0.502  1984 ms
+  L-C@ls: hits 12/16, median error 0.306 m, negatives fp 0.0, AUROC 1.0 → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/flightroom/semantics/2026-09-29_163855/eval/L-C@ls.json
+  L-CD@ls (lift, DINO at query time): 19 queries
+    armchair                     HIT  0.33 m    peak 0.682  8947 ms
+    upholstered chair            HIT  0.31 m    peak 0.628  1996 ms
+    whiteboard                   HIT  0.07 m    peak 0.689  2020 ms
+    computer monitor             HIT  0.09 m    peak 0.645  2004 ms
+    keyboard                     MISS           peak 0.533  1995 ms
+    floor lamp                   MISS 0.84 m    peak 0.602  2000 ms
+    red cup                      HIT  0.03 m    peak 0.681  1999 ms
+    water bottle                 HIT  0.03 m    peak 0.648  2009 ms
+    water jug                    MISS 0.76 m    peak 0.623  2000 ms
+    round table                  HIT  0.60 m    peak 0.575  1995 ms
+    drone gate                   MISS 1.23 m    peak 0.574  1994 ms
+    PVC pipe frame               HIT  0.68 m    peak 0.842  1998 ms
+    poster                       HIT  0.22 m    peak 0.640  2002 ms
+    garden cart                  HIT  0.38 m    peak 0.692  2001 ms
+    wheelbarrow                  HIT  0.35 m    peak 0.673  1991 ms
+    cardboard box                HIT  0.19 m    peak 0.601  2005 ms
+    red tool chest               NEG ok         peak 0.429  1994 ms
+    recycling bin                NEG ok         peak 0.484  2031 ms
+    bicycle                      NEG ok         peak 0.477  1997 ms
+  L-CD@ls: hits 12/16, median error 0.331 m, negatives fp 0.0, AUROC 1.0 → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/flightroom/semantics/2026-09-29_163855/eval/L-CD@ls.json
+  L-C@lsfill (lift): 19 queries
+    armchair                     HIT  0.30 m    peak 0.694  2028 ms
+    upholstered chair            HIT  0.28 m    peak 0.641  1975 ms
+    whiteboard                   HIT  0.07 m    peak 0.713  1949 ms
+    computer monitor             HIT  0.11 m    peak 0.684  1939 ms
+    keyboard                     MISS           peak 0.545  1976 ms
+    floor lamp                   MISS 6.18 m    peak 0.597  1956 ms
+    red cup                      HIT  0.03 m    peak 0.700  1953 ms
+    water bottle                 HIT  0.03 m    peak 0.654  1957 ms
+    water jug                    MISS 0.76 m    peak 0.631  1942 ms
+    round table                  HIT  0.45 m    peak 0.601  1960 ms
+    drone gate                   MISS 1.09 m    peak 0.586  2000 ms
+    PVC pipe frame               HIT  0.69 m    peak 0.847  1984 ms
+    poster                       HIT  0.25 m    peak 0.667  1990 ms
+    garden cart                  HIT  0.37 m    peak 0.720  1979 ms
+    wheelbarrow                  HIT  0.36 m    peak 0.697  1960 ms
+    cardboard box                HIT  0.20 m    peak 0.623  1944 ms
+    red tool chest               NEG ok         peak 0.465  1952 ms
+    recycling bin                NEG ok         peak 0.521  1950 ms
+    bicycle                      NEG ok         peak 0.497  1948 ms
+  L-C@lsfill: hits 12/16, median error 0.297 m, negatives fp 0.0, AUROC 1.0 → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/flightroom/semantics/2026-09-29_163855/eval/L-C@lsfill.json
+  L-CD@lsfill (lift, DINO at query time): 19 queries
+    armchair                     HIT  0.32 m    peak 0.673  8956 ms
+    upholstered chair            HIT  0.30 m    peak 0.620  2000 ms
+    whiteboard                   HIT  0.06 m    peak 0.688  2010 ms
+    computer monitor             HIT  0.09 m    peak 0.641  2004 ms
+    keyboard                     MISS           peak 0.529  2005 ms
+    floor lamp                   MISS 6.20 m    peak 0.578  2003 ms
+    red cup                      HIT  0.03 m    peak 0.686  2024 ms
+    water bottle                 HIT  0.03 m    peak 0.646  2006 ms
+    water jug                    MISS 0.76 m    peak 0.621  1999 ms
+    round table                  HIT  0.60 m    peak 0.573  2007 ms
+    drone gate                   MISS 1.26 m    peak 0.574  1998 ms
+    PVC pipe frame               HIT  0.69 m    peak 0.833  2019 ms
+    poster                       HIT  0.22 m    peak 0.640  2023 ms
+    garden cart                  HIT  0.31 m    peak 0.678  2003 ms
+    wheelbarrow                  HIT  0.32 m    peak 0.667  2003 ms
+    cardboard box                HIT  0.20 m    peak 0.601  1999 ms
+    red tool chest               NEG ok         peak 0.444  2010 ms
+    recycling bin                NEG ok         peak 0.485  1998 ms
+    bicycle                      NEG ok         peak 0.475  1997 ms
+  L-CD@lsfill: hits 12/16, median error 0.309 m, negatives fp 0.0, AUROC 1.0 → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/flightroom/semantics/2026-09-29_163855/eval/L-CD@lsfill.json
+  L-C@ls (lift): 5 queries
+    red tool chest               HIT  0.18 m    peak 0.817  7560 ms
+    shop vacuum                  HIT  0.07 m    peak 0.616  2697 ms
+    green foam mats              HIT  0.17 m    peak 0.737  2680 ms
+    garden cart                  HIT  0.45 m    peak 0.651  2710 ms
+    whiteboard                   HIT  0.25 m    peak 0.669  2705 ms
+  L-C@ls: hits 5/5, median error 0.183 m, negatives fp None, AUROC None → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/backroom/semantics/2026-09-26_190524/eval/phase1_gate/L-C@ls.json
+  L-C@lsfill (lift): 5 queries
+    red tool chest               HIT  0.18 m    peak 0.817  2775 ms
+    shop vacuum                  HIT  0.05 m    peak 0.614  2678 ms
+    green foam mats              HIT  0.17 m    peak 0.736  2683 ms
+    garden cart                  HIT  0.39 m    peak 0.643  2673 ms
+    whiteboard                   HIT  0.21 m    peak 0.668  2682 ms
+  L-C@lsfill: hits 5/5, median error 0.185 m, negatives fp None, AUROC None → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/backroom/semantics/2026-09-26_190524/eval/phase1_gate/L-C@lsfill.json
+backroom LS-skip floor 0.46: hits 11/13, negatives with a candidate ['bicycle', 'sofa', 'ceiling fan']
+backroom LS-skip floor 0.48: hits 11/13, negatives with a candidate ['bicycle', 'sofa', 'ceiling fan']
+backroom LS-skip floor 0.5: hits 11/13, negatives with a candidate ['ceiling fan']
+backroom LS-skip floor 0.51: hits 11/13, negatives with a candidate ['ceiling fan']
+backroom LS-skip floor 0.52: hits 11/13, negatives with a candidate ['ceiling fan']
+backroom LS-skip floor 0.525: hits 11/13, negatives with a candidate ['ceiling fan']
+backroom LS-skip floor 0.53: hits 11/13, negatives with a candidate ['ceiling fan']
+backroom LS-skip floor 0.54: hits 11/13, negatives with a candidate ['ceiling fan']
+backroom LS-skip floor 0.55: hits 12/13, negatives with a candidate ['ceiling fan']
+backroom LS-skip floor 0.575: hits 12/13, negatives with a candidate ['ceiling fan']
+backroom LS-skip floor 0.6: hits 11/13, negatives with a candidate ['ceiling fan']
+backroom LS-skip-flat floor 0.46: hits 11/13, negatives with a candidate ['bicycle', 'ceiling fan']
+backroom LS-skip-flat floor 0.48: hits 11/13, negatives with a candidate ['ceiling fan']
+backroom LS-skip-flat floor 0.5: hits 12/13, negatives with a candidate ['ceiling fan']
+backroom LS-skip-flat floor 0.51: hits 12/13, negatives with a candidate ['ceiling fan']
+backroom LS-skip-flat floor 0.52: hits 12/13, negatives with a candidate ['ceiling fan']
+backroom LS-skip-flat floor 0.525: hits 12/13, negatives with a candidate ['ceiling fan']
+backroom LS-skip-flat floor 0.53: hits 12/13, negatives with a candidate ['ceiling fan']
+backroom LS-skip-flat floor 0.54: hits 12/13, negatives with a candidate ['ceiling fan']
+backroom LS-skip-flat floor 0.55: hits 11/13, negatives with a candidate ['ceiling fan']
+backroom LS-skip-flat floor 0.575: hits 11/13, negatives with a candidate ['ceiling fan']
+backroom LS-skip-flat floor 0.6: hits 9/13, negatives with a candidate ['ceiling fan']
+backroom LS-fill floor 0.46: hits 11/13, negatives with a candidate ['bicycle', 'sofa', 'ceiling fan']
+backroom LS-fill floor 0.48: hits 11/13, negatives with a candidate ['bicycle', 'ceiling fan']
+backroom LS-fill floor 0.5: hits 11/13, negatives with a candidate ['ceiling fan']
+backroom LS-fill floor 0.51: hits 11/13, negatives with a candidate ['ceiling fan']
+backroom LS-fill floor 0.52: hits 11/13, negatives with a candidate ['ceiling fan']
+backroom LS-fill floor 0.525: hits 11/13, negatives with a candidate ['ceiling fan']
+backroom LS-fill floor 0.53: hits 11/13, negatives with a candidate ['ceiling fan']
+backroom LS-fill floor 0.54: hits 11/13, negatives with a candidate ['ceiling fan']
+backroom LS-fill floor 0.55: hits 11/13, negatives with a candidate ['ceiling fan']
+backroom LS-fill floor 0.575: hits 12/13, negatives with a candidate ['ceiling fan']
+backroom LS-fill floor 0.6: hits 10/13, negatives with a candidate ['ceiling fan']
+backroom LS-fill-flat floor 0.46: hits 11/13, negatives with a candidate ['bicycle', 'ceiling fan']
+backroom LS-fill-flat floor 0.48: hits 11/13, negatives with a candidate ['ceiling fan']
+backroom LS-fill-flat floor 0.5: hits 11/13, negatives with a candidate ['ceiling fan']
+backroom LS-fill-flat floor 0.51: hits 11/13, negatives with a candidate ['ceiling fan']
+backroom LS-fill-flat floor 0.52: hits 11/13, negatives with a candidate ['ceiling fan']
+backroom LS-fill-flat floor 0.525: hits 11/13, negatives with a candidate ['ceiling fan']
+backroom LS-fill-flat floor 0.53: hits 11/13, negatives with a candidate ['ceiling fan']
+backroom LS-fill-flat floor 0.54: hits 11/13, negatives with a candidate ['ceiling fan']
+backroom LS-fill-flat floor 0.55: hits 11/13, negatives with a candidate ['ceiling fan']
+backroom LS-fill-flat floor 0.575: hits 11/13, negatives with a candidate ['ceiling fan']
+backroom LS-fill-flat floor 0.6: hits 9/13, negatives with a candidate ['ceiling fan']
+flightroom LS-skip floor 0.46: hits 13/16, negatives with a candidate ['recycling bin', 'bicycle']
+flightroom LS-skip floor 0.48: hits 13/16, negatives with a candidate ['recycling bin', 'bicycle']
+flightroom LS-skip floor 0.5: hits 13/16, negatives with a candidate ['recycling bin']
+flightroom LS-skip floor 0.51: hits 13/16, negatives with a candidate ['recycling bin']
+flightroom LS-skip floor 0.52: hits 13/16, negatives with a candidate ['recycling bin']
+flightroom LS-skip floor 0.525: hits 13/16, negatives with a candidate ['recycling bin']
+flightroom LS-skip floor 0.53: hits 13/16, negatives with a candidate ['recycling bin']
+flightroom LS-skip floor 0.54: hits 13/16, negatives with a candidate []
+flightroom LS-skip floor 0.55: hits 12/16, negatives with a candidate []
+flightroom LS-skip floor 0.575: hits 12/16, negatives with a candidate []
+flightroom LS-skip floor 0.6: hits 12/16, negatives with a candidate []
+flightroom LS-skip-flat floor 0.46: hits 13/16, negatives with a candidate ['recycling bin', 'bicycle']
+flightroom LS-skip-flat floor 0.48: hits 14/16, negatives with a candidate ['recycling bin']
+flightroom LS-skip-flat floor 0.5: hits 13/16, negatives with a candidate ['recycling bin']
+flightroom LS-skip-flat floor 0.51: hits 13/16, negatives with a candidate ['recycling bin']
+flightroom LS-skip-flat floor 0.52: hits 13/16, negatives with a candidate ['recycling bin']
+flightroom LS-skip-flat floor 0.525: hits 13/16, negatives with a candidate []
+flightroom LS-skip-flat floor 0.53: hits 13/16, negatives with a candidate []
+flightroom LS-skip-flat floor 0.54: hits 13/16, negatives with a candidate []
+flightroom LS-skip-flat floor 0.55: hits 13/16, negatives with a candidate []
+flightroom LS-skip-flat floor 0.575: hits 13/16, negatives with a candidate []
+flightroom LS-skip-flat floor 0.6: hits 9/16, negatives with a candidate []
+flightroom LS-fill floor 0.46: hits 13/16, negatives with a candidate ['red tool chest', 'recycling bin', 'bicycle']
+flightroom LS-fill floor 0.48: hits 13/16, negatives with a candidate ['recycling bin', 'bicycle']
+flightroom LS-fill floor 0.5: hits 13/16, negatives with a candidate ['recycling bin']
+flightroom LS-fill floor 0.51: hits 13/16, negatives with a candidate ['recycling bin']
+flightroom LS-fill floor 0.52: hits 13/16, negatives with a candidate ['recycling bin']
+flightroom LS-fill floor 0.525: hits 13/16, negatives with a candidate ['recycling bin']
+flightroom LS-fill floor 0.53: hits 13/16, negatives with a candidate ['recycling bin']
+flightroom LS-fill floor 0.54: hits 13/16, negatives with a candidate []
+flightroom LS-fill floor 0.55: hits 12/16, negatives with a candidate []
+flightroom LS-fill floor 0.575: hits 12/16, negatives with a candidate []
+flightroom LS-fill floor 0.6: hits 12/16, negatives with a candidate []
+flightroom LS-fill-flat floor 0.46: hits 13/16, negatives with a candidate ['recycling bin']
+flightroom LS-fill-flat floor 0.48: hits 14/16, negatives with a candidate ['recycling bin']
+flightroom LS-fill-flat floor 0.5: hits 13/16, negatives with a candidate ['recycling bin']
+flightroom LS-fill-flat floor 0.51: hits 13/16, negatives with a candidate ['recycling bin']
+flightroom LS-fill-flat floor 0.52: hits 13/16, negatives with a candidate []
+flightroom LS-fill-flat floor 0.525: hits 13/16, negatives with a candidate []
+flightroom LS-fill-flat floor 0.53: hits 13/16, negatives with a candidate []
+flightroom LS-fill-flat floor 0.54: hits 13/16, negatives with a candidate []
+flightroom LS-fill-flat floor 0.55: hits 13/16, negatives with a candidate []
+flightroom LS-fill-flat floor 0.575: hits 12/16, negatives with a candidate []
+flightroom LS-fill-flat floor 0.6: hits 10/16, negatives with a candidate []
+ALL_DONE

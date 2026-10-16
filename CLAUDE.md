@@ -44,6 +44,8 @@ holds what. Full history with every problem and fix: `docs/report/project_chroni
 Occam's centre-pixel lift 6.5–18× faster, ±1–2 queries (SEMANTICS.md §17, `Research notes/experiment results/`).
 14 Oct: full pipelines — **Occam's LGS on LangSplat SAM ViT-H features: 25/29 at 1/6 false positives** (best so far; A 22/29),
 LUDVIG full (DINOv2 ViT-g + diffusion) 19/29 (SEMANTICS.md §18). LangSplat extraction ~5 GPU-h per scene on the 2080.
+16 Oct (`semantic/new`): `--clip-mode langsplat` (region teachers, our lift) 24/29 at 1/6 FP; `--uncovered skip|fill` differ by
+one query (SEMANTICS.md §19). Switching the default lift mode to langsplat is Suhan's call.
 
 Next (Suhan to choose, HANDOVER.md §2): per-table floor calibration, then decide the default lift; query-time fusion /
 ViT-L re-ranker / FMGS baking fixes; merging B2/C2 (branches pushed, unmerged); disk cleanup of variant teachers and

@@ -1,0 +1,25 @@
+{
+ "views": 450,
+ "passes": 27450,
+ "seconds": 1174.8,
+ "seen": 378173,
+ "n": 379684,
+ "seen_frac": 0.996,
+ "render_width": 960,
+ "uncovered": "fill",
+ "level_rows": [
+  378173,
+  378173,
+  378173
+ ],
+ "pixel_coverage": [
+  0.8746,
+  0.9282,
+  0.86
+ ],
+ "step": 29999,
+ "acc_device": "cpu",
+ "peak_vram_mib": 774,
+ "teacher_tag": "4f4bdb1a08",
+ "key": "2026-09-29_163855-step-000029999-1790681982"
+}
