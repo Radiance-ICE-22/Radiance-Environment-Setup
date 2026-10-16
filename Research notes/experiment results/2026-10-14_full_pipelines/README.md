@@ -1,6 +1,8 @@
 # Full pipelines: LUDVIG (DINOv2 ViT-g + graph diffusion) and Occam's LGS (LangSplat SAM ViT-H features)
 
-Runs 13–14 Oct 2026 on intellisense08 (RTX 2080). **Report:** [report/full_pipelines_report.pdf](report/full_pipelines_report.pdf)
+Runs 13–14 Oct 2026 on intellisense08 (RTX 2080). **Reports:** [report/full_pipelines_report.pdf](report/full_pipelines_report.pdf) (both papers) ·
+[report/occam/occam_full_chain_report.pdf](report/occam/occam_full_chain_report.pdf) (Occam's full chain in detail: every step, the 8 GB
+fixes, mask statistics, level choice per query, comparison with our A / Old / B2 and with Occam's lift on our A teachers)
 
 ## Result in brief (Phase 5 sets, 29 positives / 6 absent objects, floor 0.55)
 | Configuration | Hits | Absent firing | Best hits at 1 false positive (floor sweep) | Features + lift per scene |
@@ -20,7 +22,10 @@ Runs 13–14 Oct 2026 on intellisense08 (RTX 2080). **Report:** [report/full_pip
   (lift statistics, LangSplat meta), `raw/floor_sweep.json`, `raw/logs/` (runs; `test_langsplat_nms.log` = the
   vectorised-NMS equivalence check).
 - `csv/` — summary, combined, per_query, cost, dev, floor_sweep.
-- `scripts/collect.py`, `scripts/make_tables.py` — raw → csv → report tables.
+- `raw/occam/` — levels chosen per query (levels.json), masks per image and level (masks.csv), per-image extraction
+  time (timing.csv), per-level table coverage.
+- `scripts/collect.py`, `scripts/make_tables.py` — raw → csv → report tables; `scripts/occam_analysis.py` (kitchen, CPU)
+  and `scripts/make_occam_tables.py` — the Occam report's extra data and tables.
 
 Code: `semantics/baselines/` on `semantic/LUDVIG` (ludvig_full.py, ludvig_diffuse.py, import_diffused.py; query
 variant L-CL) and `semantic/LGS` (langsplat_features.py, occam_lift.py --langsplat). LangSplat feature cache (15 GB):
