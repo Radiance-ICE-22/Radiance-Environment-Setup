@@ -1,0 +1,5 @@
+variant,hits,err_med_m,missed
+L-C@ludvigfull,4/5,0.203,garden cart (no candidate)
+L-C@occamfull,5/5,0.191,-
+L-CD@ludvigfull,4/5,0.203,garden cart (no candidate)
+L-CL@ludvigfull,4/5,0.195,garden cart (no candidate)

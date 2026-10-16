@@ -1,0 +1,19 @@
+{
+ "config": "B2",
+ "table": "lift_sam2",
+ "rows": 532361,
+ "lift": {
+  "views": 270,
+  "passes": 16470,
+  "seconds": 884.5,
+  "seen": 531951,
+  "n": 532361,
+  "seen_frac": 0.9992,
+  "render_width": 960,
+  "step": 29999,
+  "acc_device": "cpu",
+  "peak_vram_mib": 826,
+  "teacher_tag": "d869f497f5",
+  "key": "2026-09-26_190524-step-000029999-1790431381"
+ }
+}

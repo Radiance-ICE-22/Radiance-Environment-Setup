@@ -1,0 +1,166 @@
+  ✔ open_clip 2.24.0, radiance_semantics 0.1.0
+  ! device cpu: teachers and the lift will be very slow (tests only)
+  ✔ scene backroom: run 2026-09-26_190524, step-000029999.ckpt (key 2026-09-26_190524-step-000029999-1790431381)
+    300 frames at 1920x1080; 3529 CLIP crops per frame (7 scales); teacher tag d7a30d7264 (300 frames already cached)
+    532,361 Gaussians; needs ≈ 1.8 GB (teachers 1.3 GB, lift + table 1.8 GB); 274 GB free
+  ✔ table: 532,361 rows (.splat order, 22cd5cc9509bc6e5), 531,966 seen, 574 MB → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/backroom/semantics/2026-09-26_190524/lift_ludvigfull
+    record: /home/yutharsan/Radiance/figs/SousVide/runs/semantics_p1_backroom_2026-10-13_1837.json
+Semantic pipeline  scene=backroom  run=2026-09-26_190524  backend=lift  teachers=clip,dino  steps=preflight,export
+    state: /home/yutharsan/Radiance/figs/.semantic_pipeline_state/backroom/2026-09-26_190524/table_ludvigfull
+
+══════════════════════════════════════════════════════════════════════════════
+  preflight  —  environment, GPU, weights, active run, time and disk estimate
+══════════════════════════════════════════════════════════════════════════════
+    'preflight' completed in 6.0s
+
+══════════════════════════════════════════════════════════════════════════════
+  export  —  write the per-Gaussian table in .splat order
+══════════════════════════════════════════════════════════════════════════════
+    'export' completed in 9.0s
+
+══════════════════════════════════════════════════════════════════════════════
+  Done — total 15.1s
+══════════════════════════════════════════════════════════════════════════════
+21 diffused prompts → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/backroom/semantics/2026-09-26_190524/lift_ludvigfull/ludvig_diffused.npz
+  ✔ open_clip 2.24.0, radiance_semantics 0.1.0
+  ! device cpu: teachers and the lift will be very slow (tests only)
+  ✔ scene flightroom: run 2026-09-29_163855, step-000029999.ckpt (key 2026-09-29_163855-step-000029999-1790681982)
+    499 frames at 1280x720; 3529 CLIP crops per frame (7 scales); teacher tag d7a30d7264 (499 frames already cached)
+    379,684 Gaussians; needs ≈ 1.3 GB (teachers 2.2 GB, lift + table 1.3 GB); 273 GB free
+  ✔ table: 379,684 rows (.splat order, 212ed1b97dc232f0), 378,208 seen, 410 MB → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/flightroom/semantics/2026-09-29_163855/lift_ludvigfull
+    record: /home/yutharsan/Radiance/figs/SousVide/runs/semantics_p1_flightroom_2026-10-13_1837.json
+Semantic pipeline  scene=flightroom  run=2026-09-29_163855  backend=lift  teachers=clip,dino  steps=preflight,export
+    state: /home/yutharsan/Radiance/figs/.semantic_pipeline_state/flightroom/2026-09-29_163855/table_ludvigfull
+
+══════════════════════════════════════════════════════════════════════════════
+  preflight  —  environment, GPU, weights, active run, time and disk estimate
+══════════════════════════════════════════════════════════════════════════════
+    'preflight' completed in 2.8s
+
+══════════════════════════════════════════════════════════════════════════════
+  export  —  write the per-Gaussian table in .splat order
+══════════════════════════════════════════════════════════════════════════════
+    'export' completed in 7.5s
+
+══════════════════════════════════════════════════════════════════════════════
+  Done — total 10.3s
+══════════════════════════════════════════════════════════════════════════════
+19 diffused prompts → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/flightroom/semantics/2026-09-29_163855/lift_ludvigfull/ludvig_diffused.npz
+  L-C@ludvigfull (lift): 16 queries
+    recycling bin                HIT  0.21 m    peak 0.688  16366 ms
+    blue trash can               HIT  0.26 m    peak 0.667  1051 ms
+    office chair                 MISS           peak 0.534  1029 ms
+    swivel chair                 MISS           peak 0.504  988 ms
+    grandfather clock            HIT  0.07 m    peak 0.637  1003 ms
+    clock                        HIT  0.08 m    peak 0.645  980 ms
+    children's road play mat     HIT  0.07 m    peak 0.702  1024 ms
+    camera tripod                MISS           peak 0.499  1017 ms
+    purple foam mat              HIT  0.10 m    peak 0.705  966 ms
+    white bucket                 MISS 3.68 m    peak 0.555  884 ms
+    glass door cabinet           HIT  0.33 m    peak 0.619  889 ms
+    hose reel                    HIT  0.12 m    peak 0.624  886 ms
+    moving box                   HIT  0.27 m    peak 0.665  890 ms
+    bicycle                      NEG ok         peak 0.492  826 ms
+    sofa                         NEG ok         peak 0.387  764 ms
+    ceiling fan                  NEG fp         peak 0.639  794 ms
+  L-C@ludvigfull: hits 9/13, median error 0.168 m, negatives fp 0.333, AUROC 0.821 → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/backroom/semantics/2026-09-26_190524/eval/L-C@ludvigfull.json
+  L-CD@ludvigfull (lift, DINO at query time): 16 queries
+    recycling bin                HIT  0.20 m    peak 0.676  3781 ms
+    blue trash can               HIT  0.27 m    peak 0.657  1007 ms
+    office chair                 MISS           peak 0.521  1008 ms
+    swivel chair                 MISS           peak 0.496  1008 ms
+    grandfather clock            HIT  0.07 m    peak 0.629  1007 ms
+    clock                        HIT  0.08 m    peak 0.636  1010 ms
+    children's road play mat     HIT  0.06 m    peak 0.689  1011 ms
+    camera tripod                MISS           peak 0.492  1009 ms
+    purple foam mat              HIT  0.12 m    peak 0.680  997 ms
+    white bucket                 MISS           peak 0.546  1019 ms
+    glass door cabinet           HIT  0.31 m    peak 0.610  1022 ms
+    hose reel                    HIT  0.11 m    peak 0.615  996 ms
+    moving box                   HIT  0.24 m    peak 0.652  1010 ms
+    bicycle                      NEG ok         peak 0.481  1004 ms
+    sofa                         NEG ok         peak 0.375  995 ms
+    ceiling fan                  NEG fp         peak 0.631  1029 ms
+  L-CD@ludvigfull: hits 9/13, median error 0.117 m, negatives fp 0.333, AUROC 0.821 → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/backroom/semantics/2026-09-26_190524/eval/L-CD@ludvigfull.json
+  L-CL@ludvigfull (lift, DINO at query time): 16 queries
+    recycling bin                HIT  0.13 m    peak 0.688  1168 ms
+    blue trash can               HIT  0.22 m    peak 0.667  897 ms
+    office chair                 MISS           peak 0.534  899 ms
+    swivel chair                 MISS           peak 0.504  899 ms
+    grandfather clock            HIT  0.24 m    peak 0.637  900 ms
+    clock                        HIT  0.22 m    peak 0.645  904 ms
+    children's road play mat     HIT  0.09 m    peak 0.702  899 ms
+    camera tripod                MISS           peak 0.499  897 ms
+    purple foam mat              HIT  0.05 m    peak 0.705  899 ms
+    white bucket                 MISS 3.79 m    peak 0.555  1071 ms
+    glass door cabinet           HIT  0.36 m    peak 0.619  908 ms
+    hose reel                    HIT  0.06 m    peak 0.624  910 ms
+    moving box                   HIT  0.26 m    peak 0.665  909 ms
+    bicycle                      NEG ok         peak 0.492  901 ms
+    sofa                         NEG ok         peak 0.387  901 ms
+    ceiling fan                  NEG fp         peak 0.639  912 ms
+  L-CL@ludvigfull: hits 9/13, median error 0.218 m, negatives fp 0.333, AUROC 0.821 → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/backroom/semantics/2026-09-26_190524/eval/L-CL@ludvigfull.json
+  L-C@ludvigfull (lift): 19 queries
+    armchair                     MISS           peak 0.530  5194 ms
+    upholstered chair            MISS           peak 0.502  588 ms
+    whiteboard                   HIT  0.20 m    peak 0.698  620 ms
+    computer monitor             HIT  0.06 m    peak 0.595  582 ms
+    keyboard                     MISS           peak 0.472  583 ms
+    floor lamp                   MISS           peak 0.502  585 ms
+    red cup                      HIT  0.04 m    peak 0.673  587 ms
+    water bottle                 HIT  0.03 m    peak 0.598  582 ms
+    water jug                    MISS 0.78 m    peak 0.578  593 ms
+    round table                  HIT  0.51 m    peak 0.567  587 ms
+    drone gate                   MISS 4.91 m    peak 0.593  582 ms
+    PVC pipe frame               HIT  0.68 m    peak 0.703  630 ms
+    poster                       HIT  0.30 m    peak 0.618  590 ms
+    garden cart                  HIT  0.17 m    peak 0.569  584 ms
+    wheelbarrow                  HIT  0.18 m    peak 0.592  631 ms
+    cardboard box                HIT  0.22 m    peak 0.614  839 ms
+    red tool chest               NEG ok         peak 0.510  834 ms
+    recycling bin                NEG ok         peak 0.532  782 ms
+    bicycle                      NEG ok         peak 0.475  837 ms
+  L-C@ludvigfull: hits 10/16, median error 0.21 m, negatives fp 0.0, AUROC 0.833 → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/flightroom/semantics/2026-09-29_163855/eval/L-C@ludvigfull.json
+  L-CD@ludvigfull (lift, DINO at query time): 19 queries
+    armchair                     MISS           peak 0.517  2651 ms
+    upholstered chair            MISS           peak 0.489  951 ms
+    whiteboard                   HIT  0.20 m    peak 0.685  962 ms
+    computer monitor             HIT  0.08 m    peak 0.588  993 ms
+    keyboard                     MISS           peak 0.463  843 ms
+    floor lamp                   MISS           peak 0.489  912 ms
+    red cup                      HIT  0.04 m    peak 0.665  807 ms
+    water bottle                 HIT  0.03 m    peak 0.585  856 ms
+    water jug                    MISS 0.78 m    peak 0.569  663 ms
+    round table                  HIT  0.26 m    peak 0.553  632 ms
+    drone gate                   MISS 4.79 m    peak 0.585  644 ms
+    PVC pipe frame               HIT  0.69 m    peak 0.694  645 ms
+    poster                       HIT  0.29 m    peak 0.607  638 ms
+    garden cart                  HIT  0.23 m    peak 0.559  636 ms
+    wheelbarrow                  HIT  0.22 m    peak 0.585  633 ms
+    cardboard box                HIT  0.31 m    peak 0.592  636 ms
+    red tool chest               NEG ok         peak 0.497  634 ms
+    recycling bin                NEG ok         peak 0.519  634 ms
+    bicycle                      NEG ok         peak 0.466  629 ms
+  L-CD@ludvigfull: hits 10/16, median error 0.245 m, negatives fp 0.0, AUROC 0.833 → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/flightroom/semantics/2026-09-29_163855/eval/L-CD@ludvigfull.json
+  L-CL@ludvigfull (lift, DINO at query time): 19 queries
+    armchair                     MISS           peak 0.530  729 ms
+    upholstered chair            MISS           peak 0.502  596 ms
+    whiteboard                   HIT  0.06 m    peak 0.698  592 ms
+    computer monitor             HIT  0.15 m    peak 0.595  585 ms
+    keyboard                     MISS           peak 0.472  584 ms
+    floor lamp                   MISS           peak 0.502  585 ms
+    red cup                      HIT  0.06 m    peak 0.673  587 ms
+    water bottle                 HIT  0.08 m    peak 0.598  595 ms
+    water jug                    MISS 0.78 m    peak 0.578  604 ms
+    round table                  HIT  0.15 m    peak 0.567  593 ms
+    drone gate                   MISS 4.51 m    peak 0.593  602 ms
+    PVC pipe frame               HIT  0.64 m    peak 0.703  599 ms
+    poster                       HIT  0.15 m    peak 0.618  595 ms
+    garden cart                  MISS 16.23 m   peak 0.569  610 ms
+    wheelbarrow                  HIT  0.23 m    peak 0.592  598 ms
+    cardboard box                HIT  0.37 m    peak 0.614  590 ms
+    red tool chest               NEG ok         peak 0.510  588 ms
+    recycling bin                NEG ok         peak 0.532  593 ms
+    bicycle                      NEG ok         peak 0.475  587 ms
+  L-CL@ludvigfull: hits 9/16, median error 0.191 m, negatives fp 0.0, AUROC 0.833 → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/flightroom/semantics/2026-09-29_163855/eval/L-CL@ludvigfull.json
+LUDVIG_EVAL_DONE

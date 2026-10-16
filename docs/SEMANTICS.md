@@ -845,3 +845,31 @@ Report and raw results: `Research notes/experiment results/2026-10-13_lift_basel
   **Fixed 13 Oct:** any `--set` other than `phase5` now writes (and `--report` / `--sweep` read)
   `eval/<set>/<variant>.json`; the phase5 path is unchanged. Galley lists only top-level `eval/*.json` with
   `set == phase5`. Tests: `test_evaluate.py` (eval_dir, run_variants on phase1_gate), Galley `test_semantics.py`.
+
+## 18. Full pipelines: LUDVIG (DINOv2 ViT-g + graph diffusion) and Occam's LGS (LangSplat SAM ViT-H) (13–14 Oct)
+
+The papers' whole pipelines with the authors' code (branches `semantic/LUDVIG`, `semantic/LGS`; report and raw results:
+`Research notes/experiment results/2026-10-14_full_pipelines/`), scored by our unchanged query and evaluator.
+
+| Configuration | Hits /29 | Absent firing /6 | Best hits at 1 FP (sweep) | Cost per scene |
+| --- | --- | --- | --- | --- |
+| Ours A (default) | 22 | 2 | 19 | lift 18–23 min (+ teachers 31–53 min) |
+| LUDVIG full, L-C / L-CL (its diffusion) | 19 / 18 | 1 | 19 | features 29–37 min, diffusion 2–4 min |
+| **Occam's full (LangSplat features, 3 SAM levels)** | **25** | **1** | **25** (floors 0.52–0.55) | LangSplat 5.1 h / 4.7 h, lift 30 s |
+
+- **Occam's full pipeline is the best design measured**: backroom 12/13, flightroom 13/16, AUROC 0.92 / 1.00, dev set 5/5.
+  Over A it gains swivel chair, camera tripod, hose reel and loses nothing; occluded chairs' peaks rise (armchair 0.71 vs
+  0.58). Per-query level choice adds 2 (flat: 23 at 1 FP). Median localisation error 0.27 / 0.30 m (A: 0.21 / 0.25).
+  Still missed by every configuration: white bucket, keyboard, floor lamp, drone gate.
+- **LUDVIG's full pipeline does not beat our lift**: its CLIP peaks run 0.01–0.03 lower; its diffusion only reshapes
+  selections above the floor (misses are below it) and once sent garden cart 16 m away. Its released code drops the
+  DINOv2 checkpoint's register tokens (strict=False load).
+- With 13 Oct's controlled result (lift ≈ irrelevant), the 2D features decide the outcome: region-level CLIP on SAM ViT-H
+  masks, three granularities, unsegmented pixels skipped. +3 queries over A is not formally significant (3–0, p = 0.25)
+  but comes with fewer false positives, higher AUROC and a flat floor curve.
+- 8 GB adaptations (execution only, documented in the runners): LUDVIG PCA in host RAM, chunked CLIP upsampling, batched
+  crops, CPU sparse diffusion; LangSplat SAM 16 points per batch and a vectorised mask NMS verified identical to upstream's
+  on 10 real level sets (10–40× faster).
+- Next for `semantic/new`: region-level features as the base; separate which part of LangSplat's recipe beats our B2
+  (ViT-H vs ViT-B, SAM levels vs area bins, skip vs fill, NMS — cheap re-lifts on the cached masks); cut extraction cost;
+  anchor candidates on visible surfaces. LangSplat cache: `~/Radiance/third_party/langsplat_features/` (15 GB).

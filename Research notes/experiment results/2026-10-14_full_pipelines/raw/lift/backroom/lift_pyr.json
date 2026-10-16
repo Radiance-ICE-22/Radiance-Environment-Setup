@@ -1,0 +1,19 @@
+{
+ "config": "Ours-Old",
+ "table": "lift_pyr",
+ "rows": 532361,
+ "lift": {
+  "views": 270,
+  "passes": 7830,
+  "seconds": 180.9,
+  "seen": 531951,
+  "n": 532361,
+  "seen_frac": 0.9992,
+  "render_width": 960,
+  "step": 29999,
+  "acc_device": "cuda:0",
+  "peak_vram_mib": 7587,
+  "teacher_tag": "d7a30d7264",
+  "key": "2026-09-26_190524-step-000029999-1790431381"
+ }
+}
