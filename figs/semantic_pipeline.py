@@ -57,9 +57,10 @@ except ImportError:
 DEFAULTS = {"backend": "lift", "teachers": ["clip", "dino"], "feat_width": 960, "dino_width": 896,
             "scales": None, "batch": 256, "device": None, "render_backend": "gsplat", "limit": None,
             "fmgs_steps": 4200, "fmgs_width": 480, "fmgs_variant": "auto", "fmgs_impl": "auto", "fmgs_table": 20,
-            "clip_mode": "pyramid", "clip_model": "ViT-B-16", "clip_pretrained": "laion2b_s34b_b88k"}
+            "clip_mode": "pyramid", "clip_model": "ViT-B-16", "clip_pretrained": "laion2b_s34b_b88k",
+            "uncovered": "skip"}
 LISTS = ("teachers",)
-VARIANT_KEYS = ("clip_mode", "clip_model", "clip_pretrained")   # teacher variants (A/B/C, 7 Oct)
+VARIANT_KEYS = ("clip_mode", "clip_model", "clip_pretrained", "uncovered")   # variants (A/B/C 7 Oct; uncovered 16 Oct)
 NOT_STICKY = ("backend", "clip_mode")   # never taken from config.json: a bare run (Galley's Continue) is the lift,
                                         # and the CLIP mode follows the backend unless given (see default_clip_mode)
 
@@ -240,12 +241,16 @@ def step_teachers(c):
     s = c.teacher_settings()
     t0 = time.time()
     with VramMonitor() as vm:
-        meta = teachers.extract(c.run.scene_dir, c.run.semantics_dir / "teachers", s, device=c.device,
-                                log=info, limit=c.a.limit)
+        if s.clip_mode == "langsplat":            # region features: LangSplat's preprocessing in the occamlgs env
+            meta = teachers.extract_langsplat(c.run.scene_dir, c.run.semantics_dir / "teachers", s, device=c.device,
+                                              log=info, limit=c.a.limit)
+        else:
+            meta = teachers.extract(c.run.scene_dir, c.run.semantics_dir / "teachers", s, device=c.device,
+                                    log=info, limit=c.a.limit)
     st = meta["stats"]
     ok(f"teachers {meta['tag']}: {st['done']} frames extracted, {st['skipped']} already cached, "
        f"{st['mb']:.0f} MB, {elapsed(t0)}")
-    secs = [r["seconds"] for r in meta["images"].values() if "seconds" in r]
+    secs = [r["seconds"] for r in meta["images"].values() if "seconds" in r] if meta.get("images") else []
     c.results["teachers"] = {"tag": meta["tag"], **st, "s_per_frame": round(sum(secs) / len(secs), 2) if secs else None,
                              "peak_vram_mib": vm.peak, "dir": str(c.teacher_dir)}
 
@@ -256,8 +261,22 @@ def step_lift(c):
     if not (c.teacher_dir / "meta.json").exists():
         raise StepFailed(f"no teacher features at {c.teacher_dir}: run the teachers step")
     with VramMonitor() as vm:
-        feats, w, stats, _ = lift_run(c.run, c.teacher_dir, feat_width=int(c.a.feat_width),
-                                      backend=c.a.render_backend, log=info, limit=c.a.limit)
+        if c.a.clip_mode == "langsplat":
+            from radiance_semantics.lift import lift_segments_run
+            fill_dir = None
+            if c.a.uncovered == "fill":            # uncovered pixels take the scale-averaged pyramid (as variant B2)
+                from radiance_semantics.teachers import TeacherSettings
+                fs = TeacherSettings(clip_mode="pyramid", clip_model=c.a.clip_model, clip_pretrained=c.a.clip_pretrained)
+                fill_dir = c.run.semantics_dir / "teachers" / fs.tag()
+                if not (fill_dir / "meta.json").exists():
+                    raise StepFailed(f"--uncovered fill needs the pyramid teachers at {fill_dir}: run the teachers "
+                                     f"step with --clip-mode pyramid first")
+            feats, w, stats, _ = lift_segments_run(c.run, c.teacher_dir, uncovered=c.a.uncovered, fill_dir=fill_dir,
+                                                   feat_width=int(c.a.feat_width), backend=c.a.render_backend,
+                                                   log=info, limit=c.a.limit)
+        else:
+            feats, w, stats, _ = lift_run(c.run, c.teacher_dir, feat_width=int(c.a.feat_width),
+                                          backend=c.a.render_backend, log=info, limit=c.a.limit)
     raw = c.backend_dir.with_name(c.backend_dir.name + "_raw")
     raw.mkdir(parents=True, exist_ok=True)
     for name, f in feats.items():
@@ -455,7 +474,8 @@ STEPS = [
     ("cameras", step_cameras, [], "refined vs raw pose render check"),
     ("teachers", step_teachers, ["teachers", "scales", "dino_width", "clip_mode", "clip_model", "clip_pretrained"],
      "CLIP pyramid + DINOv2 per frame (LONG, GPU)"),
-    ("lift", step_lift, ["backend", "feat_width", "render_backend", "limit"], "lift teacher features onto the Gaussians (GPU)"),
+    ("lift", step_lift, ["backend", "feat_width", "render_backend", "limit", "uncovered"],
+     "lift teacher features onto the Gaussians (GPU)"),
     ("export", step_export, [], "write the per-Gaussian table in .splat order"),
     ("fmgs", step_fmgs, ["fmgs_steps", "fmgs_width", "fmgs_variant", "fmgs_impl", "fmgs_table", "render_backend", "limit"],
      "train the FMGS hash-grid field on the frozen Gaussians (LONG, GPU)"),
@@ -533,7 +553,12 @@ def main(argv=None):
     ap.add_argument("--teachers", help="comma-separated: clip,dino (default both)")
     ap.add_argument("--feat-width", type=int, help="lift render width in px (default 960; 480 halves time)")
     ap.add_argument("--dino-width", type=int, help="DINOv2 input width, multiple of 14 (default 896)")
-    ap.add_argument("--clip-mode", help="how CLIP teacher maps are made: pyramid (default) or a variant's mode")
+    ap.add_argument("--clip-mode", help="how CLIP teacher maps are made: scales (lift default, variant A), pyramid "
+                    "(scale-averaged; FMGS default) or langsplat (SAM ViT-H region features at 3 levels, LangSplat's "
+                    "preprocessing; needs the occamlgs env, ~1 h of GPU per 50 frames on an RTX 2080)")
+    ap.add_argument("--uncovered", choices=["skip", "fill"],
+                    help="langsplat: pixels no mask covers are skipped (default, as LangSplat/Occam's LGS) or filled "
+                         "with the scale-averaged pyramid feature (as variant B2)")
     ap.add_argument("--clip-model", help="OpenCLIP model for the teachers and the query (default ViT-B-16)")
     ap.add_argument("--clip-pretrained", help="OpenCLIP weights tag (default laion2b_s34b_b88k)")
     ap.add_argument("--scales", type=float, nargs="+", help="CLIP pyramid scales (default 7 from 0.05 to 0.5)")

@@ -104,3 +104,57 @@ def test_pca_rgb_spreads_values():
     x = rng.normal(size=(500, 16)).astype(np.float32)
     rgb = pca_rgb(x)
     assert rgb.shape == (500, 3) and rgb.dtype == np.uint8 and rgb.min() == 0 and rgb.max() == 255
+
+
+def test_seg_to_render_samples_ids_at_pixel_centres():
+    seg = np.arange(2 * 4 * 6).reshape(2, 4, 6)
+    out = L.seg_to_render(seg, 3, 2)                        # 6x4 → 3x2: every other source pixel, centres
+    assert out.shape == (2, 2, 3)
+    assert np.array_equal(out[0], seg[0][[1, 3]][:, [1, 3, 5]])
+
+
+def _segments(level_ids, feats):
+    """segs_for for the three LangSplat levels, the same seg map at every level."""
+    seg = np.stack([level_ids] * 3)
+    return lambda stem: (seg, feats)
+
+
+def test_segment_lift_skip_and_fill_agree_when_every_pixel_is_covered():
+    g = scene()
+    ids = np.zeros((8, 12), np.int64)                       # one mask covers the whole image
+    feats = np.array([[0.3, -1.0, 2.0]], np.float32)
+    fill = np.zeros((4, 6, 3), np.float32)
+    kw = dict(feat_width=24, backend="reference", chunk=2, log=lambda m: None)
+    a, wa, sa = L.lift_segment_views(g, views(), _segments(ids, feats), uncovered="skip", **kw)
+    b, wb, _ = L.lift_segment_views(g, views(), _segments(ids, feats), uncovered="fill",
+                                    fill_for=lambda stem: fill, **kw)
+    seen = wa > 0
+    assert seen.any() and np.array_equal(wa, wb)
+    for k in ("clip_s0", "clip_s1", "clip_s2"):
+        assert np.allclose(a[k][seen], feats[0], atol=1e-4)
+        assert np.allclose(a[k], b[k], atol=1e-5)
+    assert sa["uncovered"] == "skip" and sa["pixel_coverage"] == [1.0, 1.0, 1.0]
+
+
+def test_segment_lift_skip_ignores_uncovered_pixels_and_fill_mixes_them_in():
+    g = scene(200, seed=7)
+    ids = -np.ones((8, 12), np.int64)
+    ids[:, :6] = 0                                          # only the left half is segmented
+    feats = np.array([[1.0, 0.0]], np.float32)
+    fill = np.zeros((4, 6, 2), np.float32)
+    fill[..., 1] = 1.0                                      # the fill feature is channel 1
+    kw = dict(feat_width=48, backend="reference", log=lambda m: None)
+    v = views(1)
+    a, w, _ = L.lift_segment_views(g, v, _segments(ids, feats), uncovered="skip", **kw)
+    b, _, _ = L.lift_segment_views(g, v, _segments(ids, feats), uncovered="fill", fill_for=lambda stem: fill, **kw)
+    has = np.linalg.norm(a["clip_s0"], axis=1) > 0
+    assert has.any()
+    assert np.allclose(a["clip_s0"][has, 1], 0.0, atol=1e-6)            # skip: never the uncovered side
+    mixed = (b["clip_s0"][:, 1] > 0.05) & (w > 0)
+    assert mixed.any()                                                   # fill: right-side Gaussians get channel 1
+    assert ((w > 0) & ~has).any()                                        # some seen Gaussians only on the uncovered side
+
+
+def test_segment_lift_rejects_unknown_mode():
+    with pytest.raises(ValueError):
+        L.lift_segment_views(scene(), views(), lambda s: None, uncovered="nearest", backend="reference")

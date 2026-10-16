@@ -35,6 +35,13 @@ IMNET_MEAN = (0.485, 0.456, 0.406)
 IMNET_STD = (0.229, 0.224, 0.225)
 TEACHERS_VERSION = 1          # bump when the extraction code changes its output
 
+# clip_mode "langsplat": LangSplat's preprocessing (SAM ViT-H automatic masks at levels default / s / m / l, mask NMS,
+# one OpenCLIP embedding per masked crop), run by semantics/baselines/langsplat_features.py in the `occamlgs` env (it
+# needs LangSplat's SAM fork). These are its fixed settings; they key the teacher cache.
+LANGSPLAT = {"sam": "vit_h:sam_vit_h_4b8939", "points_per_side": 32, "pred_iou_thresh": 0.7, "box_nms_thresh": 0.7,
+             "stability_score_thresh": 0.85, "crop_n_layers": 1, "min_mask_region_area": 100,
+             "mask_nms": [0.8, 0.7, 0.5], "crop": "mask-on-black, square pad, 224", "max_height": 1080}
+
 
 @dataclass
 class TeacherSettings:
@@ -48,12 +55,16 @@ class TeacherSettings:
     clip_pretrained: str = CLIP_PRETRAINED
     dino_model: str = DINO_MODEL
     teachers: tuple = ("clip", "dino")
-    clip_mode: str = "pyramid"        # pyramid (LERF/FMGS, scales averaged) | variants on their own branches
+    clip_mode: str = "pyramid"        # pyramid (scales averaged) | scales (variant A) | langsplat (region features)
 
     def tag(self):
         key = {k: v for k, v in asdict(self).items() if k not in ("batch",)}
         if key.get("clip_mode") == "pyramid":       # the default hashes exactly as before clip_mode existed
             key.pop("clip_mode")
+        if key.get("clip_mode") == "langsplat":     # the region features do not use the crop pyramid
+            for k in ("scales", "stride_frac", "cell_frac", "min_tile"):
+                key.pop(k, None)
+            key["langsplat"] = LANGSPLAT
         key["version"] = TEACHERS_VERSION
         key["teachers"] = list(self.teachers)
         return hashlib.sha256(json.dumps(key, sort_keys=True).encode()).hexdigest()[:10]
@@ -274,6 +285,62 @@ def extract(scene_dir, out_root, settings=None, device="cuda", encoders=None, lo
     return meta
 
 
+def extract_langsplat(scene_dir, out_root, settings, device="cuda", log=print, limit=None, repo=None):
+    """clip_mode 'langsplat': LangSplat region features for every frame into out_root/<tag>/langsplat/ (its own
+    format: <stem>_s.npy seg maps [4, H, W], <stem>_f.npy features [masks, 512]) by running LangSplat's
+    preprocessing in the `occamlgs` env, then DINOv2 grids as usual (dino/<stem>.npy). Resumable per frame."""
+    import subprocess
+    from dataclasses import replace
+    s = settings
+    tag = s.tag()
+    out = Path(out_root) / tag
+    ls = out / "langsplat"
+    ls.mkdir(parents=True, exist_ok=True)
+    frames = frames_of(Path(scene_dir) / "transforms.json")
+    if limit:
+        frames = frames[:limit]
+    repo = Path(repo) if repo else Path(__file__).resolve().parents[2]
+    t_all = time.time()
+    todo = [(stem, rel) for stem, rel in frames
+            if not ((ls / f"{stem}_s.npy").exists() and (ls / f"{stem}_f.npy").exists())]
+    if todo:
+        fj = out / "langsplat_frames.json"
+        fj.write_text(json.dumps([{"stem": st, "image": str((Path(scene_dir) / rel).resolve())} for st, rel in todo]))
+        log(f"LangSplat features for {len(todo)} of {len(frames)} frames (SAM ViT-H, ~40–100 s per frame on an RTX 2080)")
+        cmd = (f'source "{repo}/semantics/baselines/env.sh" occamlgs && '
+               f'PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True python "{repo}/semantics/baselines/langsplat_features.py" '
+               f'--frames "{fj}" --out-dir "{ls}"')
+        r = subprocess.run(["bash", "-c", cmd])
+        if r.returncode != 0:
+            raise RuntimeError(f"LangSplat feature extraction failed (exit {r.returncode}); see the output above")
+    t_ls = time.time() - t_all
+    meta_p = out / "meta.json"
+    meta = json.loads(meta_p.read_text()) if meta_p.exists() else {}
+    meta.update(tag=tag, settings=asdict(s), clip_dim=CLIP_DIM, dino_dim=DINO_DIM, n_frames=len(frames),
+                images=meta.get("images", {}), langsplat=LANGSPLAT)
+    meta["settings"]["teachers"] = list(s.teachers)
+    done = 0
+    if "dino" in s.teachers:
+        enc = default_encoders(device, replace(s, teachers=("dino",)))
+        for k, (stem, rel) in enumerate(frames):
+            if (out / "dino" / f"{stem}.npy").exists():
+                continue
+            img = load_image(Path(scene_dir) / rel, device)
+            d = dino_dense(enc["dino"], img, s)
+            _save(out / "dino" / f"{stem}.npy", d.cpu().numpy())
+            meta["images"].setdefault(stem, {})["dino_grid"] = list(d.shape[:2])
+            done += 1
+    missing = [st for st, _ in frames if not (ls / f"{st}_f.npy").exists()]
+    if missing:
+        raise RuntimeError(f"LangSplat features missing for {len(missing)} frames, e.g. {missing[:3]}")
+    size = sum(p.stat().st_size for p in out.rglob("*.npy"))
+    meta["stats"] = {"done": len(todo), "skipped": len(frames) - len(todo), "dino_done": done,
+                     "seconds": round(time.time() - t_all, 1), "langsplat_seconds": round(t_ls, 1),
+                     "mb": round(size / 2 ** 20, 1)}
+    meta_p.write_text(json.dumps(meta, indent=1) + "\n")
+    return meta
+
+
 def load_maps(teacher_dir, stem):
     """{teacher: float32 array [gh, gw, C]} for one image stem."""
     out = {}
@@ -306,5 +373,5 @@ def grid_bytes(H, W, s=None):
     return gh * gw * CLIP_DIM * 2 + (h // 14) * (w // 14) * DINO_DIM * 2
 
 
-__all__ = ["TeacherSettings", "extract", "load_maps", "frames_of", "clip_pyramid", "dino_dense",
+__all__ = ["TeacherSettings", "extract", "extract_langsplat", "LANGSPLAT", "load_maps", "frames_of", "clip_pyramid", "dino_dense",
            "resample", "common_grid", "crop_starts", "estimate_crops", "grid_bytes"]

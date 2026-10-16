@@ -82,7 +82,9 @@ def mask_nms_matrix(masks, scores, iou_thr=0.7, score_thr=0.1, inner_thr=0.2, ch
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--scene", required=True)
+    ap.add_argument("--scene", help="read the frames from exports/<scene>/cameras.json (baseline runs)")
+    ap.add_argument("--frames", help="JSON list of {stem, image} instead of --scene (the semantic pipeline's teacher step)")
+    ap.add_argument("--out-dir", help="write <stem>_s.npy / _f.npy here instead of <out>/<scene>")
     ap.add_argument("--exports", default=str(THIRD_PARTY / "exports"))
     ap.add_argument("--out", default=str(THIRD_PARTY / "langsplat_features"))
     ap.add_argument("--sam-ckpt", default=str(THIRD_PARTY / "checkpoints/sam_vit_h_4b8939.pth"))
@@ -100,10 +102,13 @@ def main():
 
     P.seed_everything(42)
     torch.set_default_dtype(torch.float32)
-    cams = json.loads((Path(a.exports) / a.scene / "cameras.json").read_text())
+    if bool(a.scene) == bool(a.frames):
+        ap.error("give exactly one of --scene and --frames")
+    cams = json.loads(Path(a.frames).read_text()) if a.frames else \
+        json.loads((Path(a.exports) / a.scene / "cameras.json").read_text())
     if a.limit:
         cams = cams[:a.limit]
-    out = Path(a.out) / a.scene
+    out = Path(a.out_dir) if a.out_dir else Path(a.out) / a.scene
     out.mkdir(parents=True, exist_ok=True)
 
     # LangSplat's __main__ set-up, verbatim settings
@@ -133,7 +138,7 @@ def main():
         print(f"  {k + 1}/{len(cams)} {stem}: {time.time() - t0:.1f} s, "
               f"peak {torch.cuda.max_memory_allocated() / 2**30:.2f} GB", flush=True)
     (out / "meta.json").write_text(json.dumps({
-        "scene": a.scene, "images": len(cams), "computed_now": done, "seconds": round(time.time() - t_all, 1),
+        "scene": a.scene or a.frames, "images": len(cams), "computed_now": done, "seconds": round(time.time() - t_all, 1),
         "sam": "vit_h (sam_vit_h_4b8939)", "clip": "ViT-B-16 laion2b_s34b_b88k",
         "source": "LangSplat preprocess.py (create, sam_encoder, masks_update; mask_nms vectorised, verified identical)"}, indent=1) + "\n")
     print(f"done: {done} images in {time.time() - t_all:.0f} s → {out}")
