@@ -1,0 +1,38 @@
+{
+ "backroom": {
+  "rows": 532361,
+  "seen": 498828,
+  "levels": {
+   "s": {
+    "rows_with_feature": 493643,
+    "frac": 0.9273
+   },
+   "m": {
+    "rows_with_feature": 497759,
+    "frac": 0.935
+   },
+   "l": {
+    "rows_with_feature": 494747,
+    "frac": 0.9293
+   }
+  }
+ },
+ "flightroom": {
+  "rows": 379684,
+  "seen": 348411,
+  "levels": {
+   "s": {
+    "rows_with_feature": 347353,
+    "frac": 0.9148
+   },
+   "m": {
+    "rows_with_feature": 348027,
+    "frac": 0.9166
+   },
+   "l": {
+    "rows_with_feature": 347129,
+    "frac": 0.9143
+   }
+  }
+ }
+}

@@ -1,0 +1,1593 @@
+{
+ "backroom": {
+  "Occam-full": [
+   {
+    "text": "recycling bin",
+    "negative": false,
+    "scale_group": 1,
+    "scale_peaks": [
+     0.7479,
+     0.7533,
+     0.7486
+    ],
+    "peak": 0.7533,
+    "tau": 0.6516,
+    "n_selected": 972,
+    "n_candidates": 1,
+    "top_n": 971
+   },
+   {
+    "text": "blue trash can",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.6909,
+     0.7095,
+     0.7536
+    ],
+    "peak": 0.7536,
+    "tau": 0.6518,
+    "n_selected": 3102,
+    "n_candidates": 1,
+    "top_n": 3098
+   },
+   {
+    "text": "office chair",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.5304,
+     0.6498,
+     0.677
+    ],
+    "peak": 0.677,
+    "tau": 0.6135,
+    "n_selected": 1227,
+    "n_candidates": 5,
+    "top_n": 699
+   },
+   {
+    "text": "swivel chair",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.5143,
+     0.6398,
+     0.6702
+    ],
+    "peak": 0.6702,
+    "tau": 0.6101,
+    "n_selected": 679,
+    "n_candidates": 5,
+    "top_n": 417
+   },
+   {
+    "text": "grandfather clock",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.6002,
+     0.7045,
+     0.7224
+    ],
+    "peak": 0.7224,
+    "tau": 0.6362,
+    "n_selected": 1335,
+    "n_candidates": 2,
+    "top_n": 1275
+   },
+   {
+    "text": "clock",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.6747,
+     0.7213,
+     0.7326
+    ],
+    "peak": 0.7326,
+    "tau": 0.6413,
+    "n_selected": 1151,
+    "n_candidates": 1,
+    "top_n": 1098
+   },
+   {
+    "text": "children's road play mat",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.7611,
+     0.7931,
+     0.7975
+    ],
+    "peak": 0.7975,
+    "tau": 0.6737,
+    "n_selected": 7504,
+    "n_candidates": 1,
+    "top_n": 7462
+   },
+   {
+    "text": "camera tripod",
+    "negative": false,
+    "scale_group": 1,
+    "scale_peaks": [
+     0.5809,
+     0.5925,
+     0.5524
+    ],
+    "peak": 0.5925,
+    "tau": 0.5712,
+    "n_selected": 339,
+    "n_candidates": 2,
+    "top_n": 51
+   },
+   {
+    "text": "purple foam mat",
+    "negative": false,
+    "scale_group": 1,
+    "scale_peaks": [
+     0.7494,
+     0.7573,
+     0.7545
+    ],
+    "peak": 0.7573,
+    "tau": 0.6537,
+    "n_selected": 271,
+    "n_candidates": 1,
+    "top_n": 263
+   },
+   {
+    "text": "white bucket",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.5862,
+     0.6018,
+     0.6319
+    ],
+    "peak": 0.6319,
+    "tau": 0.591,
+    "n_selected": 172,
+    "n_candidates": 1,
+    "top_n": 152
+   },
+   {
+    "text": "glass door cabinet",
+    "negative": false,
+    "scale_group": 1,
+    "scale_peaks": [
+     0.7378,
+     0.7595,
+     0.7565
+    ],
+    "peak": 0.7595,
+    "tau": 0.6548,
+    "n_selected": 17425,
+    "n_candidates": 5,
+    "top_n": 8525
+   },
+   {
+    "text": "hose reel",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.567,
+     0.6065,
+     0.6367
+    ],
+    "peak": 0.6367,
+    "tau": 0.5933,
+    "n_selected": 1016,
+    "n_candidates": 2,
+    "top_n": 929
+   },
+   {
+    "text": "moving box",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.6864,
+     0.6991,
+     0.7062
+    ],
+    "peak": 0.7062,
+    "tau": 0.6281,
+    "n_selected": 656,
+    "n_candidates": 2,
+    "top_n": 338
+   },
+   {
+    "text": "bicycle",
+    "negative": true,
+    "scale_group": 1,
+    "scale_peaks": [
+     0.5131,
+     0.5213,
+     0.513
+    ],
+    "peak": 0.5213,
+    "tau": 0.55,
+    "n_selected": 1,
+    "n_candidates": 0,
+    "top_n": null
+   },
+   {
+    "text": "sofa",
+    "negative": true,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.5022,
+     0.5116,
+     0.5157
+    ],
+    "peak": 0.5157,
+    "tau": 0.55,
+    "n_selected": 14,
+    "n_candidates": 0,
+    "top_n": null
+   },
+   {
+    "text": "ceiling fan",
+    "negative": true,
+    "scale_group": 0,
+    "scale_peaks": [
+     0.6471,
+     0.6453,
+     0.6214
+    ],
+    "peak": 0.6471,
+    "tau": 0.5985,
+    "n_selected": 282,
+    "n_candidates": 3,
+    "top_n": 150
+   }
+  ],
+  "Occam-ctrl": [
+   {
+    "text": "recycling bin",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.6472,
+     0.781,
+     0.7864
+    ],
+    "peak": 0.7864,
+    "tau": 0.6682,
+    "n_selected": 3365,
+    "n_candidates": 1,
+    "top_n": 3276
+   },
+   {
+    "text": "blue trash can",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.6263,
+     0.7472,
+     0.7703
+    ],
+    "peak": 0.7703,
+    "tau": 0.6601,
+    "n_selected": 2495,
+    "n_candidates": 2,
+    "top_n": 2396
+   },
+   {
+    "text": "office chair",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.4955,
+     0.6321,
+     0.6786
+    ],
+    "peak": 0.6786,
+    "tau": 0.6143,
+    "n_selected": 810,
+    "n_candidates": 4,
+    "top_n": 322
+   },
+   {
+    "text": "swivel chair",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.4888,
+     0.5981,
+     0.6505
+    ],
+    "peak": 0.6505,
+    "tau": 0.6003,
+    "n_selected": 196,
+    "n_candidates": 2,
+    "top_n": 41
+   },
+   {
+    "text": "grandfather clock",
+    "negative": false,
+    "scale_group": 1,
+    "scale_peaks": [
+     0.6,
+     0.7232,
+     0.7009
+    ],
+    "peak": 0.7232,
+    "tau": 0.6366,
+    "n_selected": 873,
+    "n_candidates": 2,
+    "top_n": 798
+   },
+   {
+    "text": "clock",
+    "negative": false,
+    "scale_group": 1,
+    "scale_peaks": [
+     0.6129,
+     0.7038,
+     0.6556
+    ],
+    "peak": 0.7038,
+    "tau": 0.6269,
+    "n_selected": 579,
+    "n_candidates": 1,
+    "top_n": 556
+   },
+   {
+    "text": "children's road play mat",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.609,
+     0.7998,
+     0.8013
+    ],
+    "peak": 0.8013,
+    "tau": 0.6757,
+    "n_selected": 1600,
+    "n_candidates": 2,
+    "top_n": 1463
+   },
+   {
+    "text": "camera tripod",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.5311,
+     0.5426,
+     0.5545
+    ],
+    "peak": 0.5545,
+    "tau": 0.5523,
+    "n_selected": 42,
+    "n_candidates": 1,
+    "top_n": 30
+   },
+   {
+    "text": "purple foam mat",
+    "negative": false,
+    "scale_group": 1,
+    "scale_peaks": [
+     0.5996,
+     0.7585,
+     0.735
+    ],
+    "peak": 0.7585,
+    "tau": 0.6543,
+    "n_selected": 673,
+    "n_candidates": 5,
+    "top_n": 395
+   },
+   {
+    "text": "white bucket",
+    "negative": false,
+    "scale_group": 1,
+    "scale_peaks": [
+     0.5825,
+     0.6164,
+     0.5571
+    ],
+    "peak": 0.6164,
+    "tau": 0.5832,
+    "n_selected": 239,
+    "n_candidates": 1,
+    "top_n": 142
+   },
+   {
+    "text": "glass door cabinet",
+    "negative": false,
+    "scale_group": 1,
+    "scale_peaks": [
+     0.6102,
+     0.7304,
+     0.7269
+    ],
+    "peak": 0.7304,
+    "tau": 0.6402,
+    "n_selected": 3338,
+    "n_candidates": 5,
+    "top_n": 2571
+   },
+   {
+    "text": "hose reel",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.5585,
+     0.687,
+     0.692
+    ],
+    "peak": 0.692,
+    "tau": 0.621,
+    "n_selected": 1733,
+    "n_candidates": 5,
+    "top_n": 731
+   },
+   {
+    "text": "moving box",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.6198,
+     0.7517,
+     0.7638
+    ],
+    "peak": 0.7638,
+    "tau": 0.6569,
+    "n_selected": 11010,
+    "n_candidates": 3,
+    "top_n": 9622
+   },
+   {
+    "text": "bicycle",
+    "negative": true,
+    "scale_group": 1,
+    "scale_peaks": [
+     0.5074,
+     0.5557,
+     0.5425
+    ],
+    "peak": 0.5557,
+    "tau": 0.5529,
+    "n_selected": 46,
+    "n_candidates": 1,
+    "top_n": 22
+   },
+   {
+    "text": "sofa",
+    "negative": true,
+    "scale_group": 0,
+    "scale_peaks": [
+     0.4304,
+     0.4231,
+     0.3948
+    ],
+    "peak": 0.4304,
+    "tau": 0.55,
+    "n_selected": 0,
+    "n_candidates": 0,
+    "top_n": null
+   },
+   {
+    "text": "ceiling fan",
+    "negative": true,
+    "scale_group": 1,
+    "scale_peaks": [
+     0.5949,
+     0.6918,
+     0.6901
+    ],
+    "peak": 0.6918,
+    "tau": 0.6209,
+    "n_selected": 22003,
+    "n_candidates": 5,
+    "top_n": 6345
+   }
+  ],
+  "Ours-A": [
+   {
+    "text": "recycling bin",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.6214,
+     0.7629,
+     0.7735
+    ],
+    "peak": 0.7735,
+    "tau": 0.6618,
+    "n_selected": 4133,
+    "n_candidates": 3,
+    "top_n": 4050
+   },
+   {
+    "text": "blue trash can",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.6083,
+     0.728,
+     0.7568
+    ],
+    "peak": 0.7568,
+    "tau": 0.6534,
+    "n_selected": 3349,
+    "n_candidates": 2,
+    "top_n": 3281
+   },
+   {
+    "text": "office chair",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.4819,
+     0.6045,
+     0.6545
+    ],
+    "peak": 0.6545,
+    "tau": 0.6023,
+    "n_selected": 1800,
+    "n_candidates": 3,
+    "top_n": 1596
+   },
+   {
+    "text": "swivel chair",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.4752,
+     0.5776,
+     0.6207
+    ],
+    "peak": 0.6207,
+    "tau": 0.5854,
+    "n_selected": 312,
+    "n_candidates": 3,
+    "top_n": 76
+   },
+   {
+    "text": "grandfather clock",
+    "negative": false,
+    "scale_group": 1,
+    "scale_peaks": [
+     0.5963,
+     0.7139,
+     0.6815
+    ],
+    "peak": 0.7139,
+    "tau": 0.6319,
+    "n_selected": 811,
+    "n_candidates": 2,
+    "top_n": 768
+   },
+   {
+    "text": "clock",
+    "negative": false,
+    "scale_group": 1,
+    "scale_peaks": [
+     0.6071,
+     0.6973,
+     0.6403
+    ],
+    "peak": 0.6973,
+    "tau": 0.6237,
+    "n_selected": 554,
+    "n_candidates": 2,
+    "top_n": 534
+   },
+   {
+    "text": "children's road play mat",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.5893,
+     0.8022,
+     0.8159
+    ],
+    "peak": 0.8159,
+    "tau": 0.6829,
+    "n_selected": 5241,
+    "n_candidates": 1,
+    "top_n": 5170
+   },
+   {
+    "text": "camera tripod",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.524,
+     0.5341,
+     0.5353
+    ],
+    "peak": 0.5353,
+    "tau": 0.55,
+    "n_selected": 2,
+    "n_candidates": 0,
+    "top_n": null
+   },
+   {
+    "text": "purple foam mat",
+    "negative": false,
+    "scale_group": 1,
+    "scale_peaks": [
+     0.5992,
+     0.7606,
+     0.7532
+    ],
+    "peak": 0.7606,
+    "tau": 0.6553,
+    "n_selected": 660,
+    "n_candidates": 3,
+    "top_n": 583
+   },
+   {
+    "text": "white bucket",
+    "negative": false,
+    "scale_group": 1,
+    "scale_peaks": [
+     0.5782,
+     0.605,
+     0.5477
+    ],
+    "peak": 0.605,
+    "tau": 0.5775,
+    "n_selected": 260,
+    "n_candidates": 2,
+    "top_n": 176
+   },
+   {
+    "text": "glass door cabinet",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.6025,
+     0.7021,
+     0.7081
+    ],
+    "peak": 0.7081,
+    "tau": 0.6291,
+    "n_selected": 2255,
+    "n_candidates": 5,
+    "top_n": 1206
+   },
+   {
+    "text": "hose reel",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.5478,
+     0.6781,
+     0.685
+    ],
+    "peak": 0.685,
+    "tau": 0.6175,
+    "n_selected": 1616,
+    "n_candidates": 5,
+    "top_n": 815
+   },
+   {
+    "text": "moving box",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.6139,
+     0.7248,
+     0.7617
+    ],
+    "peak": 0.7617,
+    "tau": 0.6559,
+    "n_selected": 12268,
+    "n_candidates": 3,
+    "top_n": 10826
+   },
+   {
+    "text": "bicycle",
+    "negative": true,
+    "scale_group": 1,
+    "scale_peaks": [
+     0.4987,
+     0.5342,
+     0.5241
+    ],
+    "peak": 0.5342,
+    "tau": 0.55,
+    "n_selected": 10,
+    "n_candidates": 0,
+    "top_n": null
+   },
+   {
+    "text": "sofa",
+    "negative": true,
+    "scale_group": 0,
+    "scale_peaks": [
+     0.4208,
+     0.413,
+     0.3774
+    ],
+    "peak": 0.4208,
+    "tau": 0.55,
+    "n_selected": 0,
+    "n_candidates": 0,
+    "top_n": null
+   },
+   {
+    "text": "ceiling fan",
+    "negative": true,
+    "scale_group": 1,
+    "scale_peaks": [
+     0.5848,
+     0.6856,
+     0.6845
+    ],
+    "peak": 0.6856,
+    "tau": 0.6178,
+    "n_selected": 24895,
+    "n_candidates": 5,
+    "top_n": 9078
+   }
+  ]
+ },
+ "flightroom": {
+  "Occam-full": [
+   {
+    "text": "armchair",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.5789,
+     0.6924,
+     0.7077
+    ],
+    "peak": 0.7077,
+    "tau": 0.6288,
+    "n_selected": 707,
+    "n_candidates": 1,
+    "top_n": 695
+   },
+   {
+    "text": "upholstered chair",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.5542,
+     0.6393,
+     0.6543
+    ],
+    "peak": 0.6543,
+    "tau": 0.6022,
+    "n_selected": 517,
+    "n_candidates": 1,
+    "top_n": 506
+   },
+   {
+    "text": "whiteboard",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.716,
+     0.748,
+     0.7488
+    ],
+    "peak": 0.7488,
+    "tau": 0.6494,
+    "n_selected": 907,
+    "n_candidates": 1,
+    "top_n": 876
+   },
+   {
+    "text": "computer monitor",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.5887,
+     0.6351,
+     0.6994
+    ],
+    "peak": 0.6994,
+    "tau": 0.6247,
+    "n_selected": 356,
+    "n_candidates": 1,
+    "top_n": 338
+   },
+   {
+    "text": "keyboard",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.556,
+     0.5548,
+     0.5564
+    ],
+    "peak": 0.5564,
+    "tau": 0.5532,
+    "n_selected": 63,
+    "n_candidates": 0,
+    "top_n": null
+   },
+   {
+    "text": "floor lamp",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.6271,
+     0.6387,
+     0.6637
+    ],
+    "peak": 0.6637,
+    "tau": 0.6068,
+    "n_selected": 216,
+    "n_candidates": 2,
+    "top_n": 95
+   },
+   {
+    "text": "red cup",
+    "negative": false,
+    "scale_group": 1,
+    "scale_peaks": [
+     0.6084,
+     0.6713,
+     0.6617
+    ],
+    "peak": 0.6713,
+    "tau": 0.6107,
+    "n_selected": 242,
+    "n_candidates": 1,
+    "top_n": 241
+   },
+   {
+    "text": "water bottle",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.5317,
+     0.6009,
+     0.6279
+    ],
+    "peak": 0.6279,
+    "tau": 0.589,
+    "n_selected": 265,
+    "n_candidates": 2,
+    "top_n": 220
+   },
+   {
+    "text": "water jug",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.5454,
+     0.6012,
+     0.6176
+    ],
+    "peak": 0.6176,
+    "tau": 0.5838,
+    "n_selected": 157,
+    "n_candidates": 2,
+    "top_n": 97
+   },
+   {
+    "text": "round table",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.5788,
+     0.5867,
+     0.5999
+    ],
+    "peak": 0.5999,
+    "tau": 0.5749,
+    "n_selected": 129,
+    "n_candidates": 3,
+    "top_n": 33
+   },
+   {
+    "text": "drone gate",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.5693,
+     0.5919,
+     0.6046
+    ],
+    "peak": 0.6046,
+    "tau": 0.5773,
+    "n_selected": 585,
+    "n_candidates": 3,
+    "top_n": 136
+   },
+   {
+    "text": "PVC pipe frame",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.7252,
+     0.8472,
+     0.8551
+    ],
+    "peak": 0.8551,
+    "tau": 0.7026,
+    "n_selected": 4002,
+    "n_candidates": 2,
+    "top_n": 3898
+   },
+   {
+    "text": "poster",
+    "negative": false,
+    "scale_group": 1,
+    "scale_peaks": [
+     0.6377,
+     0.6669,
+     0.6488
+    ],
+    "peak": 0.6669,
+    "tau": 0.6084,
+    "n_selected": 527,
+    "n_candidates": 3,
+    "top_n": 320
+   },
+   {
+    "text": "garden cart",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.5538,
+     0.6176,
+     0.7293
+    ],
+    "peak": 0.7293,
+    "tau": 0.6396,
+    "n_selected": 289,
+    "n_candidates": 2,
+    "top_n": 222
+   },
+   {
+    "text": "wheelbarrow",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.5476,
+     0.6061,
+     0.695
+    ],
+    "peak": 0.695,
+    "tau": 0.6225,
+    "n_selected": 361,
+    "n_candidates": 2,
+    "top_n": 275
+   },
+   {
+    "text": "cardboard box",
+    "negative": false,
+    "scale_group": 1,
+    "scale_peaks": [
+     0.5529,
+     0.5996,
+     0.597
+    ],
+    "peak": 0.5996,
+    "tau": 0.5748,
+    "n_selected": 99,
+    "n_candidates": 1,
+    "top_n": 91
+   },
+   {
+    "text": "red tool chest",
+    "negative": true,
+    "scale_group": 0,
+    "scale_peaks": [
+     0.5073,
+     0.5052,
+     0.5002
+    ],
+    "peak": 0.5073,
+    "tau": 0.55,
+    "n_selected": 7,
+    "n_candidates": 0,
+    "top_n": null
+   },
+   {
+    "text": "recycling bin",
+    "negative": true,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.5093,
+     0.511,
+     0.5326
+    ],
+    "peak": 0.5326,
+    "tau": 0.55,
+    "n_selected": 18,
+    "n_candidates": 0,
+    "top_n": null
+   },
+   {
+    "text": "bicycle",
+    "negative": true,
+    "scale_group": 1,
+    "scale_peaks": [
+     0.5013,
+     0.5135,
+     0.5047
+    ],
+    "peak": 0.5135,
+    "tau": 0.55,
+    "n_selected": 2,
+    "n_candidates": 0,
+    "top_n": null
+   }
+  ],
+  "Occam-ctrl": [
+   {
+    "text": "armchair",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.4805,
+     0.5789,
+     0.5918
+    ],
+    "peak": 0.5918,
+    "tau": 0.5709,
+    "n_selected": 80,
+    "n_candidates": 1,
+    "top_n": 61
+   },
+   {
+    "text": "upholstered chair",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.4501,
+     0.5594,
+     0.5603
+    ],
+    "peak": 0.5603,
+    "tau": 0.5552,
+    "n_selected": 56,
+    "n_candidates": 1,
+    "top_n": 42
+   },
+   {
+    "text": "whiteboard",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.5831,
+     0.7472,
+     0.7683
+    ],
+    "peak": 0.7683,
+    "tau": 0.6591,
+    "n_selected": 7554,
+    "n_candidates": 5,
+    "top_n": 5521
+   },
+   {
+    "text": "computer monitor",
+    "negative": false,
+    "scale_group": 1,
+    "scale_peaks": [
+     0.5341,
+     0.6712,
+     0.6341
+    ],
+    "peak": 0.6712,
+    "tau": 0.6106,
+    "n_selected": 676,
+    "n_candidates": 1,
+    "top_n": 655
+   },
+   {
+    "text": "keyboard",
+    "negative": false,
+    "scale_group": 1,
+    "scale_peaks": [
+     0.5114,
+     0.5293,
+     0.48
+    ],
+    "peak": 0.5293,
+    "tau": 0.55,
+    "n_selected": 0,
+    "n_candidates": 0,
+    "top_n": null
+   },
+   {
+    "text": "floor lamp",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.4894,
+     0.5526,
+     0.5835
+    ],
+    "peak": 0.5835,
+    "tau": 0.5667,
+    "n_selected": 113,
+    "n_candidates": 0,
+    "top_n": null
+   },
+   {
+    "text": "red cup",
+    "negative": false,
+    "scale_group": 1,
+    "scale_peaks": [
+     0.6839,
+     0.7131,
+     0.6556
+    ],
+    "peak": 0.7131,
+    "tau": 0.6316,
+    "n_selected": 350,
+    "n_candidates": 1,
+    "top_n": 338
+   },
+   {
+    "text": "water bottle",
+    "negative": false,
+    "scale_group": 1,
+    "scale_peaks": [
+     0.5405,
+     0.607,
+     0.5444
+    ],
+    "peak": 0.607,
+    "tau": 0.5785,
+    "n_selected": 96,
+    "n_candidates": 2,
+    "top_n": 53
+   },
+   {
+    "text": "water jug",
+    "negative": false,
+    "scale_group": 1,
+    "scale_peaks": [
+     0.5466,
+     0.6171,
+     0.5354
+    ],
+    "peak": 0.6171,
+    "tau": 0.5836,
+    "n_selected": 139,
+    "n_candidates": 2,
+    "top_n": 47
+   },
+   {
+    "text": "round table",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.5034,
+     0.6369,
+     0.6423
+    ],
+    "peak": 0.6423,
+    "tau": 0.5962,
+    "n_selected": 649,
+    "n_candidates": 5,
+    "top_n": 68
+   },
+   {
+    "text": "drone gate",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.5384,
+     0.6743,
+     0.6987
+    ],
+    "peak": 0.6987,
+    "tau": 0.6244,
+    "n_selected": 3158,
+    "n_candidates": 5,
+    "top_n": 2602
+   },
+   {
+    "text": "PVC pipe frame",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.6083,
+     0.794,
+     0.8251
+    ],
+    "peak": 0.8251,
+    "tau": 0.6875,
+    "n_selected": 9874,
+    "n_candidates": 4,
+    "top_n": 9033
+   },
+   {
+    "text": "poster",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.5304,
+     0.6804,
+     0.7364
+    ],
+    "peak": 0.7364,
+    "tau": 0.6432,
+    "n_selected": 3102,
+    "n_candidates": 1,
+    "top_n": 2923
+   },
+   {
+    "text": "garden cart",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.4718,
+     0.6668,
+     0.6907
+    ],
+    "peak": 0.6907,
+    "tau": 0.6203,
+    "n_selected": 255,
+    "n_candidates": 2,
+    "top_n": 153
+   },
+   {
+    "text": "wheelbarrow",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.5128,
+     0.678,
+     0.691
+    ],
+    "peak": 0.691,
+    "tau": 0.6205,
+    "n_selected": 431,
+    "n_candidates": 3,
+    "top_n": 193
+   },
+   {
+    "text": "cardboard box",
+    "negative": false,
+    "scale_group": 1,
+    "scale_peaks": [
+     0.5127,
+     0.6569,
+     0.6406
+    ],
+    "peak": 0.6569,
+    "tau": 0.6035,
+    "n_selected": 220,
+    "n_candidates": 2,
+    "top_n": 168
+   },
+   {
+    "text": "red tool chest",
+    "negative": true,
+    "scale_group": 0,
+    "scale_peaks": [
+     0.5124,
+     0.5035,
+     0.4949
+    ],
+    "peak": 0.5124,
+    "tau": 0.55,
+    "n_selected": 2,
+    "n_candidates": 0,
+    "top_n": null
+   },
+   {
+    "text": "recycling bin",
+    "negative": true,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.4876,
+     0.5694,
+     0.6041
+    ],
+    "peak": 0.6041,
+    "tau": 0.5771,
+    "n_selected": 138,
+    "n_candidates": 1,
+    "top_n": 60
+   },
+   {
+    "text": "bicycle",
+    "negative": true,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.484,
+     0.511,
+     0.5124
+    ],
+    "peak": 0.5124,
+    "tau": 0.55,
+    "n_selected": 1,
+    "n_candidates": 0,
+    "top_n": null
+   }
+  ],
+  "Ours-A": [
+   {
+    "text": "armchair",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.4845,
+     0.5729,
+     0.5815
+    ],
+    "peak": 0.5815,
+    "tau": 0.5657,
+    "n_selected": 80,
+    "n_candidates": 1,
+    "top_n": 79
+   },
+   {
+    "text": "upholstered chair",
+    "negative": false,
+    "scale_group": 1,
+    "scale_peaks": [
+     0.4431,
+     0.5533,
+     0.5494
+    ],
+    "peak": 0.5533,
+    "tau": 0.5517,
+    "n_selected": 49,
+    "n_candidates": 1,
+    "top_n": 49
+   },
+   {
+    "text": "whiteboard",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.5819,
+     0.7434,
+     0.7625
+    ],
+    "peak": 0.7625,
+    "tau": 0.6562,
+    "n_selected": 8310,
+    "n_candidates": 5,
+    "top_n": 6153
+   },
+   {
+    "text": "computer monitor",
+    "negative": false,
+    "scale_group": 1,
+    "scale_peaks": [
+     0.5252,
+     0.6641,
+     0.6407
+    ],
+    "peak": 0.6641,
+    "tau": 0.607,
+    "n_selected": 834,
+    "n_candidates": 1,
+    "top_n": 821
+   },
+   {
+    "text": "keyboard",
+    "negative": false,
+    "scale_group": 1,
+    "scale_peaks": [
+     0.5027,
+     0.5224,
+     0.4705
+    ],
+    "peak": 0.5224,
+    "tau": 0.55,
+    "n_selected": 0,
+    "n_candidates": 0,
+    "top_n": null
+   },
+   {
+    "text": "floor lamp",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.4834,
+     0.529,
+     0.562
+    ],
+    "peak": 0.562,
+    "tau": 0.556,
+    "n_selected": 63,
+    "n_candidates": 0,
+    "top_n": null
+   },
+   {
+    "text": "red cup",
+    "negative": false,
+    "scale_group": 1,
+    "scale_peaks": [
+     0.6837,
+     0.7463,
+     0.6949
+    ],
+    "peak": 0.7463,
+    "tau": 0.6481,
+    "n_selected": 495,
+    "n_candidates": 1,
+    "top_n": 492
+   },
+   {
+    "text": "water bottle",
+    "negative": false,
+    "scale_group": 1,
+    "scale_peaks": [
+     0.5539,
+     0.6525,
+     0.5729
+    ],
+    "peak": 0.6525,
+    "tau": 0.6012,
+    "n_selected": 237,
+    "n_candidates": 1,
+    "top_n": 226
+   },
+   {
+    "text": "water jug",
+    "negative": false,
+    "scale_group": 1,
+    "scale_peaks": [
+     0.5568,
+     0.6344,
+     0.5617
+    ],
+    "peak": 0.6344,
+    "tau": 0.5922,
+    "n_selected": 247,
+    "n_candidates": 2,
+    "top_n": 190
+   },
+   {
+    "text": "round table",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.4772,
+     0.6296,
+     0.6402
+    ],
+    "peak": 0.6402,
+    "tau": 0.5951,
+    "n_selected": 814,
+    "n_candidates": 5,
+    "top_n": 296
+   },
+   {
+    "text": "drone gate",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.5298,
+     0.6516,
+     0.6796
+    ],
+    "peak": 0.6796,
+    "tau": 0.6148,
+    "n_selected": 4761,
+    "n_candidates": 5,
+    "top_n": 3906
+   },
+   {
+    "text": "PVC pipe frame",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.6059,
+     0.7856,
+     0.8227
+    ],
+    "peak": 0.8227,
+    "tau": 0.6863,
+    "n_selected": 9965,
+    "n_candidates": 2,
+    "top_n": 9349
+   },
+   {
+    "text": "poster",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.5236,
+     0.6726,
+     0.7375
+    ],
+    "peak": 0.7375,
+    "tau": 0.6437,
+    "n_selected": 3896,
+    "n_candidates": 1,
+    "top_n": 3669
+   },
+   {
+    "text": "garden cart",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.4699,
+     0.6645,
+     0.7006
+    ],
+    "peak": 0.7006,
+    "tau": 0.6253,
+    "n_selected": 330,
+    "n_candidates": 1,
+    "top_n": 315
+   },
+   {
+    "text": "wheelbarrow",
+    "negative": false,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.4991,
+     0.6659,
+     0.6848
+    ],
+    "peak": 0.6848,
+    "tau": 0.6174,
+    "n_selected": 644,
+    "n_candidates": 1,
+    "top_n": 550
+   },
+   {
+    "text": "cardboard box",
+    "negative": false,
+    "scale_group": 1,
+    "scale_peaks": [
+     0.5076,
+     0.66,
+     0.6409
+    ],
+    "peak": 0.66,
+    "tau": 0.605,
+    "n_selected": 278,
+    "n_candidates": 2,
+    "top_n": 225
+   },
+   {
+    "text": "red tool chest",
+    "negative": true,
+    "scale_group": 1,
+    "scale_peaks": [
+     0.5135,
+     0.5201,
+     0.4949
+    ],
+    "peak": 0.5201,
+    "tau": 0.55,
+    "n_selected": 0,
+    "n_candidates": 0,
+    "top_n": null
+   },
+   {
+    "text": "recycling bin",
+    "negative": true,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.502,
+     0.5739,
+     0.5941
+    ],
+    "peak": 0.5941,
+    "tau": 0.5721,
+    "n_selected": 153,
+    "n_candidates": 1,
+    "top_n": 107
+   },
+   {
+    "text": "bicycle",
+    "negative": true,
+    "scale_group": 2,
+    "scale_peaks": [
+     0.4785,
+     0.4975,
+     0.5257
+    ],
+    "peak": 0.5257,
+    "tau": 0.55,
+    "n_selected": 3,
+    "n_candidates": 0,
+    "top_n": null
+   }
+  ]
+ }
+}
