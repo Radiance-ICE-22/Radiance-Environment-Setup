@@ -181,6 +181,10 @@ def test_status_lists_phase5_evaluations(settings, sem_project):
     (d / "L-C.json").write_text(json.dumps({"variant": "L-C", "backend": "lift", "set": "phase5", "key": key,
                                             "metrics": {"hit_rate": 0.5, "n_pos": 2}, "records": rec}))
     (d / "sweep_L-C.json").write_text("[]")
+    other = {"variant": "L-CD", "backend": "lift", "set": "phase1_gate", "key": key, "metrics": {"hit_rate": 1.0}, "records": []}
+    (d / "phase1_gate").mkdir()
+    (d / "phase1_gate" / "L-CD.json").write_text(json.dumps(other))            # other sets: eval/<set>/, not listed
+    (d / "L-CD.json").write_text(json.dumps(other))                            # a stray top-level one is skipped too
     ev = sem.status(settings, "backroom")["eval"]
     assert len(ev) == 1 and ev[0]["variant"] == "L-C" and ev[0]["stale"] is False and ev[0]["metrics"]["hit_rate"] == 0.5
     assert ev[0]["failed"] == [{"text": "chair", "failure": "wrong object", "error": 3.1, "top": [1, 2, 3]}]

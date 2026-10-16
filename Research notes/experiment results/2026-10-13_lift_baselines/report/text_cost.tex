@@ -1,0 +1,10 @@
+\paragraph{Reading.} Occam's centre-pixel lift is the cheapest by far: one forward render per view (no backward
+pass), with the feature gathered at one pixel per Gaussian. It lifts all 512 CLIP and 384 DINO channels in
+\textbf{28\,s / 38\,s} (Old) and \textbf{124\,s / 74\,s} (A, four maps), 6.5--18$\times$ faster than our
+gradient lift (181\,s / 262\,s and 1064\,s / 1364\,s). LUDVIG's kernel is the slowest for wide features (369\,s / 633\,s
+for Old). It processes every pixel's full channel vector per Gaussian, and its 512-channel template
+likely spills registers on sm\_75. Our A lift stays under 1\,GB of GPU memory because its accumulators live in host RAM; the two originals keep
+them on the GPU (2.7--3.4\,GB), which still fits the 8\,GB card. Coverage is the price of Occam's speed: 4.8\,\% and
+7.3\,\% of the Gaussians are never blended at their own centre pixel and stay unseen (all-pixel lifts: 0.1\,\% and
+0.4\,\%). These are mostly small or occluded Gaussians, which the query's opacity and cluster-size filters largely
+ignore anyway. Teacher extraction (31--53\,min per scene) dominates every pipeline.

@@ -39,6 +39,10 @@ holds what. Full history with every problem and fix: `docs/report/project_chroni
 | P5 evaluation + teacher study | DONE (SEMANTICS.md §13–16). Default lift = multi-scale A (22/29); B2 21, C2 19, Old 20 at floor 0.55, but A's lead is a floor effect — at equal false positives B2 flat is best (24/29). Open: browser check of View ▸ Compare |
 | P6 instruction → semantic-course → SV-Net | Not started (experiment waits on SV-Net flying) |
 
+13 Oct: FMGS dropped (too heavy for the lab GPU); the lift continues. Original LUDVIG / Occam's LGS code run against our lift
+(branches `semantic/LUDVIG`, `semantic/LGS`; `semantic/new` reserved for our own architecture): LUDVIG's lift = ours exactly,
+Occam's centre-pixel lift 6.5–18× faster, ±1–2 queries (SEMANTICS.md §17, `Research notes/experiment results/`).
+
 Next (Suhan to choose, HANDOVER.md §2): per-table floor calibration, then decide the default lift; query-time fusion /
 ViT-L re-ranker / FMGS baking fixes; merging B2/C2 (branches pushed, unmerged); disk cleanup of variant teachers and
 tables (ask first). Separate thread: the SV-Net student (Maverick, cohort `p4_smoke`) does not fly; next is cohort
