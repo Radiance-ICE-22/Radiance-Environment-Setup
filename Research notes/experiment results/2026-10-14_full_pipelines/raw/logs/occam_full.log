@@ -1,0 +1,856 @@
+== LangSplat features Tue Oct 13 07:00:22 PM +0530 2026
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+WARNING:huggingface_hub.utils._http:Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:37, 97.87s/it]                                          19/270 frame_00021: 98.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:41, 101.40s/it]                                           20/270 frame_00022: 102.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:36, 96.37s/it]                                          21/270 frame_00023: 97.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:31, 91.59s/it]                                          22/270 frame_00024: 92.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:40, 100.56s/it]                                           23/270 frame_00025: 101.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:38, 98.72s/it]                                          24/270 frame_00026: 99.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:40, 100.09s/it]                                           25/270 frame_00027: 100.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:42, 102.67s/it]                                           26/270 frame_00028: 103.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:45, 105.03s/it]                                           27/270 frame_00029: 105.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:32, 92.59s/it]                                          28/270 frame_00031: 93.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:34, 94.12s/it]                                          29/270 frame_00032: 94.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:23, 83.86s/it]                                          30/270 frame_00033: 84.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:19, 79.52s/it]                                          31/270 frame_00034: 80.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:09, 69.62s/it]                                          32/270 frame_00035: 70.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:10, 70.56s/it]                                          33/270 frame_00036: 71.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:06, 66.48s/it]                                          34/270 frame_00037: 67.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:09, 69.42s/it]                                          35/270 frame_00038: 70.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:09, 69.33s/it]                                          36/270 frame_00039: 70.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:11, 71.08s/it]                                          37/270 frame_00041: 71.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:15, 75.06s/it]                                          38/270 frame_00042: 75.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:15, 75.83s/it]                                          39/270 frame_00043: 76.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:17, 77.62s/it]                                          40/270 frame_00044: 78.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:18, 78.12s/it]                                          41/270 frame_00045: 78.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:17, 77.66s/it]                                          42/270 frame_00046: 78.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:13, 73.14s/it]                                          43/270 frame_00047: 73.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:14, 74.71s/it]                                          44/270 frame_00048: 75.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:11, 71.58s/it]                                          45/270 frame_00049: 72.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:21, 81.15s/it]                                          46/270 frame_00051: 81.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:20, 80.83s/it]                                          47/270 frame_00052: 81.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:23, 83.25s/it]                                          48/270 frame_00053: 83.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:21, 81.39s/it]                                          49/270 frame_00054: 82.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:21, 81.26s/it]                                          50/270 frame_00055: 81.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:22, 82.21s/it]                                          51/270 frame_00056: 82.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:20, 80.83s/it]                                          52/270 frame_00057: 81.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:19, 79.18s/it]                                          53/270 frame_00058: 79.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:15, 75.57s/it]                                          54/270 frame_00059: 76.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:13, 73.19s/it]                                          55/270 frame_00061: 73.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:11, 71.17s/it]                                          56/270 frame_00062: 71.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:14, 74.39s/it]                                          57/270 frame_00063: 75.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:07, 67.43s/it]                                          58/270 frame_00064: 68.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:03, 63.74s/it]                                          59/270 frame_00065: 64.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:02, 62.12s/it]                                          60/270 frame_00066: 62.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:59, 59.16s/it]                                          61/270 frame_00067: 59.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:03, 63.92s/it]                                          62/270 frame_00068: 64.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:02, 62.89s/it]                                          63/270 frame_00069: 63.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:04, 64.73s/it]                                          64/270 frame_00071: 65.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:06, 66.28s/it]                                          65/270 frame_00072: 66.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:08, 68.28s/it]                                          66/270 frame_00073: 68.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:10, 70.56s/it]                                          67/270 frame_00074: 71.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:12, 72.59s/it]                                          68/270 frame_00075: 73.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:22, 82.76s/it]                                          69/270 frame_00076: 83.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:28, 88.06s/it]                                          70/270 frame_00077: 88.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:34, 94.60s/it]                                          71/270 frame_00078: 95.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:37, 97.78s/it]                                          72/270 frame_00079: 98.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:12, 72.16s/it]                                          73/270 frame_00081: 72.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:04, 64.81s/it]                                          74/270 frame_00082: 65.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:02, 62.05s/it]                                          75/270 frame_00083: 62.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:00, 60.97s/it]                                          76/270 frame_00084: 61.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:05, 65.28s/it]                                          77/270 frame_00085: 65.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:04, 64.26s/it]                                          78/270 frame_00086: 64.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:04, 64.82s/it]                                          79/270 frame_00087: 65.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:00, 60.92s/it]                                          80/270 frame_00088: 61.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:59, 59.79s/it]                                          81/270 frame_00089: 60.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:59, 59.55s/it]                                          82/270 frame_00091: 60.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:01, 61.18s/it]                                          83/270 frame_00092: 61.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:02, 62.15s/it]                                          84/270 frame_00093: 62.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:04, 64.20s/it]                                          85/270 frame_00094: 64.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:02, 62.21s/it]                                          86/270 frame_00095: 62.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:57, 57.96s/it]                                          87/270 frame_00096: 58.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:06, 66.59s/it]                                          88/270 frame_00097: 67.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:07, 67.09s/it]                                          89/270 frame_00098: 67.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:00, 60.40s/it]                                          90/270 frame_00099: 61.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:09, 69.41s/it]                                          91/270 frame_00101: 70.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:08, 68.80s/it]                                          92/270 frame_00102: 69.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:09, 69.04s/it]                                          93/270 frame_00103: 69.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:07, 67.27s/it]                                          94/270 frame_00104: 67.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:02, 62.50s/it]                                          95/270 frame_00105: 63.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:00, 60.88s/it]                                          96/270 frame_00106: 61.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:58, 58.97s/it]                                          97/270 frame_00107: 59.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:55, 55.04s/it]                                          98/270 frame_00108: 55.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:54, 54.98s/it]                                          99/270 frame_00109: 55.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:49, 49.98s/it]                                          100/270 frame_00111: 50.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:49, 49.88s/it]                                          101/270 frame_00112: 50.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:51, 51.14s/it]                                          102/270 frame_00113: 51.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:49, 49.36s/it]                                          103/270 frame_00114: 50.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:45, 45.27s/it]                                          104/270 frame_00115: 45.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:46, 46.31s/it]                                          105/270 frame_00116: 47.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:51, 51.89s/it]                                          106/270 frame_00117: 52.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:08, 68.52s/it]                                          107/270 frame_00118: 69.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:16, 76.89s/it]                                          108/270 frame_00119: 77.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:19, 79.82s/it]                                          109/270 frame_00121: 80.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:14, 74.73s/it]                                          110/270 frame_00122: 75.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:16, 76.49s/it]                                          111/270 frame_00123: 77.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:13, 73.88s/it]                                          112/270 frame_00124: 74.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:21, 81.47s/it]                                          113/270 frame_00125: 82.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:22, 82.24s/it]                                          114/270 frame_00126: 82.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:19, 79.10s/it]                                          115/270 frame_00127: 79.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:17, 77.21s/it]                                          116/270 frame_00128: 77.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:14, 74.60s/it]                                          117/270 frame_00129: 75.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:07, 67.30s/it]                                          118/270 frame_00131: 67.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:01, 61.29s/it]                                          119/270 frame_00132: 61.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:02, 62.30s/it]                                          120/270 frame_00133: 62.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:54, 54.30s/it]                                          121/270 frame_00134: 54.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:01, 61.77s/it]                                          122/270 frame_00135: 62.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:59, 59.26s/it]                                          123/270 frame_00136: 59.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:58, 58.64s/it]                                          124/270 frame_00137: 59.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:06, 66.53s/it]                                          125/270 frame_00138: 67.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:08, 68.81s/it]                                          126/270 frame_00139: 69.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:09, 69.20s/it]                                          127/270 frame_00141: 69.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:10, 70.33s/it]                                          128/270 frame_00142: 71.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:15, 75.77s/it]                                          129/270 frame_00143: 76.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:18, 78.82s/it]                                          130/270 frame_00144: 79.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:10, 70.89s/it]                                          131/270 frame_00145: 71.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:13, 73.92s/it]                                          132/270 frame_00146: 74.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:15, 75.98s/it]                                          133/270 frame_00147: 76.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:11, 71.11s/it]                                          134/270 frame_00148: 71.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:01, 61.99s/it]                                          135/270 frame_00149: 62.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:00, 60.28s/it]                                          136/270 frame_00151: 60.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:00, 60.52s/it]                                          137/270 frame_00152: 61.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:58, 58.71s/it]                                          138/270 frame_00153: 59.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:55, 55.59s/it]                                          139/270 frame_00154: 56.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:57, 57.80s/it]                                          140/270 frame_00155: 58.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:50, 50.93s/it]                                          141/270 frame_00156: 51.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:49, 49.99s/it]                                          142/270 frame_00157: 50.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:00, 60.02s/it]                                          143/270 frame_00158: 60.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:20, 80.89s/it]                                          144/270 frame_00159: 81.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:48, 108.05s/it]                                           145/270 frame_00161: 108.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:43, 103.41s/it]                                           146/270 frame_00162: 104.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:42, 102.23s/it]                                           147/270 frame_00163: 102.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:40, 100.03s/it]                                           148/270 frame_00164: 100.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:39, 99.89s/it]                                          149/270 frame_00165: 100.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:37, 97.52s/it]                                          150/270 frame_00166: 98.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:25, 85.95s/it]                                          151/270 frame_00167: 86.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:17, 77.86s/it]                                          152/270 frame_00168: 78.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:14, 74.37s/it]                                          153/270 frame_00169: 75.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:05, 65.01s/it]                                          154/270 frame_00171: 65.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:10, 70.68s/it]                                          155/270 frame_00172: 71.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:20, 80.06s/it]                                          156/270 frame_00173: 80.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:20, 80.96s/it]                                          157/270 frame_00174: 81.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:14, 74.44s/it]                                          158/270 frame_00175: 75.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:20, 80.44s/it]                                          159/270 frame_00176: 81.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:25, 85.10s/it]                                          160/270 frame_00177: 85.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:21, 81.28s/it]                                          161/270 frame_00178: 81.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:12, 72.97s/it]                                          162/270 frame_00179: 73.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:09, 69.23s/it]                                          163/270 frame_00181: 69.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:04, 64.30s/it]                                          164/270 frame_00182: 64.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:01, 61.46s/it]                                          165/270 frame_00183: 62.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:55, 55.86s/it]                                          166/270 frame_00184: 56.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:57, 57.67s/it]                                          167/270 frame_00185: 58.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:53, 53.20s/it]                                          168/270 frame_00186: 53.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:51, 51.01s/it]                                          169/270 frame_00187: 51.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:57, 57.94s/it]                                          170/270 frame_00188: 58.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:21, 81.69s/it]                                          171/270 frame_00189: 82.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:45, 105.99s/it]                                           172/270 frame_00191: 106.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:46, 106.53s/it]                                           173/270 frame_00192: 107.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:49, 109.84s/it]                                           174/270 frame_00193: 110.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:36, 96.96s/it]                                          175/270 frame_00194: 97.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:34, 94.70s/it]                                          176/270 frame_00195: 95.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:34, 94.49s/it]                                          177/270 frame_00196: 95.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:29, 89.16s/it]                                          178/270 frame_00197: 89.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:34, 94.22s/it]                                          179/270 frame_00198: 94.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:28, 88.87s/it]                                          180/270 frame_00199: 89.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:23, 83.48s/it]                                          181/270 frame_00201: 84.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:28, 88.07s/it]                                          182/270 frame_00202: 88.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:25, 85.85s/it]                                          183/270 frame_00203: 86.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:31, 91.21s/it]                                          184/270 frame_00204: 91.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:30, 90.75s/it]                                          185/270 frame_00205: 91.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:35, 95.45s/it]                                          186/270 frame_00206: 96.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:40, 100.40s/it]                                           187/270 frame_00207: 101.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:48, 108.15s/it]                                           188/270 frame_00208: 108.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:43, 103.49s/it]                                           189/270 frame_00209: 104.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:29, 89.86s/it]                                          190/270 frame_00211: 90.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:26, 86.35s/it]                                          191/270 frame_00212: 87.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:23, 83.40s/it]                                          192/270 frame_00213: 84.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:25, 85.55s/it]                                          193/270 frame_00214: 86.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:33, 93.94s/it]                                          194/270 frame_00215: 94.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:36, 96.94s/it]                                          195/270 frame_00216: 97.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:33, 93.02s/it]                                          196/270 frame_00217: 93.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:26, 86.26s/it]                                          197/270 frame_00218: 86.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:10, 70.56s/it]                                          198/270 frame_00219: 71.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:12, 72.14s/it]                                          199/270 frame_00221: 72.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:08, 68.72s/it]                                          200/270 frame_00222: 69.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:14, 74.89s/it]                                          201/270 frame_00223: 75.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:09, 69.59s/it]                                          202/270 frame_00224: 70.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:09, 69.18s/it]                                          203/270 frame_00225: 69.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:07, 67.05s/it]                                          204/270 frame_00226: 67.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:06, 66.34s/it]                                          205/270 frame_00227: 67.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:03, 63.91s/it]                                          206/270 frame_00228: 64.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:58, 58.39s/it]                                          207/270 frame_00229: 59.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:59, 59.04s/it]                                          208/270 frame_00231: 59.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:59, 59.41s/it]                                          209/270 frame_00232: 60.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:58, 58.92s/it]                                          210/270 frame_00233: 59.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:05, 65.43s/it]                                          211/270 frame_00234: 66.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:05, 66.00s/it]                                          212/270 frame_00235: 66.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:06, 66.65s/it]                                          213/270 frame_00236: 67.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:04, 64.30s/it]                                          214/270 frame_00237: 64.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:02, 62.86s/it]                                          215/270 frame_00238: 63.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:09, 69.16s/it]                                          216/270 frame_00239: 69.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:02, 62.77s/it]                                          217/270 frame_00241: 63.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:58, 58.95s/it]                                          218/270 frame_00242: 59.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:00, 60.28s/it]                                          219/270 frame_00243: 60.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:57, 57.09s/it]                                          220/270 frame_00244: 57.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:59, 59.88s/it]                                          221/270 frame_00245: 60.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:04, 64.11s/it]                                          222/270 frame_00246: 64.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:00, 60.67s/it]                                          223/270 frame_00247: 61.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:59, 59.02s/it]                                          224/270 frame_00248: 59.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:54, 54.92s/it]                                          225/270 frame_00249: 55.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:16, 76.65s/it]                                          226/270 frame_00251: 77.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:14, 74.40s/it]                                          227/270 frame_00252: 75.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:18, 78.93s/it]                                          228/270 frame_00253: 79.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:14, 74.36s/it]                                          229/270 frame_00254: 75.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:14, 74.11s/it]                                          230/270 frame_00255: 74.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:13, 73.08s/it]                                          231/270 frame_00256: 73.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:16, 76.21s/it]                                          232/270 frame_00257: 76.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:20, 80.51s/it]                                          233/270 frame_00258: 81.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:17, 77.61s/it]                                          234/270 frame_00259: 78.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:12, 72.42s/it]                                          235/270 frame_00261: 73.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:09, 69.36s/it]                                          236/270 frame_00262: 70.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:10, 70.96s/it]                                          237/270 frame_00263: 71.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:08, 68.63s/it]                                          238/270 frame_00264: 69.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:05, 65.85s/it]                                          239/270 frame_00265: 66.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:06, 66.26s/it]                                          240/270 frame_00266: 66.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:06, 66.61s/it]                                          241/270 frame_00267: 67.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:04, 64.22s/it]                                          242/270 frame_00268: 64.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:02, 62.66s/it]                                          243/270 frame_00269: 63.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:03, 63.71s/it]                                          244/270 frame_00271: 64.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:01, 61.89s/it]                                          245/270 frame_00272: 62.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:59, 59.86s/it]                                          246/270 frame_00273: 60.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:58, 58.49s/it]                                          247/270 frame_00274: 59.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:03, 63.28s/it]                                          248/270 frame_00275: 63.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:04, 64.55s/it]                                          249/270 frame_00276: 65.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:08, 68.42s/it]                                          250/270 frame_00277: 69.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:10, 70.80s/it]                                          251/270 frame_00278: 71.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:06, 66.78s/it]                                          252/270 frame_00279: 67.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:10, 70.67s/it]                                          253/270 frame_00281: 71.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:14, 74.06s/it]                                          254/270 frame_00282: 74.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:15, 75.39s/it]                                          255/270 frame_00283: 76.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:14, 74.83s/it]                                          256/270 frame_00284: 75.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:15, 75.94s/it]                                          257/270 frame_00285: 76.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:19, 79.52s/it]                                          258/270 frame_00286: 80.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:15, 75.01s/it]                                          259/270 frame_00287: 75.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:08, 68.95s/it]                                          260/270 frame_00288: 69.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:08, 68.17s/it]                                          261/270 frame_00289: 68.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:55, 55.46s/it]                                          262/270 frame_00291: 56.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:56, 56.33s/it]                                          263/270 frame_00292: 57.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:04, 64.88s/it]                                          264/270 frame_00293: 65.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:03, 63.99s/it]                                          265/270 frame_00294: 64.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:01, 61.48s/it]                                          266/270 frame_00295: 62.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:59, 59.19s/it]                                          267/270 frame_00296: 59.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:57, 57.85s/it]                                          268/270 frame_00297: 58.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:15, 75.34s/it]                                          269/270 frame_00298: 76.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [01:22, 82.75s/it]                                          270/270 frame_00300: 83.4 s, peak 5.87 GB
+done: 252 images in 18525 s → /home/yutharsan/Radiance/third_party/langsplat_features/backroom
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.55s/it]                                          1/450 0000: 39.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.74s/it]                                          2/450 0001: 34.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:34, 34.08s/it]                                          3/450 0002: 34.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.37s/it]                                          4/450 0003: 37.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.05s/it]                                          5/450 0004: 37.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.44s/it]                                          6/450 0005: 39.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.95s/it]                                          7/450 0006: 38.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.75s/it]                                          8/450 0007: 37.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:34, 34.96s/it]                                          9/450 0008: 35.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:34, 34.73s/it]                                          10/450 0009: 35.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.60s/it]                                          11/450 0011: 34.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.93s/it]                                          12/450 0012: 34.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.93s/it]                                          13/450 0013: 36.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.50s/it]                                          14/450 0014: 36.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.01s/it]                                          15/450 0015: 37.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.47s/it]                                          16/450 0016: 38.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.75s/it]                                          17/450 0017: 39.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:39, 39.85s/it]                                          18/450 0018: 40.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.35s/it]                                          19/450 0019: 38.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:42, 42.79s/it]                                          20/450 0021: 43.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:42, 42.45s/it]                                          21/450 0022: 43.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:40, 40.25s/it]                                          22/450 0023: 40.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:40, 40.26s/it]                                          23/450 0024: 40.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:40, 40.38s/it]                                          24/450 0025: 41.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:40, 40.85s/it]                                          25/450 0026: 41.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:39, 39.32s/it]                                          26/450 0027: 39.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:39, 39.11s/it]                                          27/450 0028: 39.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:41, 41.42s/it]                                          28/450 0029: 42.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:43, 43.62s/it]                                          29/450 0031: 44.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:42, 42.20s/it]                                          30/450 0032: 42.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:43, 43.68s/it]                                          31/450 0033: 44.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:42, 42.45s/it]                                          32/450 0034: 43.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:41, 41.84s/it]                                          33/450 0035: 42.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:42, 42.07s/it]                                          34/450 0036: 42.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:40, 40.93s/it]                                          35/450 0037: 41.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:39, 39.60s/it]                                          36/450 0038: 40.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:40, 40.06s/it]                                          37/450 0039: 40.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.86s/it]                                          38/450 0041: 37.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.93s/it]                                          39/450 0042: 38.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.39s/it]                                          40/450 0043: 39.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.43s/it]                                          41/450 0044: 38.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.48s/it]                                          42/450 0045: 37.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.17s/it]                                          43/450 0046: 35.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.99s/it]                                          44/450 0047: 34.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.39s/it]                                          45/450 0048: 37.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:32, 32.92s/it]                                          46/450 0049: 33.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:34, 34.53s/it]                                          47/450 0051: 35.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:31, 31.19s/it]                                          48/450 0052: 31.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:31, 31.29s/it]                                          49/450 0053: 31.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:32, 32.82s/it]                                          50/450 0054: 33.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:31, 31.12s/it]                                          51/450 0055: 31.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:29, 29.78s/it]                                          52/450 0056: 30.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:31, 31.19s/it]                                          53/450 0057: 31.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.68s/it]                                          54/450 0058: 34.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:34, 34.87s/it]                                          55/450 0059: 35.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.03s/it]                                          56/450 0061: 35.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:34, 34.94s/it]                                          57/450 0062: 35.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:34, 34.34s/it]                                          58/450 0063: 34.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:34, 34.81s/it]                                          59/450 0064: 35.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:32, 32.74s/it]                                          60/450 0065: 33.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.65s/it]                                          61/450 0066: 34.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:34, 34.63s/it]                                          62/450 0067: 35.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.50s/it]                                          63/450 0068: 37.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.13s/it]                                          64/450 0069: 35.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.17s/it]                                          65/450 0070: 35.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:34, 34.29s/it]                                          66/450 0072: 34.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.38s/it]                                          67/450 0073: 37.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.61s/it]                                          68/450 0074: 37.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:39, 39.50s/it]                                          69/450 0075: 40.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:43, 43.00s/it]                                          70/450 0076: 43.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:41, 41.25s/it]                                          71/450 0077: 41.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:42, 42.54s/it]                                          72/450 0078: 43.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:41, 41.27s/it]                                          73/450 0079: 41.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:42, 42.36s/it]                                          74/450 0080: 43.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:41, 41.53s/it]                                          75/450 0082: 42.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:41, 41.97s/it]                                          76/450 0083: 42.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:41, 41.10s/it]                                          77/450 0084: 41.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.22s/it]                                          78/450 0085: 38.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:39, 39.01s/it]                                          79/450 0086: 39.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:39, 39.35s/it]                                          80/450 0087: 40.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:39, 39.54s/it]                                          81/450 0088: 40.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.99s/it]                                          82/450 0089: 39.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.99s/it]                                          83/450 0090: 37.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.69s/it]                                          84/450 0092: 36.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.04s/it]                                          85/450 0093: 35.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:34, 34.83s/it]                                          86/450 0094: 35.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.04s/it]                                          87/450 0095: 37.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.84s/it]                                          88/450 0096: 36.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.97s/it]                                          89/450 0097: 36.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.45s/it]                                          90/450 0098: 39.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.52s/it]                                          91/450 0099: 38.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.17s/it]                                          92/450 0100: 37.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.97s/it]                                          93/450 0102: 38.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.28s/it]                                          94/450 0103: 35.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.03s/it]                                          95/450 0104: 38.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.26s/it]                                          96/450 0105: 37.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.98s/it]                                          97/450 0106: 37.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.54s/it]                                          98/450 0107: 38.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.58s/it]                                          99/450 0108: 37.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.54s/it]                                          100/450 0109: 36.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.35s/it]                                          101/450 0110: 34.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.09s/it]                                          102/450 0112: 33.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:34, 34.14s/it]                                          103/450 0113: 34.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.29s/it]                                          104/450 0114: 33.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.80s/it]                                          105/450 0115: 34.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.61s/it]                                          106/450 0116: 34.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.24s/it]                                          107/450 0117: 35.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.23s/it]                                          108/450 0118: 36.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.73s/it]                                          109/450 0119: 38.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.96s/it]                                          110/450 0120: 39.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.72s/it]                                          111/450 0122: 37.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.48s/it]                                          112/450 0123: 37.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.08s/it]                                          113/450 0124: 35.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.04s/it]                                          114/450 0125: 36.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.09s/it]                                          115/450 0126: 36.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.70s/it]                                          116/450 0127: 37.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.21s/it]                                          117/450 0128: 36.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:46, 46.15s/it]                                          118/450 0129: 46.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:42, 42.71s/it]                                          119/450 0130: 43.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:43, 43.80s/it]                                          120/450 0131: 44.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:41, 41.07s/it]                                          121/450 0133: 41.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.62s/it]                                          122/450 0134: 39.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:40, 40.88s/it]                                          123/450 0135: 41.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:39, 39.56s/it]                                          124/450 0136: 40.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.95s/it]                                          125/450 0137: 38.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.26s/it]                                          126/450 0138: 37.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.34s/it]                                          127/450 0139: 38.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.59s/it]                                          128/450 0140: 37.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.43s/it]                                          129/450 0141: 36.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.37s/it]                                          130/450 0143: 37.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.08s/it]                                          131/450 0144: 38.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.69s/it]                                          132/450 0145: 38.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.17s/it]                                          133/450 0146: 36.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.12s/it]                                          134/450 0147: 36.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.24s/it]                                          135/450 0148: 38.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:40, 40.16s/it]                                          136/450 0149: 40.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.98s/it]                                          137/450 0150: 39.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.34s/it]                                          138/450 0151: 39.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.95s/it]                                          139/450 0153: 36.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:40, 40.81s/it]                                          140/450 0154: 41.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:41, 41.57s/it]                                          141/450 0155: 42.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:39, 39.36s/it]                                          142/450 0156: 40.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:39, 39.34s/it]                                          143/450 0157: 40.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:39, 39.23s/it]                                          144/450 0158: 39.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:39, 39.36s/it]                                          145/450 0159: 40.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.84s/it]                                          146/450 0160: 38.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.91s/it]                                          147/450 0161: 38.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.84s/it]                                          148/450 0163: 37.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.57s/it]                                          149/450 0164: 39.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.37s/it]                                          150/450 0165: 37.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.01s/it]                                          151/450 0166: 38.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.20s/it]                                          152/450 0167: 38.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:39, 39.15s/it]                                          153/450 0168: 39.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.52s/it]                                          154/450 0169: 38.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.81s/it]                                          155/450 0170: 37.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.05s/it]                                          156/450 0171: 37.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:34, 34.01s/it]                                          157/450 0173: 34.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:32, 32.95s/it]                                          158/450 0174: 33.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.12s/it]                                          159/450 0175: 35.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.19s/it]                                          160/450 0176: 33.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.27s/it]                                          161/450 0177: 35.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.47s/it]                                          162/450 0178: 36.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:34, 34.95s/it]                                          163/450 0179: 35.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:32, 32.34s/it]                                          164/450 0180: 33.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:31, 31.88s/it]                                          165/450 0181: 32.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:32, 32.79s/it]                                          166/450 0183: 33.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:31, 31.75s/it]                                          167/450 0184: 32.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:34, 34.03s/it]                                          168/450 0185: 34.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.42s/it]                                          169/450 0186: 36.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:34, 34.38s/it]                                          170/450 0187: 35.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:32, 32.89s/it]                                          171/450 0188: 33.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.53s/it]                                          172/450 0189: 34.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:32, 32.42s/it]                                          173/450 0190: 33.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.04s/it]                                          174/450 0191: 33.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:32, 32.62s/it]                                          175/450 0192: 33.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:34, 34.55s/it]                                          176/450 0194: 35.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:31, 31.91s/it]                                          177/450 0195: 32.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:32, 32.97s/it]                                          178/450 0196: 33.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.16s/it]                                          179/450 0197: 35.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.33s/it]                                          180/450 0198: 39.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.23s/it]                                          181/450 0199: 38.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:39, 39.95s/it]                                          182/450 0200: 40.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.70s/it]                                          183/450 0201: 38.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:39, 39.49s/it]                                          184/450 0202: 40.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.51s/it]                                          185/450 0204: 38.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.99s/it]                                          186/450 0205: 37.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.74s/it]                                          187/450 0206: 37.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.52s/it]                                          188/450 0207: 38.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.58s/it]                                          189/450 0208: 39.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.93s/it]                                          190/450 0209: 39.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:40, 40.70s/it]                                          191/450 0210: 41.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:39, 39.56s/it]                                          192/450 0211: 40.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.35s/it]                                          193/450 0212: 36.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:32, 32.06s/it]                                          194/450 0214: 32.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.15s/it]                                          195/450 0215: 33.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.12s/it]                                          196/450 0216: 33.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.33s/it]                                          197/450 0217: 37.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:31, 31.04s/it]                                          198/450 0218: 31.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.57s/it]                                          199/450 0219: 37.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.98s/it]                                          200/450 0220: 34.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.99s/it]                                          201/450 0221: 38.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.84s/it]                                          202/450 0222: 37.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:34, 34.39s/it]                                          203/450 0224: 35.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.16s/it]                                          204/450 0225: 36.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.38s/it]                                          205/450 0226: 37.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.50s/it]                                          206/450 0227: 38.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:34, 34.27s/it]                                          207/450 0228: 34.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:32, 32.24s/it]                                          208/450 0229: 32.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:32, 32.88s/it]                                          209/450 0230: 33.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:34, 34.91s/it]                                          210/450 0231: 35.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:34, 34.42s/it]                                          211/450 0232: 35.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:34, 34.24s/it]                                          212/450 0234: 34.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.42s/it]                                          213/450 0235: 34.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.46s/it]                                          214/450 0236: 34.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.97s/it]                                          215/450 0237: 34.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.38s/it]                                          216/450 0238: 36.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.54s/it]                                          217/450 0239: 37.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.19s/it]                                          218/450 0240: 36.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.57s/it]                                          219/450 0241: 38.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.60s/it]                                          220/450 0242: 38.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.87s/it]                                          221/450 0244: 39.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:41, 41.01s/it]                                          222/450 0245: 41.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:39, 39.32s/it]                                          223/450 0246: 40.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:40, 40.39s/it]                                          224/450 0247: 41.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:41, 41.44s/it]                                          225/450 0248: 42.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:41, 41.18s/it]                                          226/450 0249: 41.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:40, 40.43s/it]                                          227/450 0250: 41.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:39, 39.20s/it]                                          228/450 0251: 39.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:40, 40.21s/it]                                          229/450 0252: 40.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:41, 41.79s/it]                                          230/450 0253: 42.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:42, 42.06s/it]                                          231/450 0255: 42.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:42, 42.15s/it]                                          232/450 0256: 42.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:40, 40.29s/it]                                          233/450 0257: 41.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:41, 41.23s/it]                                          234/450 0258: 41.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:39, 39.24s/it]                                          235/450 0259: 39.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:39, 39.95s/it]                                          236/450 0260: 40.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:40, 40.11s/it]                                          237/450 0261: 40.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.84s/it]                                          238/450 0262: 39.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.88s/it]                                          239/450 0263: 39.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.92s/it]                                          240/450 0265: 39.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.55s/it]                                          241/450 0266: 37.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.35s/it]                                          242/450 0267: 38.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.87s/it]                                          243/450 0268: 37.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.39s/it]                                          244/450 0269: 37.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.08s/it]                                          245/450 0270: 35.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:32, 32.09s/it]                                          246/450 0271: 32.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:32, 32.51s/it]                                          247/450 0272: 33.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:32, 32.58s/it]                                          248/450 0273: 33.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:32, 32.10s/it]                                          249/450 0275: 32.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:32, 32.79s/it]                                          250/450 0276: 33.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:32, 32.25s/it]                                          251/450 0277: 32.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:32, 32.98s/it]                                          252/450 0278: 33.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.90s/it]                                          253/450 0279: 34.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.84s/it]                                          254/450 0280: 34.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.77s/it]                                          255/450 0281: 34.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:34, 34.76s/it]                                          256/450 0282: 35.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:34, 34.55s/it]                                          257/450 0283: 35.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.87s/it]                                          258/450 0285: 36.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:30, 30.93s/it]                                          259/450 0286: 31.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:31, 31.29s/it]                                          260/450 0287: 31.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:29, 29.61s/it]                                          261/450 0288: 30.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:32, 32.14s/it]                                          262/450 0289: 32.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:30, 30.10s/it]                                          263/450 0290: 30.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:29, 29.67s/it]                                          264/450 0291: 30.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.13s/it]                                          265/450 0292: 33.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:32, 32.47s/it]                                          266/450 0293: 33.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:32, 32.90s/it]                                          267/450 0295: 33.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:32, 32.46s/it]                                          268/450 0296: 33.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.19s/it]                                          269/450 0297: 33.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:31, 31.23s/it]                                          270/450 0298: 31.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:31, 31.71s/it]                                          271/450 0299: 32.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:32, 32.36s/it]                                          272/450 0300: 33.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.24s/it]                                          273/450 0301: 35.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.11s/it]                                          274/450 0302: 36.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.05s/it]                                          275/450 0303: 35.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.65s/it]                                          276/450 0305: 34.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.39s/it]                                          277/450 0306: 34.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.26s/it]                                          278/450 0307: 33.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:32, 32.69s/it]                                          279/450 0308: 33.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:32, 32.90s/it]                                          280/450 0309: 33.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:27, 27.96s/it]                                          281/450 0310: 28.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.98s/it]                                          282/450 0311: 39.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:39, 39.06s/it]                                          283/450 0312: 39.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:40, 40.84s/it]                                          284/450 0313: 41.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.82s/it]                                          285/450 0314: 38.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.61s/it]                                          286/450 0316: 36.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.36s/it]                                          287/450 0317: 34.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.49s/it]                                          288/450 0318: 36.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.55s/it]                                          289/450 0319: 36.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:39, 39.04s/it]                                          290/450 0320: 39.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.02s/it]                                          291/450 0321: 36.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:40, 40.71s/it]                                          292/450 0322: 41.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:44, 44.21s/it]                                          293/450 0323: 44.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:43, 43.08s/it]                                          294/450 0324: 43.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:46, 46.02s/it]                                          295/450 0326: 46.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:45, 45.37s/it]                                          296/450 0327: 46.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:45, 45.31s/it]                                          297/450 0328: 46.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:42, 42.85s/it]                                          298/450 0329: 43.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:42, 42.02s/it]                                          299/450 0330: 42.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:39, 40.00s/it]                                          300/450 0331: 40.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:39, 39.42s/it]                                          301/450 0332: 40.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.37s/it]                                          302/450 0333: 37.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.45s/it]                                          303/450 0334: 36.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.28s/it]                                          304/450 0336: 33.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:34, 34.45s/it]                                          305/450 0337: 35.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.37s/it]                                          306/450 0338: 36.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.78s/it]                                          307/450 0339: 37.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:34, 34.84s/it]                                          308/450 0340: 35.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:34, 34.05s/it]                                          309/450 0341: 34.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:34, 34.01s/it]                                          310/450 0342: 34.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:34, 34.72s/it]                                          311/450 0343: 35.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:34, 34.04s/it]                                          312/450 0344: 34.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:34, 34.61s/it]                                          313/450 0346: 35.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.59s/it]                                          314/450 0347: 36.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.77s/it]                                          315/450 0348: 37.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.20s/it]                                          316/450 0349: 38.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:40, 40.12s/it]                                          317/450 0350: 40.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.02s/it]                                          318/450 0351: 38.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.34s/it]                                          319/450 0352: 39.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.34s/it]                                          320/450 0353: 37.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.32s/it]                                          321/450 0354: 37.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:31, 31.41s/it]                                          322/450 0356: 32.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.64s/it]                                          323/450 0357: 34.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:32, 32.66s/it]                                          324/450 0358: 33.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.78s/it]                                          325/450 0359: 34.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.53s/it]                                          326/450 0360: 34.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.44s/it]                                          327/450 0361: 34.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.56s/it]                                          328/450 0362: 34.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:34, 34.45s/it]                                          329/450 0363: 35.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:32, 32.88s/it]                                          330/450 0364: 33.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:34, 34.16s/it]                                          331/450 0366: 34.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.01s/it]                                          332/450 0367: 33.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.00s/it]                                          333/450 0368: 35.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.69s/it]                                          334/450 0369: 34.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.84s/it]                                          335/450 0370: 34.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.54s/it]                                          336/450 0371: 36.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.92s/it]                                          337/450 0372: 36.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.94s/it]                                          338/450 0373: 36.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.41s/it]                                          339/450 0374: 37.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.21s/it]                                          340/450 0375: 37.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.37s/it]                                          341/450 0377: 39.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.72s/it]                                          342/450 0378: 37.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.44s/it]                                          343/450 0379: 37.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.62s/it]                                          344/450 0380: 37.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.32s/it]                                          345/450 0381: 37.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.98s/it]                                          346/450 0382: 36.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.61s/it]                                          347/450 0383: 38.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:34, 34.10s/it]                                          348/450 0384: 34.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:32, 32.34s/it]                                          349/450 0385: 33.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:31, 31.27s/it]                                          350/450 0387: 31.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:32, 32.99s/it]                                          351/450 0388: 33.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:32, 32.87s/it]                                          352/450 0389: 33.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:32, 32.52s/it]                                          353/450 0390: 33.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:32, 32.38s/it]                                          354/450 0391: 33.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.02s/it]                                          355/450 0392: 33.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:32, 32.63s/it]                                          356/450 0393: 33.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:32, 32.69s/it]                                          357/450 0394: 33.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.68s/it]                                          358/450 0395: 34.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.33s/it]                                          359/450 0397: 34.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:31, 31.62s/it]                                          360/450 0398: 32.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:30, 30.79s/it]                                          361/450 0399: 31.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:29, 29.69s/it]                                          362/450 0400: 30.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:30, 30.37s/it]                                          363/450 0401: 31.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:31, 31.55s/it]                                          364/450 0402: 32.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:32, 32.65s/it]                                          365/450 0403: 33.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.18s/it]                                          366/450 0404: 33.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:30, 30.19s/it]                                          367/450 0405: 30.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.44s/it]                                          368/450 0407: 37.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.13s/it]                                          369/450 0408: 36.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:41, 41.70s/it]                                          370/450 0409: 42.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.93s/it]                                          371/450 0410: 39.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.68s/it]                                          372/450 0411: 39.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.95s/it]                                          373/450 0412: 39.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:41, 41.99s/it]                                          374/450 0413: 42.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:40, 40.40s/it]                                          375/450 0414: 41.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:39, 39.65s/it]                                          376/450 0415: 40.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:41, 41.12s/it]                                          377/450 0417: 41.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:39, 39.33s/it]                                          378/450 0418: 40.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:43, 43.12s/it]                                          379/450 0419: 43.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:42, 42.89s/it]                                          380/450 0420: 43.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:43, 43.41s/it]                                          381/450 0421: 44.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:41, 41.60s/it]                                          382/450 0422: 42.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.24s/it]                                          383/450 0423: 36.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.77s/it]                                          384/450 0424: 37.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.92s/it]                                          385/450 0425: 37.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.07s/it]                                          386/450 0427: 35.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.54s/it]                                          387/450 0428: 39.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:39, 39.19s/it]                                          388/450 0429: 39.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.93s/it]                                          389/450 0430: 38.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.34s/it]                                          390/450 0431: 39.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:39, 39.02s/it]                                          391/450 0432: 39.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:39, 39.25s/it]                                          392/450 0433: 39.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:39, 39.90s/it]                                          393/450 0434: 40.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.03s/it]                                          394/450 0435: 38.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.92s/it]                                          395/450 0436: 38.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.67s/it]                                          396/450 0438: 39.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.94s/it]                                          397/450 0439: 38.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:39, 39.62s/it]                                          398/450 0440: 40.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.58s/it]                                          399/450 0441: 39.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:39, 39.36s/it]                                          400/450 0442: 40.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.72s/it]                                          401/450 0443: 38.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.96s/it]                                          402/450 0444: 38.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.46s/it]                                          403/450 0445: 37.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.25s/it]                                          404/450 0446: 36.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.30s/it]                                          405/450 0448: 39.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.79s/it]                                          406/450 0449: 39.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:40, 40.09s/it]                                          407/450 0450: 40.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:39, 39.75s/it]                                          408/450 0451: 40.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:39, 39.99s/it]                                          409/450 0452: 40.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:40, 40.99s/it]                                          410/450 0453: 41.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:39, 39.12s/it]                                          411/450 0454: 39.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:39, 39.60s/it]                                          412/450 0455: 40.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:40, 40.35s/it]                                          413/450 0456: 41.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.71s/it]                                          414/450 0458: 38.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.81s/it]                                          415/450 0459: 39.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.55s/it]                                          416/450 0460: 38.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.25s/it]                                          417/450 0461: 37.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.51s/it]                                          418/450 0462: 36.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.69s/it]                                          419/450 0463: 36.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:39, 39.49s/it]                                          420/450 0464: 40.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.71s/it]                                          421/450 0465: 38.4 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:34, 34.24s/it]                                          422/450 0466: 34.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:34, 34.34s/it]                                          423/450 0468: 35.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.98s/it]                                          424/450 0469: 34.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.57s/it]                                          425/450 0470: 38.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.62s/it]                                          426/450 0471: 38.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.35s/it]                                          427/450 0472: 39.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.51s/it]                                          428/450 0473: 38.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.95s/it]                                          429/450 0474: 38.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:39, 39.51s/it]                                          430/450 0475: 40.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.65s/it]                                          431/450 0476: 37.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.95s/it]                                          432/450 0478: 36.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:40, 40.12s/it]                                          433/450 0479: 40.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.58s/it]                                          434/450 0480: 37.3 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.23s/it]                                          435/450 0481: 36.9 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.36s/it]                                          436/450 0482: 36.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:31, 31.94s/it]                                          437/450 0483: 32.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:32, 32.94s/it]                                          438/450 0484: 33.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:32, 32.92s/it]                                          439/450 0485: 33.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.32s/it]                                          440/450 0486: 38.0 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:39, 39.53s/it]                                          441/450 0488: 40.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.92s/it]                                          442/450 0489: 39.6 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:38, 38.45s/it]                                          443/450 0490: 39.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.14s/it]                                          444/450 0491: 36.8 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:34, 34.42s/it]                                          445/450 0492: 35.1 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:33, 33.83s/it]                                          446/450 0493: 34.5 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.01s/it]                                          447/450 0494: 36.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:37, 37.55s/it]                                          448/450 0495: 38.2 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:35, 35.05s/it]                                          449/450 0496: 35.7 s, peak 5.87 GB
+Embedding images: 0it [00:00, ?it/s]Embedding images: 1it [00:36, 36.93s/it]                                          450/450 0498: 37.6 s, peak 5.87 GB
+done: 450 images in 16776 s → /home/yutharsan/Radiance/third_party/langsplat_features/flightroom
+== Occam lift Wed Oct 14 04:49:02 AM +0530 2026
+backroom: 532,361 Gaussians, 270 views, teachers None ['clip_s0', 'clip_s1', 'clip_s2'], render 960 px → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/backroom/semantics/2026-09-26_190524/lift_occamfull_raw
+  clip_s0: 1/270 views, 1 s, peak 3.45 GB
+  clip_s0: 50/270 views, 3 s, peak 4.20 GB
+  clip_s0: 100/270 views, 4 s, peak 4.20 GB
+  clip_s0: 150/270 views, 6 s, peak 4.28 GB
+  clip_s0: 200/270 views, 8 s, peak 4.32 GB
+  clip_s0: 250/270 views, 9 s, peak 4.32 GB
+  clip_s0: 270/270 views, 10 s, peak 4.32 GB
+  clip_s0: done in 12 s, 493,643 activated
+  clip_s1: 1/270 views, 1 s, peak 4.32 GB
+  clip_s1: 50/270 views, 2 s, peak 4.32 GB
+  clip_s1: 100/270 views, 4 s, peak 4.32 GB
+  clip_s1: 150/270 views, 5 s, peak 4.32 GB
+  clip_s1: 200/270 views, 7 s, peak 4.32 GB
+  clip_s1: 250/270 views, 8 s, peak 4.32 GB
+  clip_s1: 270/270 views, 9 s, peak 4.32 GB
+  clip_s1: done in 11 s, 497,759 activated
+  clip_s2: 1/270 views, 1 s, peak 4.32 GB
+  clip_s2: 50/270 views, 2 s, peak 4.32 GB
+  clip_s2: 100/270 views, 4 s, peak 4.32 GB
+  clip_s2: 150/270 views, 5 s, peak 4.32 GB
+  clip_s2: 200/270 views, 7 s, peak 4.32 GB
+  clip_s2: 250/270 views, 8 s, peak 4.32 GB
+  clip_s2: 270/270 views, 9 s, peak 4.32 GB
+  clip_s2: done in 11 s, 494,747 activated
+lifted ['clip_s0', 'clip_s1', 'clip_s2'] onto 498,828 of 532,361 Gaussians in 34 s → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/backroom/semantics/2026-09-26_190524/lift_occamfull_raw
+flightroom: 379,684 Gaussians, 450 views, teachers None ['clip_s0', 'clip_s1', 'clip_s2'], render 960 px → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/flightroom/semantics/2026-09-29_163855/lift_occamfull_raw
+  clip_s0: 1/450 views, 1 s, peak 1.97 GB
+  clip_s0: 50/450 views, 2 s, peak 2.46 GB
+  clip_s0: 100/450 views, 2 s, peak 2.48 GB
+  clip_s0: 150/450 views, 3 s, peak 2.48 GB
+  clip_s0: 200/450 views, 4 s, peak 2.48 GB
+  clip_s0: 250/450 views, 5 s, peak 2.48 GB
+  clip_s0: 300/450 views, 6 s, peak 2.48 GB
+  clip_s0: 350/450 views, 6 s, peak 2.48 GB
+  clip_s0: 400/450 views, 7 s, peak 2.48 GB
+  clip_s0: 450/450 views, 8 s, peak 2.48 GB
+  clip_s0: done in 9 s, 347,353 activated
+  clip_s1: 1/450 views, 0 s, peak 2.48 GB
+  clip_s1: 50/450 views, 1 s, peak 2.48 GB
+  clip_s1: 100/450 views, 2 s, peak 2.48 GB
+  clip_s1: 150/450 views, 3 s, peak 2.48 GB
+  clip_s1: 200/450 views, 4 s, peak 2.48 GB
+  clip_s1: 250/450 views, 5 s, peak 2.48 GB
+  clip_s1: 300/450 views, 5 s, peak 2.48 GB
+  clip_s1: 350/450 views, 6 s, peak 2.48 GB
+  clip_s1: 400/450 views, 7 s, peak 2.48 GB
+  clip_s1: 450/450 views, 8 s, peak 2.48 GB
+  clip_s1: done in 9 s, 348,027 activated
+  clip_s2: 1/450 views, 0 s, peak 2.48 GB
+  clip_s2: 50/450 views, 1 s, peak 2.48 GB
+  clip_s2: 100/450 views, 2 s, peak 2.48 GB
+  clip_s2: 150/450 views, 3 s, peak 2.48 GB
+  clip_s2: 200/450 views, 4 s, peak 2.48 GB
+  clip_s2: 250/450 views, 5 s, peak 2.48 GB
+  clip_s2: 300/450 views, 5 s, peak 2.48 GB
+  clip_s2: 350/450 views, 6 s, peak 2.48 GB
+  clip_s2: 400/450 views, 7 s, peak 2.48 GB
+  clip_s2: 450/450 views, 8 s, peak 2.48 GB
+  clip_s2: done in 9 s, 347,129 activated
+lifted ['clip_s0', 'clip_s1', 'clip_s2'] onto 348,411 of 379,684 Gaussians in 28 s → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/flightroom/semantics/2026-09-29_163855/lift_occamfull_raw
+== Occam tables + evaluation Wed Oct 14 04:50:06 AM +0530 2026
+  ✔ open_clip 2.24.0, radiance_semantics 0.1.0
+  ! device cpu: teachers and the lift will be very slow (tests only)
+  ✔ scene backroom: run 2026-09-26_190524, step-000029999.ckpt (key 2026-09-26_190524-step-000029999-1790431381)
+    300 frames at 1920x1080; 3529 CLIP crops per frame (7 scales); teacher tag 9c437cce68 (300 frames already cached)
+    532,361 Gaussians; needs ≈ 1.8 GB (teachers 1.3 GB, lift + table 1.8 GB); 254 GB free
+  ✔ table: 532,361 rows (.splat order, 22cd5cc9509bc6e5), 498,828 seen, 2093 MB → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/backroom/semantics/2026-09-26_190524/lift_occamfull
+    record: /home/yutharsan/Radiance/figs/SousVide/runs/semantics_p1_backroom_2026-10-14_0450.json
+Semantic pipeline  scene=backroom  run=2026-09-26_190524  backend=lift  teachers=clip,dino  steps=preflight,export
+    state: /home/yutharsan/Radiance/figs/.semantic_pipeline_state/backroom/2026-09-26_190524/table_occamfull
+
+══════════════════════════════════════════════════════════════════════════════
+  preflight  —  environment, GPU, weights, active run, time and disk estimate
+══════════════════════════════════════════════════════════════════════════════
+    'preflight' completed in 1.7s
+
+══════════════════════════════════════════════════════════════════════════════
+  export  —  write the per-Gaussian table in .splat order
+══════════════════════════════════════════════════════════════════════════════
+    'export' completed in 22.9s
+
+══════════════════════════════════════════════════════════════════════════════
+  Done — total 24.7s
+══════════════════════════════════════════════════════════════════════════════
+  ✔ open_clip 2.24.0, radiance_semantics 0.1.0
+  ! device cpu: teachers and the lift will be very slow (tests only)
+  ✔ scene flightroom: run 2026-09-29_163855, step-000029999.ckpt (key 2026-09-29_163855-step-000029999-1790681982)
+    499 frames at 1280x720; 3529 CLIP crops per frame (7 scales); teacher tag 9c437cce68 (499 frames already cached)
+    379,684 Gaussians; needs ≈ 1.3 GB (teachers 2.2 GB, lift + table 1.3 GB); 252 GB free
+  ✔ table: 379,684 rows (.splat order, 212ed1b97dc232f0), 348,411 seen, 1493 MB → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/flightroom/semantics/2026-09-29_163855/lift_occamfull
+    record: /home/yutharsan/Radiance/figs/SousVide/runs/semantics_p1_flightroom_2026-10-14_0450.json
+Semantic pipeline  scene=flightroom  run=2026-09-29_163855  backend=lift  teachers=clip,dino  steps=preflight,export
+    state: /home/yutharsan/Radiance/figs/.semantic_pipeline_state/flightroom/2026-09-29_163855/table_occamfull
+
+══════════════════════════════════════════════════════════════════════════════
+  preflight  —  environment, GPU, weights, active run, time and disk estimate
+══════════════════════════════════════════════════════════════════════════════
+    'preflight' completed in 4.7s
+
+══════════════════════════════════════════════════════════════════════════════
+  export  —  write the per-Gaussian table in .splat order
+══════════════════════════════════════════════════════════════════════════════
+    'export' completed in 12.7s
+
+══════════════════════════════════════════════════════════════════════════════
+  Done — total 17.3s
+══════════════════════════════════════════════════════════════════════════════
+  L-C@occamfull (lift): 16 queries
+    recycling bin                HIT  0.07 m    peak 0.753  25428 ms
+    blue trash can               HIT  0.18 m    peak 0.754  2690 ms
+    office chair                 HIT  0.37 m    peak 0.677  2691 ms
+    swivel chair                 HIT  0.36 m    peak 0.670  2727 ms
+    grandfather clock            HIT  0.41 m    peak 0.722  2779 ms
+    clock                        HIT  0.22 m    peak 0.733  2743 ms
+    children's road play mat     HIT  0.17 m    peak 0.797  2733 ms
+    camera tripod                HIT  0.67 m    peak 0.593  2724 ms
+    purple foam mat              HIT  0.21 m    peak 0.757  2758 ms
+    white bucket                 MISS 1.80 m    peak 0.632  2701 ms
+    glass door cabinet           HIT  0.27 m    peak 0.759  2761 ms
+    hose reel                    HIT  0.09 m    peak 0.637  2699 ms
+    moving box                   HIT  0.28 m    peak 0.706  2772 ms
+    bicycle                      NEG ok         peak 0.521  2710 ms
+    sofa                         NEG ok         peak 0.516  2730 ms
+    ceiling fan                  NEG fp         peak 0.647  2682 ms
+  L-C@occamfull: hits 12/13, median error 0.268 m, negatives fp 0.333, AUROC 0.923 → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/backroom/semantics/2026-09-26_190524/eval/L-C@occamfull.json
+  L-C@occamfull (lift): 19 queries
+    armchair                     HIT  0.31 m    peak 0.708  6562 ms
+    upholstered chair            HIT  0.30 m    peak 0.654  1961 ms
+    whiteboard                   HIT  0.15 m    peak 0.749  1970 ms
+    computer monitor             HIT  0.12 m    peak 0.699  1952 ms
+    keyboard                     MISS           peak 0.556  1975 ms
+    floor lamp                   MISS 0.87 m    peak 0.664  2048 ms
+    red cup                      HIT  0.03 m    peak 0.671  1965 ms
+    water bottle                 HIT  0.03 m    peak 0.628  1960 ms
+    water jug                    HIT  0.13 m    peak 0.618  1958 ms
+    round table                  HIT  0.57 m    peak 0.600  1971 ms
+    drone gate                   MISS 0.97 m    peak 0.605  1998 ms
+    PVC pipe frame               HIT  0.69 m    peak 0.855  1956 ms
+    poster                       HIT  0.24 m    peak 0.667  1965 ms
+    garden cart                  HIT  0.40 m    peak 0.729  1966 ms
+    wheelbarrow                  HIT  0.35 m    peak 0.695  1962 ms
+    cardboard box                HIT  0.17 m    peak 0.600  1951 ms
+    red tool chest               NEG ok         peak 0.507  1951 ms
+    recycling bin                NEG ok         peak 0.533  1982 ms
+    bicycle                      NEG ok         peak 0.513  1948 ms
+  L-C@occamfull: hits 13/16, median error 0.296 m, negatives fp 0.0, AUROC 1.0 → /home/yutharsan/Radiance/figs/SousVide/gsplats/workspace/flightroom/semantics/2026-09-29_163855/eval/L-C@occamfull.json
+ALL_DONE Wed Oct 14 04:52:39 AM +0530 2026

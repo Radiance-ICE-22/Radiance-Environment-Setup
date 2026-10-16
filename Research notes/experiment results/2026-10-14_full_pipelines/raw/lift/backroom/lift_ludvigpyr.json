@@ -1,0 +1,18 @@
+{
+ "config": "LUDVIG-ctrl",
+ "table": "lift_ludvigpyr",
+ "rows": 532361,
+ "lift": {
+  "views": 270,
+  "seconds": 368.8,
+  "seen": 531951,
+  "n": 532361,
+  "seen_frac": 0.9992,
+  "render_width": 960,
+  "teacher_tag": "d7a30d7264",
+  "key": "2026-09-26_190524-step-000029999-1790431381",
+  "impl": "LUDVIG original (naver/ludvig apply_weights, Inria rasteriser)",
+  "prune": 0,
+  "peak_vram_mib": 3385
+ }
+}

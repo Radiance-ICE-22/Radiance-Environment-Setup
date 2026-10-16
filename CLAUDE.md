@@ -42,6 +42,8 @@ holds what. Full history with every problem and fix: `docs/report/project_chroni
 13 Oct: FMGS dropped (too heavy for the lab GPU); the lift continues. Original LUDVIG / Occam's LGS code run against our lift
 (branches `semantic/LUDVIG`, `semantic/LGS`; `semantic/new` reserved for our own architecture): LUDVIG's lift = ours exactly,
 Occam's centre-pixel lift 6.5–18× faster, ±1–2 queries (SEMANTICS.md §17, `Research notes/experiment results/`).
+14 Oct: full pipelines — **Occam's LGS on LangSplat SAM ViT-H features: 25/29 at 1/6 false positives** (best so far; A 22/29),
+LUDVIG full (DINOv2 ViT-g + diffusion) 19/29 (SEMANTICS.md §18). LangSplat extraction ~5 GPU-h per scene on the 2080.
 
 Next (Suhan to choose, HANDOVER.md §2): per-table floor calibration, then decide the default lift; query-time fusion /
 ViT-L re-ranker / FMGS baking fixes; merging B2/C2 (branches pushed, unmerged); disk cleanup of variant teachers and

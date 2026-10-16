@@ -1,0 +1,15 @@
+scene,config,lift_s,features_s,diffusion_s,seen,rows,seen_frac,table_mb
+backroom,Ours-Old,180.9,,,531951,532361,0.9992,923.5
+flightroom,Ours-Old,262.3,,,378173,379684,0.996,658.7
+backroom,Ours-A,1064.3,,,531951,532361,0.9992,2483.2
+flightroom,Ours-A,1363.9,,,378173,379684,0.996,1771.0
+backroom,B2,884.5,,,531951,532361,0.9992,2483.2
+flightroom,B2,1009.6,,,378173,379684,0.996,1771.0
+backroom,LUDVIG-ctrl,368.8,,,531951,532361,0.9992,923.5
+flightroom,LUDVIG-ctrl,632.7,,,378172,379684,0.996,658.7
+backroom,LUDVIG-full,1739.6,1739.6,238.2,531966,532361,0.9993,615.6
+flightroom,LUDVIG-full,2238.0,2238.0,145.4,378208,379684,0.9961,435.8
+backroom,Occam-ctrl,124.1,,,506971,532361,0.9523,2483.2
+flightroom,Occam-ctrl,74.0,,,352021,379684,0.9271,1771.0
+backroom,Occam-full,33.7,18524.5,,498828,532361,0.937,2093.2
+flightroom,Occam-full,27.7,16776.0,,348411,379684,0.9176,1492.9

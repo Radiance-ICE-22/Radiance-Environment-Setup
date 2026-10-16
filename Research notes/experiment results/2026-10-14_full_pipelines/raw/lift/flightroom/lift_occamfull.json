@@ -1,0 +1,17 @@
+{
+ "config": "Occam-full",
+ "table": "lift_occamfull",
+ "rows": 379684,
+ "lift": {
+  "views": 450,
+  "seconds": 27.7,
+  "seen": 348411,
+  "n": 379684,
+  "seen_frac": 0.9176,
+  "render_width": "seg-map",
+  "teacher_tag": "langsplat",
+  "key": "2026-09-29_163855-step-000029999-1790681982",
+  "impl": "Occam's LGS original (OccamLGS accumulate_gaussian_feature_per_view, gsplat fork)",
+  "peak_vram_mib": 2543
+ }
+}

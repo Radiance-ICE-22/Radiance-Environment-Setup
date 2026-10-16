@@ -9,3 +9,4 @@ One folder per experiment, named `<date>_<topic>/`, each with
 | Experiment | What | Report |
 | --- | --- | --- |
 | [2026-10-13_lift_baselines](2026-10-13_lift_baselines/) | The original LUDVIG and Occam's LGS code against our lift, controlled (same Gaussians, cameras, teachers, query, evaluator) | [lift_baselines_report.pdf](2026-10-13_lift_baselines/report/lift_baselines_report.pdf) |
+| [2026-10-14_full_pipelines](2026-10-14_full_pipelines/) | The papers' whole pipelines: LUDVIG (DINOv2 ViT-g + graph diffusion), Occam's LGS on LangSplat SAM ViT-H features — Occam's full reaches 25/29 at 1/6 false positives | [full_pipelines_report.pdf](2026-10-14_full_pipelines/report/full_pipelines_report.pdf) |
