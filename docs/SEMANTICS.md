@@ -873,3 +873,6 @@ The papers' whole pipelines with the authors' code (branches `semantic/LUDVIG`, 
 - Next for `semantic/new`: region-level features as the base; separate which part of LangSplat's recipe beats our B2
   (ViT-H vs ViT-B, SAM levels vs area bins, skip vs fill, NMS — cheap re-lifts on the cached masks); cut extraction cost;
   anchor candidates on visible surfaces. LangSplat cache: `~/Radiance/third_party/langsplat_features/` (15 GB).
+- Detailed write-up of the Occam's chain (16 Oct): `…/2026-10-14_full_pipelines/report/occam/occam_full_chain_report.pdf` —
+  same lift on our A teachers (13 Oct) vs on LangSplat features: 22 → 25 hits, 3 → 1 absent firing, AUROC 0.87/0.92 →
+  0.92/1.00; the query picks SAM level l for 22 of 29 objects and never s; LangSplat 70 s / 37 s per image (median).
