@@ -876,3 +876,28 @@ The papers' whole pipelines with the authors' code (branches `semantic/LUDVIG`, 
 - Detailed write-up of the Occam's chain (16 Oct): `…/2026-10-14_full_pipelines/report/occam/occam_full_chain_report.pdf` —
   same lift on our A teachers (13 Oct) vs on LangSplat features: 22 → 25 hits, 3 → 1 absent firing, AUROC 0.87/0.92 →
   0.92/1.00; the query picks SAM level l for 22 of 29 objects and never s; LangSplat 70 s / 37 s per image (median).
+
+## 19. Region-level teachers in our pipeline: `--clip-mode langsplat`, skip vs fill (16 Oct, `semantic/new`)
+
+LangSplat's region features (SAM ViT-H levels s/m/l, one CLIP embedding per masked crop) are a teacher mode of our
+pipeline (`--clip-mode langsplat`, cache tag `4f4bdb1a08`; extraction runs LangSplat's preprocessing in the `occamlgs` env
+as a subprocess, resumable; the 13–14 Oct cache was moved in, symlinks left at the old path). The lift
+(`lift.lift_segment_views`) is our all-pixel gsplat lift per level, with `--uncovered skip` (pixels no mask covers are left
+out, as LangSplat/Occam) or `fill` (they take the scale-averaged pyramid feature, as B2). Levels = table scale groups;
+query unchanged. Default lift mode unchanged (A). Tests: semantics 89, Galley 116.
+
+| Phase 5 (29 / 6) | Hits @0.55 | Absent firing | Best at 1 FP | AUROC br / fr |
+| --- | --- | --- | --- | --- |
+| A (default) | 22 | 2 | 19 | 0.87 / 0.90 |
+| Occam's full chain | 25 | 1 | 25 | 0.92 / 1.00 |
+| **langsplat, skip** (`lift_ls`) | **24** | **1** | 24 (25 flat) | 0.92 / 1.00 |
+| langsplat, fill (`lift_lsfill`) | 23 | 1 | 24 | 0.92 / 1.00 |
+
+- Our lift on the region teachers is within one query of Occam's chain (flightroom water jug: cluster offset), as the
+  13 Oct controlled comparison predicts; dev set 5/5. Lift 18 / 21 min per scene; extraction ~5 GPU-h per scene (2080).
+- **Skip vs fill: one query** (camera tripod, 0.588 vs 0.576); skip is better but the effect is small, so B2's 21 comes from
+  its other choices (SAM ViT-B, no crop layer, stricter thresholds, area levels, no LangSplat NMS).
+- Level choice per query: +2 with Occam's lift, 0 / −1 with ours — noise on 29 queries; keep configurable.
+- Decision for Suhan: make `langsplat` + skip the default lift (one line in `default_clip_mode`). Next: Occam's
+  centre-pixel estimator as a fast lift option (30 s vs 20 min); ablate B2's differences.
+- Report: `Research notes/experiment results/2026-10-16_langsplat_teacher/report/langsplat_teacher_report.pdf`.
